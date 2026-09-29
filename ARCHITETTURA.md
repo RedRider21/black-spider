@@ -4,7 +4,7 @@
 > Stato: l'**applicazione v0 è costruita e verificata** — chat fra due browser, **chiamata a
 > sola voce dentro l'app** (con la telecamera che si accende e si spegne a chiamata avviata),
 > guscio PWA, due temi, due lingue; `./prove.sh` la mette alla prova in un comando (esiti in
-> `CLAUDE.md` §6). Il resto di questo documento — gruppi, indirizzario, file, bacheca,
+> `app/README.md`). Il resto di questo documento — gruppi, indirizzario, file, bacheca,
 > blocchi — è **progetto da costruire**: qui sta il perché delle scelte, non la descrizione di
 > ciò che esiste. Le sezioni che dipendono da misure non ancora fatte sono §7, §11 e §14.
 > La v0.2 integra una ricerca sul panorama P2P web al 2026 (§7, §11, §12 e Appendice B).

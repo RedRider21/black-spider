@@ -4,6 +4,18 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Derivati e note di lavoro: stanno su questo disco, non nel repo.
+#
+# I due derivati: `ARCHITETTURA.html` nasce da `ARCHITETTURA.md` (pandoc, §5 di
+# CLAUDE.md) e il PDF dalla presentazione. Sono la stessa cosa detta due volte, e
+# un derivato che invecchia in silenzio è peggio di un derivato che non c'è.
+#
+# CLAUDE.md sono le note di ripresa: servono a chi lavora qui, non a chi legge il
+# progetto — e parlano dello strumento con cui sono scritte.
+/ARCHITETTURA.html
+/Black Spider.pdf
+/CLAUDE.md
+
 # I banchi di prova scrivono qui: sono esiti di una sessione, non materiale da
 # conservare. Gli esiti che contano si copiano a mano in spikes/esiti/.
 /esiti-locali/

@@ -33,7 +33,6 @@ aprirla senza rete. La porta d'ingresso del sito è [`index.html`](index.html).
 | capire **perché** è fatto così — tutte le decisioni, i vincoli, i rischi, la ricerca | [`ARCHITETTURA.md`](ARCHITETTURA.md) — 929 righe, è il documento principale |
 | **usare l'applicazione** e sapere cosa c'è dentro | [`app/README.md`](app/README.md) |
 | vedere le **prove di fattibilità** che hanno preceduto il codice | [`spikes/README.md`](spikes/README.md) |
-| riprendere lo sviluppo dopo una pausa, o su un altro computer | [`CLAUDE.md`](CLAUDE.md) — stato, comandi, prossimi passi |
 
 ## Provare l'applicazione in locale
 
@@ -62,10 +61,9 @@ pubblicato su Pages**: in locale serve per lavorarci, non per usarlo.
 black-spider/
 ├── index.html           la pagina d'ingresso del sito: porta dentro l'applicazione
 ├── README.md            questo file — la porta d'ingresso, per una persona
-├── CLAUDE.md            da dove si riprende: stato, comandi, prossimi passi
 ├── LICENSE              AGPL-3.0 — il testo della licenza
 ├── .nojekyll            dice a Pages di servire i file come sono
-├── ARCHITETTURA.md      il documento di progetto (e .html, versione da leggere)
+├── ARCHITETTURA.md      il documento di progetto: il *perché* di ogni scelta
 ├── presentazione.html   la pagina di presentazione, autonoma e bilingue
 ├── prove.sh             esegue tutte le prove e dice l'esito
 ├── app/                 l'applicazione: il guscio PWA e la chat
