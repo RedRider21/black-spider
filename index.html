@@ -1,0 +1,443 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Daniele Deplano (RedRider21) -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Spider</title>
+<meta name="description" content="Una rete fra browser, senza server. Apri l'applicazione, leggi come è fatta.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0c0d14">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='8' r='3' fill='%237a6cff'/><circle cx='12' cy='16' r='4.4' fill='%237a6cff'/></svg>">
+<style>
+/* La porta d'ingresso del sito: serve a portare dentro l'applicazione in un clic.
+ * Autonoma — nessun file esterno, nessuna richiesta in uscita. Gli stessi pezzi
+ * della presentazione: piatta, senza ombre né gradienti, una sola famiglia di
+ * caratteri, tema chiaro e scuro dalla stessa dichiarazione. */
+
+:root {
+  color-scheme: light dark;
+
+  /* Prima il valore scuro per esteso: serve ai browser che non conoscono
+   * light-dark(), che così prendono il tema scuro invece di niente. */
+  --fondo: #0c0d14;
+  --fondo: light-dark(#f6f7fa, #0c0d14);
+  --carta: #14161f;
+  --carta: light-dark(#ffffff, #14161f);
+  --bordo: #272b3c;
+  --bordo: light-dark(#dfe2ea, #272b3c);
+  --testo: #e8eaf2;
+  --testo: light-dark(#161926, #e8eaf2);
+  --testo-2: #98a0b8;
+  --testo-2: light-dark(#596074, #98a0b8);
+  --accento: #7a6cff;
+  --accento: light-dark(#5246e0, #7a6cff);
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --largh: 1000px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--testo);
+  font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: var(--accento); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- testata --------------------------------------------------------------- */
+
+.velo {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--fondo) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bordo);
+}
+.velo > div {
+  max-width: var(--largh);
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+.marchio svg { width: 26px; height: 26px; flex: none; }
+.gruppo { margin-left: auto; display: flex; gap: 6px; }
+.segmento {
+  display: flex;
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--carta);
+}
+.segmento button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--testo-2);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+.segmento button + button { border-left: 1px solid var(--bordo); }
+.segmento button[aria-pressed="true"] { background: var(--accento); color: #fff; }
+
+/* --- corpo ----------------------------------------------------------------- */
+
+main {
+  max-width: var(--largh);
+  margin: 0 auto;
+  padding: 56px 16px 8px;
+}
+
+.apertura h1 {
+  font-size: clamp(30px, 6vw, 44px);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+  margin: 0 0 18px;
+  font-weight: 700;
+}
+.frase {
+  font-size: 18px;
+  color: var(--testo-2);
+  max-width: 62ch;
+  margin: 0 0 26px;
+}
+.richiamo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.pulsante {
+  display: inline-block;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 600;
+  border: 1px solid var(--accento);
+  background: var(--accento);
+  color: #fff;
+}
+.pulsante:hover { text-decoration: none; filter: brightness(1.08); }
+.pulsante.tenue {
+  background: transparent;
+  color: var(--testo);
+  border-color: var(--bordo);
+}
+
+/* Il riquadro che dice che l'app è viva su questo indirizzo: è la cosa che
+ * cambia rispetto a prima, e va vista senza doverla leggere tutta. */
+.vivo {
+  margin: 30px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--bordo);
+  border-left: 3px solid var(--accento);
+  border-radius: 0 10px 10px 0;
+  background: var(--carta);
+  font-size: 14.5px;
+  color: var(--testo-2);
+}
+.vivo strong { color: var(--testo); }
+.vivo code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: color-mix(in srgb, var(--testo) 8%, transparent);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+h2 {
+  font-size: 22px;
+  letter-spacing: -.015em;
+  margin: 52px 0 6px;
+}
+.sottotitolo {
+  color: var(--testo-2);
+  font-size: 15px;
+  margin: 0 0 20px;
+  max-width: 68ch;
+}
+
+.porte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.porta {
+  display: block;
+  padding: 16px 18px;
+  border: 1px solid var(--bordo);
+  border-radius: 12px;
+  background: var(--carta);
+  color: var(--testo);
+}
+.porta:hover { text-decoration: none; border-color: var(--accento); }
+.porta b { display: block; font-weight: 650; margin-bottom: 4px; }
+.porta span { color: var(--testo-2); font-size: 14px; }
+
+.punti {
+  margin: 18px 0 0;
+  padding-left: 20px;
+  color: var(--testo-2);
+  max-width: 68ch;
+}
+.punti li { margin-bottom: 6px; }
+.punti b { color: var(--testo); font-weight: 650; }
+
+footer {
+  max-width: var(--largh);
+  margin: 64px auto 0;
+  padding: 22px 16px 40px;
+  border-top: 1px solid var(--bordo);
+  color: var(--testo-2);
+  font-size: 13.5px;
+}
+footer p { margin: 0 0 8px; max-width: 74ch; }
+footer code { font-family: var(--mono); }
+
+[data-lingua] { display: none; }
+[data-lingua].attiva { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="velo">
+  <div>
+    <div class="marchio">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round">
+        <circle cx="12" cy="7.4" r="3.1" fill="currentColor" stroke="none"/>
+        <ellipse cx="12" cy="16.3" rx="4.6" ry="5.4" fill="currentColor" stroke="none"/>
+        <path d="M9 5.4 3.6 3.2M9.4 8.8 3.1 8.4M9.8 12.2 3.4 13.6M10.6 15.4 4.4 18.6
+                 M15 5.4l5.4-2.2M14.6 8.8l6.3-.4M14.2 12.2l6.4 1.4M13.4 15.4l6.2 3.2"/>
+      </svg>
+      <span>Black Spider</span>
+    </div>
+    <div class="gruppo">
+      <div class="segmento" id="segmentoLingua" role="group" aria-label="Lingua / Language">
+        <button type="button" data-lingua-scelta="it" aria-pressed="true">IT</button>
+        <button type="button" data-lingua-scelta="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ============================================================ ITALIANO -->
+  <article data-lingua="it" class="attiva">
+
+    <div class="apertura">
+      <h1>Due browser<br>che si parlano<br>direttamente.</h1>
+      <p class="frase">
+        Black Spider è una rete fra pari che vive dentro il browser. Nessun server — non
+        «nessun server nostro»: nessun server. I messaggi passano da una finestra all'altra,
+        firmati da chi li scrive, e restano dove sono stati scritti.
+      </p>
+      <div class="richiamo">
+        <a class="pulsante" href="app/">Apri l'applicazione</a>
+        <a class="pulsante tenue" href="presentazione.html">Cos'è, in una pagina</a>
+        <a class="pulsante tenue" href="ARCHITETTURA.html">L'architettura</a>
+      </div>
+
+      <p class="vivo">
+        <strong>L'applicazione è viva qui, su questo sito.</strong> Non c'è niente da
+        installare e niente da avviare: si apre <code>app/</code> in due finestre — una
+        normale e una in incognito — e ci si scambia il codice d'invito a mano. Serve HTTPS
+        per il service worker, e questo sito ce l'ha; da <code>file://</code> non funziona.
+      </p>
+    </div>
+
+    <h2>Cosa c'è dentro</h2>
+    <p class="sottotitolo">
+      Non è una pagina con dentro una chat: è un guscio con dentro più applicazioni, e
+      tutte guardano la stessa cosa — il log — da punti di vista diversi.
+    </p>
+    <ul class="punti">
+      <li><b>Chat</b> fra due browser, con storico firmato che sopravvive alla chiusura della pagina.</li>
+      <li><b>Chiamate</b> dentro l'app: solo voce per difetto, la telecamera si accende a chiamata avviata.</li>
+      <li><b>Installabile come applicazione</b> e apribile senza rete, perché il service worker tiene una copia dei file.</li>
+      <li><b>Tema chiaro e scuro</b> e <b>italiano e inglese</b>, commutabili a caldo.</li>
+    </ul>
+
+    <h2>Le porte</h2>
+    <p class="sottotitolo">Il resto è materiale: la presentazione, il documento di progetto, le fonti, le prove.</p>
+    <ul class="porte">
+      <li><a class="porta" href="presentazione.html">
+        <b>La presentazione</b>
+        <span>Come funziona, cosa c'è già, cosa manca — in una pagina sola, bilingue.</span>
+      </a></li>
+      <li><a class="porta" href="ARCHITETTURA.html">
+        <b>L'architettura</b>
+        <span>Il documento di progetto: il <i>perché</i> di ogni scelta, i vincoli, i rischi.</span>
+      </a></li>
+      <li><a class="porta" href="app/">
+        <b>L'applicazione</b>
+        <span>Il guscio PWA con la chat e la chiamata, da aprire in due finestre.</span>
+      </a></li>
+      <li><a class="porta" href="app/README.md">
+        <b>Come si prova</b>
+        <span>Cosa c'è dentro l'app, come si fa parlare due finestre, cosa dicono le prove.</span>
+      </a></li>
+      <li><a class="porta" href="riferimenti/indice.html">
+        <b>Le fonti</b>
+        <span>I 22 documenti che hanno preceduto il codice: Trystero, Yjs, Automerge, gli standard.</span>
+      </a></li>
+      <li><a class="porta" href="spikes/README.md">
+        <b>Le prove di fattibilità</b>
+        <span>Quattro domande poste prima di scrivere il codice, e il banco per rispondere.</span>
+      </a></li>
+    </ul>
+
+    <h2>Licenza</h2>
+    <p class="sottotitolo">
+      <b>AGPL-3.0-or-later</b> — Copyright (C) 2026 Daniele Deplano (RedRider21). Chi
+      modifica Black Spider e lo mette a disposizione di altri attraverso una rete deve
+      rendere pubblico il sorgente modificato. Per un progetto che non ha un server non è
+      un dettaglio formale: è il modo di chiudere l'unica scappatoia rimasta — ospitarne una
+      copia modificata e in più dire a chi la usa che è Black Spider.
+    </p>
+  </article>
+
+  <!-- ============================================================ ENGLISH -->
+  <article data-lingua="en">
+
+    <div class="apertura">
+      <h1>Two browsers<br>talking<br>to each other.</h1>
+      <p class="frase">
+        Black Spider is a peer-to-peer network that lives inside the browser. No server —
+        not “no server of ours”: no server. Messages pass from one window to the other,
+        signed by whoever wrote them, and stay where they were written.
+      </p>
+      <div class="richiamo">
+        <a class="pulsante" href="app/">Open the application</a>
+        <a class="pulsante tenue" href="presentazione.html">What it is, in one page</a>
+        <a class="pulsante tenue" href="ARCHITETTURA.html">The architecture</a>
+      </div>
+
+      <p class="vivo">
+        <strong>The application is live here, on this site.</strong> Nothing to install and
+        nothing to start: open <code>app/</code> in two windows — one normal, one incognito —
+        and swap the invite code by hand. The service worker needs HTTPS, and this site has
+        it; from <code>file://</code> it does not work.
+      </p>
+    </div>
+
+    <h2>What is inside</h2>
+    <p class="sottotitolo">
+      It is not a page with a chat in it: it is a shell holding several applications, and
+      all of them look at the same thing — the log — from different angles.
+    </p>
+    <ul class="punti">
+      <li><b>Chat</b> between two browsers, with a signed history that survives closing the page.</li>
+      <li><b>Calls</b> inside the app: voice only by default, the camera is turned on while a call is running.</li>
+      <li><b>Installable as an application</b> and openable offline, because the service worker keeps a copy of the files.</li>
+      <li><b>Light and dark theme</b> and <b>Italian and English</b>, switched live.</li>
+    </ul>
+
+    <h2>The doors</h2>
+    <p class="sottotitolo">The rest is material: the presentation, the project document, the sources, the tests.</p>
+    <ul class="porte">
+      <li><a class="porta" href="presentazione.html">
+        <b>The presentation</b>
+        <span>How it works, what is already there, what is missing — one page, bilingual.</span>
+      </a></li>
+      <li><a class="porta" href="ARCHITETTURA.html">
+        <b>The architecture</b>
+        <span>The project document: the <i>why</i> of every choice, the constraints, the risks.</span>
+      </a></li>
+      <li><a class="porta" href="app/">
+        <b>The application</b>
+        <span>The PWA shell with the chat and the call, to be opened in two windows.</span>
+      </a></li>
+      <li><a class="porta" href="app/README.md">
+        <b>How to try it</b>
+        <span>What is inside the app, how to make two windows talk, what the tests say.</span>
+      </a></li>
+      <li><a class="porta" href="riferimenti/indice.html">
+        <b>The sources</b>
+        <span>The 22 documents that came before the code: Trystero, Yjs, Automerge, the standards.</span>
+      </a></li>
+      <li><a class="porta" href="spikes/README.md">
+        <b>The feasibility tests</b>
+        <span>Four questions asked before writing the code, and the bench to answer them.</span>
+      </a></li>
+    </ul>
+
+    <h2>Licence</h2>
+    <p class="sottotitolo">
+      <b>AGPL-3.0-or-later</b> — Copyright (C) 2026 Daniele Deplano (RedRider21). Anyone who
+      modifies Black Spider and makes it available to others over a network must publish the
+      modified source. For a project with no server that is not a formality: it is how the one
+      remaining loophole is closed — hosting a modified copy and still telling its users that
+      it is Black Spider.
+    </p>
+  </article>
+
+</main>
+
+<footer>
+  <p data-lingua="it" class="attiva">
+    <b>Black Spider</b> — prototipo funzionante. Licenza <a href="LICENSE">AGPL-3.0-or-later</a>,
+    Copyright (C) 2026 Daniele Deplano (RedRider21). I documenti completi stanno in
+    <a href="ARCHITETTURA.html">ARCHITETTURA</a>; l'applicazione è in
+    <a href="app/">app/</a>.
+  </p>
+  <p data-lingua="en">
+    <b>Black Spider</b> — a working prototype. Licence <a href="LICENSE">AGPL-3.0-or-later</a>,
+    Copyright (C) 2026 Daniele Deplano (RedRider21). The full reasoning lives in
+    <a href="ARCHITETTURA.html">ARCHITETTURA</a>; the application is in
+    <a href="app/">app/</a>.
+  </p>
+</footer>
+
+<script>
+/* La lingua, e nient'altro: due articoli in pagina, uno dei quali è nascosto.
+ * La scelta non si ricorda — questa è una porta d'ingresso, non l'applicazione —
+ * ma si riconosce quella del browser, così chi arriva in inglese non legge
+ * italiano per sbaglio. */
+(() => {
+  const articoli = document.querySelectorAll('[data-lingua]');
+  const bottoni = document.querySelectorAll('[data-lingua-scelta]');
+
+  function scegli(codice) {
+    document.documentElement.lang = codice;
+    articoli.forEach((n) => n.classList.toggle('attiva', n.dataset.lingua === codice));
+    bottoni.forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.linguaScelta === codice)));
+  }
+
+  bottoni.forEach((b) => b.addEventListener('click', () => scegli(b.dataset.linguaScelta)));
+
+  const preferita = (navigator.language || 'it').slice(0, 2).toLowerCase();
+  scegli(preferita === 'en' ? 'en' : 'it');
+})();
+</script>
+
+</body>
+</html>

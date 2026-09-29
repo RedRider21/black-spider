@@ -35,14 +35,18 @@ o conseguenze di dove lavora.
 | **I server di prova si legano a `127.0.0.1`**, mai a `0.0.0.0` | l'utente lavora in un ufficio su una **rete locale monitorata dalla cyber security**. Un servizio in ascolto su tutta la rete è una porta aperta su una rete che non è sua. Se una prova ha davvero bisogno di un altro dispositivo, si apre la porta solo allora e lo si dice |
 | **STUN spento per difetto** nell'app (la casella non è preselezionata) | senza la casella, creare un invito non contatta nessuno. Acceso solo se l'utente lo chiede |
 | **README sempre aggiornati** | |
+| **Licenza AGPL-3.0-or-later**, con `SPDX-License-Identifier` e copyright in testa a ogni file di programma | scelta dell'utente; per un progetto senza server è la licenza che chiude la scappatoia di chi ne ospita una copia modificata |
 | **Non si dichiara verificato quello che non è stato eseguito** | vedi §6 |
 
 ## 3. Dove sta cosa
 
 ```
 black-spider/
+├── index.html           la pagina d'ingresso del sito: porta dentro l'applicazione
 ├── README.md            la porta d'ingresso, per una persona
 ├── CLAUDE.md            questo file
+├── LICENSE              AGPL-3.0, il testo completo
+├── .nojekyll            dice a Pages di servire i file come sono
 ├── ARCHITETTURA.md      il documento di progetto — 929 righe, 17 sezioni + 2 appendici.
 │                        È la fonte della verità sul *perché*. **Si modifica solo
 │                        il .md, poi si rigenera l'HTML** (comando qui sotto)
@@ -459,3 +463,45 @@ Il progetto è stato scritto **prima** che esistesse un repository. Il primo com
 quindi uno stato già completo, diviso per **aree** (la ricerca, le fondamenta, il guscio, le
 prove, i documenti) e non per cronologia: l'ordine dei commit racconta come è fatto il
 progetto, non l'ordine in cui è stato scritto. Da quel commit in poi la storia è reale.
+
+## 13. Il repository e il sito pubblicato
+
+| | |
+|---|---|
+| repository | <https://github.com/RedRider21/black-spider> (pubblico) |
+| sito | <https://redrider21.github.io/black-spider/> |
+| applicazione viva | <https://redrider21.github.io/black-spider/app/> |
+| Pages | **ramo `main`, cartella `/`** — niente workflow, niente `docs/`: si pubblica ciò che è nel repo |
+| licenza | **AGPL-3.0-or-later**, Copyright (C) 2026 Daniele Deplano (RedRider21) |
+
+**Come si aggiorna il sito: si aggiorna il repository.** Pages serve `main` così com'è, quindi
+un `git push` è la pubblicazione. Non c'è niente da rigenerare e niente da copiare in una
+seconda cartella — è la ragione per cui Pages è puntato sulla radice invece che su `docs/`:
+una copia sola, che non può divergere da sé stessa.
+
+**Perché funziona così com'è:** tutti i percorsi dell'app sono **relativi**
+(`manifest.webmanifest` ha `"start_url": "./"`, `sw.js` elenca asset `./...`,
+`presentazione.html` linka `app/index.html`). Il sito sta quindi in una sottocartella come
+`/black-spider/` senza una riga da riscrivere. `.nojekyll` serve perché Pages non passi i file
+dentro Jekyll, che li rimaneggerebbe.
+
+**Due cose che il sito pubblico cambia davvero**, e non sono cosmetiche:
+
+- il service worker e il microfono vogliono **HTTPS**: su Pages ci sono, da `file://` no.
+  Quindi l'app è **usabile davvero** da un indirizzo pubblico — installabile come applicazione
+  e apribile senza rete — mentre `README.md` e `CLAUDE.md` §5 continuano a descrivere il giro
+  locale, che serve per *lavorarci*, non per usarla;
+- le **prove in `app/prove/`** sono pubblicate anche loro, ma `collegamento.html` e
+  `chiamata.html` hanno bisogno di `prove/server.py` come messaggero fra i due ruoli: da Pages
+  non funzionano. Non è un guasto da riparare, è il banco che serve una macchina. Se un
+  giorno dà noia, si toglie `app/prove/` dal sito — non dal repo.
+
+**Da sapere quando si lavora qui:** la cartella **non è più l'unica copia**. Prima di questa
+sessione il repository non aveva remote (`git remote -v` vuoto) e il progetto viveva solo su
+questo disco. Ora `origin` esiste: un `git push` è un punto di ripristino fuori dalla
+macchina, e dall'altro PC si riparte con `git clone`.
+
+**`pandoc` non è installato su questa macchina**, quindi `ARCHITETTURA.html` non si può
+rigenerare da `ARCHITETTURA.md` finché non lo si installa (§5): finché è così,
+`ARCHITETTURA.md` non si tocca, altrimenti i due divergono in silenzio — che è già successo
+una volta, ed è la trappola che la riga di §5 esiste per evitare.

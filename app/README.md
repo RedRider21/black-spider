@@ -10,6 +10,17 @@ ragionamento, e dove guardare quando qui c'è scritto troppo poco. L'app è
 volutamente la cosa più piccola che funziona davvero: una stanza sola, due
 persone, messaggi firmati, storico che sopravvive alla chiusura della pagina.
 
+## Usarla adesso
+
+**<https://redrider21.github.io/black-spider/app/>** — l'applicazione è pubblicata
+su GitHub Pages: non c'è niente da installare e niente da avviare. Si apre in
+**due finestre** (una normale e una in incognito, o due profili diversi) e ci si
+scambia il codice d'invito a mano. HTTPS serve per il service worker e per il
+microfono; Pages ce l'ha.
+
+Il resto di questo file spiega com'è fatta e come si prova **in locale**, che è
+quello che serve per lavorarci — non per usarla.
+
 ## Com'è fatta
 
 Non è una pagina con dentro una chat: è un **guscio** con dentro più
@@ -383,3 +394,10 @@ via d'uscita**, non a cuor leggero.
   altro, che vedrebbe quando arriva un messaggio e quanto è grande. Il contenuto
   no, è cifrato; il metadato sì. Non è un difetto aggirabile: è come è fatta la
   piattaforma web.
+
+## Licenza
+
+**AGPL-3.0-or-later** — Copyright (C) 2026 Daniele Deplano (RedRider21). Il testo
+completo è in [`../LICENSE`](../LICENSE). Chi pubblica una versione modificata su
+una rete ne deve rendere pubblico il sorgente: vale anche per chi la mette su un
+proprio sito. Usarla così com'è non obbliga a niente.
