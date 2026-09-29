@@ -163,6 +163,13 @@ body {
   font-weight: 620;
   letter-spacing: -.01em;
   white-space: nowrap;
+  /* Senza `min-width: 0` un elemento flessibile non scende sotto la larghezza
+   * del suo testo: il titolo restava largo, e su un telefono finiva sotto il
+   * chip dell'identità invece di accorciarsi. Il testo è già `nowrap`, quindi
+   * con questo si taglia con i puntini. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chip {
@@ -515,13 +522,30 @@ button.piccola { padding: 5px 11px; font-size: 12.5px; }
 
 .chiamata[hidden] { display: none; }
 .chiamata-segno { flex: none; color: var(--testo-2); }
+
+/* Il blocco di chi e da quanto. `min-width: 0` perché un identificativo lungo
+ * deve poter essere tagliato invece di spingere i pulsanti fuori dalla barra. */
+.chiamata-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 .chiamata-testo { font-size: 13.5px; }
+
+/* Il tempo della chiamata, grande come su un telefono: è l'unica cosa che
+ * cambia da sola, e va vista senza doverla cercare. */
 .chiamata-durata {
-  font-size: 13px;
-  color: var(--testo-2);
+  font-size: 25px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  color: var(--testo);
   /* I numeri non ballano mentre il tempo scorre. */
   font-variant-numeric: tabular-nums;
 }
+/* Fuori dalla chiamata in corso non c'è nessun tempo: lo spazio non deve
+ * restare lì a fare un buco. */
+.chiamata-durata:empty { display: none; }
 .chiamata-pulsanti { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 
 .chiamata[data-stato="chiamando"] { border-left-color: var(--warn); }
@@ -810,6 +834,15 @@ details.pannello[open] > summary::before { content: "▾"; }
   :root[data-menu="aperto"] .velo { display: block; }
 
   .marchio h1 { font-size: 16px; }
+}
+
+/* Su un telefono l'identificativo per esteso nella testata non serve a niente:
+ * sta in Impostazioni, intero e copiabile. Lì serviva solo a spingere — faceva
+ * andare «senza nome» a capo e costringeva il titolo ad accorciarsi. Tolto lui,
+ * il titolo torna intero e il chip resta di una riga. */
+@media (max-width: 480px) {
+  .chip { white-space: nowrap; }
+  .chip code { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

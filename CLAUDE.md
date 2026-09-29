@@ -48,7 +48,7 @@ black spider/
 │                        il .md, poi si rigenera l'HTML** (comando qui sotto)
 ├── presentazione.html   pagina di presentazione autonoma (nessun file esterno), IT/EN
 ├── prove.sh             esegue tutte le prove e dice l'esito
-├── Black Spider.pdf     6 pagine, versione stampabile
+├── Black Spider.pdf     versione stampabile, ricavata da `presentazione.html`
 ├── app/                 l'applicazione
 │   ├── index.html       il guscio: testata, menu, cinque sezioni
 │   ├── stile.css        l'aspetto; tema chiaro e scuro dalla stessa dichiarazione
@@ -144,6 +144,18 @@ python3 -m http.server 8766 --bind 127.0.0.1
 #   http://127.0.0.1:8766/app/prove/stile.html?tema=chiaro   (il campione di stile)
 ```
 
+E per guardare **la chiamata** mentre si svolge, che è un'altra domanda ancora:
+
+```sh
+python3 app/prove/sguardo.py     # fotografie in /tmp/bsapp/sguardo/fotografie
+```
+
+`sguardo.py` non è una prova: apre due browser con la porta di debug, parla il protocollo
+DevTools sopra un WebSocket scritto a mano (qui non ci sono `websocket`, `playwright` né
+`node`, e non si installano), **clicca con il mouse** sulle coordinate dei pulsanti e
+fotografa. Serve perché «funziona» e «si vede bene» sono due domande diverse: il primo giro
+ha trovato tre cose che 62 asserzioni non vedevano.
+
 ### Le quattro prove, una per una
 
 | prova | cosa verifica | come |
@@ -185,11 +197,20 @@ ordine dei 24-40 dichiarati. Accendendo la telecamera ne arrivano **70 977** sol
 negli stessi tre secondi, e **zero** dopo averla spenta. Nessun video in ingresso a chi non ne
 manda. La chiamata passa dalla **stessa connessione** della chat: non ha un secondo signaling.
 
-**Costruito e funzionante**: la chat fra due browser; la chiamata dentro l'app (solo voce per
-difetto, telecamera accesa e spenta a chiamata avviata); installabile come PWA, apribile senza
-rete; il guscio con le cinque sezioni; tema chiaro/scuro; italiano e inglese.
+**E poi guardata**, che è un'altra cosa da misurata. `sguardo.py` (§5) apre due browser veri,
+clicca i pulsanti con il mouse e fotografa: il primo giro ha trovato tre cose che 62
+asserzioni non vedevano — il video che arriva e non si vede, «Chiama» che resta acceso per
+tutta la chiamata, e l'intestazione che va sotto il chip dell'identità sotto i 410 px. Le altre
+due sono riparate; **il video in ingresso no**, perché non è un guasto ma una funzione che
+manca (§7).
 
-**Progettato ma non costruito**: gruppi, indirizzario, file, bacheca, blocchi.
+**Costruito e funzionante**: la chat fra due browser; la chiamata dentro l'app (solo voce per
+difetto, telecamera accesa e spenta a chiamata avviata, **durata a vista** come su un
+telefono); installabile come PWA, apribile senza rete; il guscio con le cinque sezioni; tema
+chiaro/scuro; italiano e inglese.
+
+**Progettato ma non costruito**: gruppi, indirizzario, file, bacheca, blocchi; **il video che
+si riceve non compare da nessuna parte** (si contano i byte, non si guarda l'immagine).
 
 **Non fatto, e va detto**: le prove 1-4 di `spikes/` (invito fra browser su reti diverse, LAN
 senza internet, scheda in background per ore, quanti NAT richiedono un relay). Il banco è
@@ -228,6 +249,19 @@ inventata.
 numero che conta è quanti byte sono arrivati davvero — una traccia «collegata» con zero byte è
 il guasto classico delle chiamate WebRTC.
 
+**E una traccia che si sente non è un'immagine che si vede.** I byte di video in ingresso si
+contano e sono la prova che il video arriva; ma **l'app non lo mostra**: non c'è nessun
+`<video>` che lo riceva. È il buco che la misura non poteva vedere e che `sguardo.py` ha
+trovato al primo giro — la differenza fra «arriva» e «si vede». Sta nell'elenco di ciò che
+manca, non in quello dei guasti.
+
+**La durata sta a vista, grande.** L'utente l'ha chiesta come sui telefoni normali: nella
+barra della chiamata il nome sopra e il tempo sotto, in corpo 25 con cifre a larghezza fissa
+(`tabular-nums`, altrimenti il numero balla a ogni secondo). Un «0:03» in coda a una frase è
+un numero che non guarda nessuno; sotto il nome, da solo, è quello che si guarda. Il tempo
+parte quando la chiamata è **in corso** — non quando si compone, non quando squilla — e non
+esiste per gli altri due stati, dove non ha senso.
+
 Per il resto la risposta è articolata, e vale per il futuro:
 
 - **in due** è quasi banale una volta che il canale dati esiste: è la stessa
@@ -259,9 +293,12 @@ In ordine di sensatezza, non di difficoltà:
 4. **La cifratura dei contenuti.** Le firme dicono *chi* ha scritto, non *nascondono cosa*.
    In transito il canale è già cifrato, ma gli eventi restano in chiaro nell'archivio, e chi
    esporta il proprio archivio esporta tutto.
-5. **Le quattro prove di `spikes/`.** Costano poco e decidono il progetto: la 1 e la 3 in
+5. **Mostrare il video che si riceve.** È poco lavoro — un `<video>` legato alla traccia in
+   ingresso — ma è la differenza fra «il video arriva» e «il video si vede»: oggi l'app conta
+   i byte e non disegna l'immagine. È il buco trovato da `sguardo.py`, non dalle asserzioni.
+6. **Le quattro prove di `spikes/`.** Costano poco e decidono il progetto: la 1 e la 3 in
    particolare (l'invito regge su Firefox? la scheda in background tiene?).
-6. Poi: file, bacheca, blocchi, e le chiamate di gruppo.
+7. Poi: file, bacheca, blocchi, e le chiamate di gruppo.
 
 ## 9. Le trappole già pagate
 
@@ -299,6 +336,32 @@ Non ripagarle.
   tono, e senza `--mute-audio` esce dalle casse della macchina. È successo in ufficio.
 - **`#registro` non ha a capo**: le note sono `<div>` accodate, e `textContent` le incolla in
   una riga sola. Per contarle si usa `children.length`, non `split('\n')`.
+- **Un controllo che chiama `Date.now()` due volte chiede che il tempo non passi.** In `m0`
+  l'istante di confronto era ricalcolato: la condizione era «l'orologio sta avanti di un minuto
+  rispetto a un momento *successivo* a sé stesso», che è vera solo se le due chiamate cadono
+  nello stesso millisecondo. Falliva ogni tanto **da sola** — l'asserzione era sbagliata, non
+  l'orologio (`osserva()` implementa l'HLC correttamente). Un falso guasto dell'applicazione è
+  la specie peggiore: fa cercare a lungo un difetto che non c'è. L'istante si calcola **una
+  volta sola**.
+- **Il service worker dell'app è «prima quello che ho, poi aggiorno»**, quindi un profilo
+  Chrome riusato fra due esecuzioni guarda il codice della prima. Le misure sembrano giuste e
+  parlano di una revisione che non è più quella sul disco. `prove.sh` già cancella il profilo
+  prima di aprirlo; `sguardo.py` lo fa con `shutil.rmtree(profilo, ignore_errors=True)`.
+- **Una correzione messa dopo un'uscita anticipata non esiste.** Il pulsante «Chiama» andava
+  spento durante la chiamata *e* riacceso dopo: la riga era stata messa dopo `if (!viva)
+  return;`, cioè nel punto che la chiamata che finisce non attraversa mai — il pulsante
+  restava spento **per sempre**, peggio di prima. L'ha visto una misura (`dopo aver
+  riattaccato: [True, '0.5'] <- atteso [False, 1]`), non una lettura.
+- **Nell'app `$` non è globale.** `const $ = (s, r = document) => r.querySelector(s)` è di
+  modulo (`app.js:33`): da `Runtime.evaluate` non esiste e ogni espressione lancia `Uncaught`.
+  Nelle prove si scrive `document.querySelector` per esteso.
+- **`document.body.dataset.pronto` non è pronto quando la pagina è caricata.** È l'ultima riga
+  di un'IIFE asincrona, dopo aver letto l'invito dal link: si aspetta, non si legge subito.
+- **Una funzione di pulizia nel `finally` che chiama `sys.exit` sostituisce l'eccezione che sta
+  salendo** con un'uscita pulita: il guasto diventa un silenzio. `ferma()` (termina i processi)
+  sta nel `finally`, `pulisci()` (esce) solo nel gestore del segnale.
+- **Un `case` con la condizione rovesciata** (`case "$ko" in 0\|*)`) fa uscire il ciclo dopo un
+  giro solo: sembra che tutto passi perché non si guarda più niente dopo la prima riga.
 
 ## 10. Le scelte che non si vedono nel codice
 

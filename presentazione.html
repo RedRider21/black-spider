@@ -373,8 +373,59 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
           <span>Un secondo blocco, che torna indietro per la stessa strada.</span></li>
         <li><b>Il canale si apre</b>
           <span>Da lì in poi i due browser si parlano direttamente, e si scambiano quello che
-          all'altro manca. Le volte successive non serve rifare lo scambio.</span></li>
+          all'altro manca. Finché quella connessione resta aperta non si tocca più niente —
+          chat, file e chiamata passano tutte di lì.</span></li>
       </ol>
+    </section>
+
+    <section>
+      <h2>Perché non si può riusare lo stesso invito</h2>
+      <p style="max-width:74ch;color:var(--testo-2)">
+       È la domanda che viene per prima: se ho già scambiato un invito con una persona, perché
+        non me lo tengo e la prossima volta ci parlo direttamente? La risposta è che
+        <strong>un invito non è un indirizzo: è il verbale di uno scambio già avvenuto</strong>.
+        Dentro ci sono quattro cose che valgono per quella connessione e per nessun'altra, e
+        che nessuno può conservare.
+      </p>
+      <div class="scorri">
+        <table>
+          <thead>
+            <tr><th>Cosa</th><th>Perché non si può riusare</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ice-ufrag, ice-pwd</td>
+              <td>Due parole d'ordine che le due parti si sono date. Devono combaciare ai due
+              capi: rigiocare quelle vecchie significa presentarsi con credenziali che l'altro
+              ha già buttato.</td>
+            </tr>
+            <tr>
+              <td>L'impronta DTLS</td>
+              <td>Corrisponde al certificato che il browser genera quando nasce quella
+              connessione. Nasce con lei e muore con lei: una nuova connessione ha un certificato
+              nuovo, quindi un'impronta nuova, e la vecchia non autentica più niente.</td>
+            </tr>
+            <tr>
+              <td>I candidati</td>
+              <td>Gli indirizzi da cui farsi trovare. Quelli locali cambiano con la rete, e la
+              traduzione fra indirizzo interno e indirizzo pubblico che fa il router viene
+              restituita dopo poco: la porta che andava bene ieri oggi non è più di nessuno.</td>
+            </tr>
+            <tr>
+              <td>La versione di sessione</td>
+              <td>Un contatore che deve crescere a ogni scambio. Ripresentare lo stesso numero
+              è, per il protocollo, un messaggio vecchio da ignorare.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="max-width:74ch;margin-top:18px;color:var(--testo-2)">
+        Quello che invece si può conservare — e che il progetto ha in programma — è
+        <strong>come si raggiunge quella persona</strong>: il suo identificativo, e il modo in
+        cui l'ultima volta ci si è trovati. Così la seconda volta non si ricopia niente a mano
+        e lo scambio avviene da solo. La connessione resta nuova; è la strada che smette di
+        dover essere rifatta.
+      </p>
     </section>
 
     <section>
@@ -426,10 +477,10 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
           manomesse vengono riconosciute e respinte.</p>
         </article>
         <article class="carta">
-          <span class="numero">50</span>
+          <span class="numero">56</span>
           <h3>L'avvio</h3>
           <p class="sotto">Identità, archivio, service worker, menu, temi, lingue, manifesto,
-          icone. Cinquanta controlli, tutti passati.</p>
+          icone. Cinquantasei controlli, tutti passati.</p>
         </article>
         <article class="carta">
           <span class="numero">21/21</span>
@@ -438,6 +489,53 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
           Invito, risposta, canale aperto in circa un secondo — in diretto, 2 ms di andata e
           ritorno. Poi un messaggio, una risposta, e una ricarica: i messaggi erano ancora
           lì, nessun evento duplicato.</p>
+        </article>
+        <article class="carta">
+          <span class="numero">62</span>
+          <h3>La chiamata</h3>
+          <p class="sotto">Sessantadue controlli fra le due parti: squillo, accettazione, voce
+          che arriva davvero, muto, telecamera accesa e spenta, riattacco. Le prove guardano
+          l'applicazione vera e premono i suoi pulsanti.</p>
+        </article>
+        <article class="carta">
+          <span class="numero">2</span>
+          <h3>E poi guardata</h3>
+          <p class="sotto">Le prove dicono <em>se</em> una cosa funziona, non <em>come si
+          vede</em>. Alla fine due browser veri sono stati fotografati durante una chiamata:
+          è così che è saltato fuori che il pulsante «Chiama» restava acceso mentre si
+          parlava.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>La chiamata, dentro l'applicazione</h2>
+      <div class="griglia">
+        <article class="carta">
+          <h3>Non è una seconda connessione</h3>
+          <p>La voce passa dalla stessa connessione che porta i messaggi. Non c'è un secondo
+          invito da scambiare, né un secondo canale da aprire: chi è già collegato può
+          chiamare. Squillo, accettazione, rifiuto e riattacco sono messaggi come gli
+          altri.</p>
+        </article>
+        <article class="carta">
+          <h3>Solo voce, per difetto</h3>
+          <p>La voce costa 24-40 kbps, un video 1,5 Mbps: quaranta volte tanto per qualcosa
+          che quasi sempre non serve. Misurato: in tre secondi <strong>8 700 byte</strong> di
+          voce, contro <strong>72 000 byte</strong> di video a telecamera accesa — e zero
+          quando si spegne.</p>
+        </article>
+        <article class="carta">
+          <h3>Muto e telecamera spenta non sono la stessa cosa</h3>
+          <p>Il muto zittisce il microfono e basta: la traccia resta al suo posto, non si
+          rinegozia niente, ed è istantaneo. Spegnere la telecamera è un'altra operazione —
+          la traccia esce dalla connessione e le due parti si devono rimettere d'accordo.</p>
+        </article>
+        <article class="carta">
+          <h3>Il video arriva, ma non si vede</h3>
+          <p>Diciamolo com'è: accendendo la telecamera, i fotogrammi partono e arrivano
+          all'altro capo — si contano i byte. Ma dall'altra parte nessuno li mostra ancora.
+          Il video è a metà, e finché non c'è dove guardarlo non è una funzione.</p>
         </article>
       </div>
     </section>
@@ -461,15 +559,16 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
               un gruppo: la sincronizzazione è già simmetrica.</td>
             </tr>
             <tr>
+              <td>Chiamate</td>
+              <td><span class="etichetta ok">solo voce</span></td>
+              <td>Sulla stessa connessione che porta i messaggi, senza un secondo invito. Il
+              video si accende dopo, ma non c'è ancora dove guardarlo.</td>
+            </tr>
+            <tr>
               <td>File</td>
               <td><span class="etichetta no">in arrivo</span></td>
               <td>Il canale dati già spezza i messaggi lunghi in pezzi, che è la parte
               difficile.</td>
-            </tr>
-            <tr>
-              <td>Chiamate</td>
-              <td><span class="etichetta no">in arrivo</span></td>
-              <td>Voce e video sulla stessa connessione che oggi porta i messaggi.</td>
             </tr>
             <tr>
               <td>Bacheca</td>
@@ -493,9 +592,10 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
       <div class="griglia">
         <article class="carta">
           <h3>In due</h3>
-          <p>Quasi banale una volta che il canale dati esiste: è la stessa connessione, e il
-          flusso della videocamera si aggiunge con una riga. Questa parte non è un problema
-          tecnico, è lavoro da fare.</p>
+          <p>Fatta, e la parte che sembrava banale non lo era. La stessa connessione basta,
+          ma aggiungere una traccia a una connessione già viva vuol dire rinegoziarla: due
+          offerte che si incrociano, e una regola per decidere chi cede. Manca l'ultimo
+          pezzo — mostrare il video che si riceve.</p>
         </article>
         <article class="carta">
           <h3>In tre o quattro</h3>
@@ -512,16 +612,22 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
         </article>
       </div>
       <p style="max-width:74ch;margin-top:18px;color:var(--testo-2)">
-        Quindi: la chiamata a due è una conseguenza diretta di quello che c'è già; la
-        chiamata di gruppo si può fare <strong>con un limite dichiarato e una via
-        d'uscita</strong>, non a cuor leggero. Quando la banda non basta, la stanza deve
-        proporre «audio e schermo» invece di peggiorare in silenzio.
+        Quindi: la chiamata a due si è rivelata davvero una conseguenza di quello che c'era
+        già, e adesso c'è. La chiamata di gruppo si può fare <strong>con un limite dichiarato
+        e una via d'uscita</strong>, non a cuor leggero. Quando la banda non basta, la stanza
+        deve proporre «audio e schermo» invece di peggiorare in silenzio.
       </p>
     </section>
 
     <section>
       <h2>Cosa manca</h2>
       <ul class="manca">
+        <li><b>La rubrica.</b> Oggi ogni nuova connessione comincia da un invito da ricopiare a
+        mano. Si può togliere di mezzo ricordando <em>come si raggiunge</em> chi si è già
+        incontrato: la connessione resta nuova — non si può riusare — ma la strada no. È il
+        primo lavoro in coda.</li>
+        <li><b>Il video che si riceve.</b> Arriva, si misura, e non si vede. Manca il posto
+        dove mostrarlo, e finché manca non è una funzione: è un esperimento riuscito a metà.</li>
         <li><b>Il gruppo.</b> Tre o più persone nella stessa stanza. La sincronizzazione è già
         simmetrica, quindi non è un altro protocollo — ma non è stato provato, e finché non lo
         è non è vero.</li>
@@ -600,8 +706,59 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
           <span>A second block, going back the same way.</span></li>
         <li><b>The channel opens</b>
           <span>From there on the two browsers talk directly and exchange whatever the other
-          is missing. Next time you do not repeat the exchange.</span></li>
+          is missing. As long as that connection stays open you never touch this again —
+          chat, files and the call all travel over it.</span></li>
       </ol>
+    </section>
+
+    <section>
+      <h2>Why the same invite cannot be reused</h2>
+      <p style="max-width:74ch;color:var(--testo-2)">
+        It is the first question anyone asks: if I have already exchanged an invite with
+        someone, why not keep it and talk to them directly next time? The answer is that
+        <strong>an invite is not an address: it is the record of an exchange that has already
+        happened</strong>. Inside it are four things that are true for that connection and for
+        no other, and that nobody can keep.
+      </p>
+      <div class="scorri">
+        <table>
+          <thead>
+            <tr><th>What</th><th>Why it cannot be reused</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ice-ufrag, ice-pwd</td>
+              <td>Two passwords the two sides gave each other. They have to match at both
+              ends: replaying the old ones means turning up with credentials the other side
+              has already thrown away.</td>
+            </tr>
+            <tr>
+              <td>The DTLS fingerprint</td>
+              <td>It corresponds to the certificate the browser generates when that connection
+              is born. It is born with it and dies with it: a new connection has a new
+              certificate, therefore a new fingerprint, and the old one authenticates nothing.</td>
+            </tr>
+            <tr>
+              <td>The candidates</td>
+              <td>The addresses to be found at. The local ones change with the network, and the
+              translation between an internal and a public address that the router performs is
+              handed back before long: the port that worked yesterday belongs to nobody today.</td>
+            </tr>
+            <tr>
+              <td>The session version</td>
+              <td>A counter that must grow with every exchange. Presenting the same number again
+              is, to the protocol, an old message to be ignored.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="max-width:74ch;margin-top:18px;color:var(--testo-2)">
+        What can be kept, instead — and what the project has on its list — is
+        <strong>how you reach that person</strong>: their identifier, and the way you found
+        each other last time. Then the second time you copy nothing by hand and the exchange
+        happens by itself. The connection is still new; it is the road to it that stops having
+        to be rebuilt.
+      </p>
     </section>
 
     <section>
@@ -654,10 +811,10 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
           tampered chains are recognised and rejected.</p>
         </article>
         <article class="carta">
-          <span class="numero">50</span>
+          <span class="numero">56</span>
           <h3>Start-up</h3>
           <p class="sotto">Identity, archive, service worker, menu, themes, languages,
-          manifest, icons. Fifty checks, all passing.</p>
+          manifest, icons. Fifty-six checks, all passing.</p>
         </article>
         <article class="carta">
           <span class="numero">21/21</span>
@@ -666,6 +823,53 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
           Invite, reply, channel open in about a second — direct, 2 ms round trip. Then a
           message, a reply, and a reload: the messages were still there, no duplicated
           event.</p>
+        </article>
+        <article class="carta">
+          <span class="numero">62</span>
+          <h3>The call</h3>
+          <p class="sotto">Sixty-two checks across the two sides: ringing, answering, voice
+          actually arriving, mute, camera on and off, hanging up. The proofs drive the real
+          application and press its buttons.</p>
+        </article>
+        <article class="carta">
+          <span class="numero">2</span>
+          <h3>And then looked at</h3>
+          <p class="sotto">Proofs say <em>whether</em> something works, not <em>how it
+          looks</em>. At the end two real browsers were photographed during a call: that is
+          how it came out that the "Call" button stayed lit while you were talking.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>The call, inside the application</h2>
+      <div class="griglia">
+        <article class="carta">
+          <h3>Not a second connection</h3>
+          <p>Voice travels over the same connection that carries the messages. There is no
+          second invite to exchange and no second channel to open: whoever is already
+          connected can call. Ringing, answering, declining and hanging up are messages like
+          any other.</p>
+        </article>
+        <article class="carta">
+          <h3>Voice only, by default</h3>
+          <p>Voice costs 24-40 kbps, video 1.5 Mbps: forty times as much for something you
+          almost never need. Measured: <strong>8,700 bytes</strong> of voice in three seconds,
+          against <strong>72,000 bytes</strong> of video with the camera on — and zero once it
+          is switched off.</p>
+        </article>
+        <article class="carta">
+          <h3>Muted and camera-off are not the same thing</h3>
+          <p>Muting silences the microphone and nothing else: the track stays where it is,
+          nothing is renegotiated, and it is instant. Switching the camera off is a different
+          operation — the track leaves the connection and the two sides have to agree
+          again.</p>
+        </article>
+        <article class="carta">
+          <h3>The video arrives, but is not shown</h3>
+          <p>Let us say it plainly: with the camera on, the frames leave and reach the other
+          end — you can count the bytes. But on the other side nobody displays them yet. The
+          video is half done, and until there is somewhere to look at it, it is not a feature.</p>
         </article>
       </div>
     </section>
@@ -689,15 +893,16 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
               people it is a group: synchronisation is already symmetric.</td>
             </tr>
             <tr>
+              <td>Calls</td>
+              <td><span class="etichetta ok">voice only</span></td>
+              <td>On the same connection that carries messages, with no second invite. The
+              camera can be switched on, but there is nowhere to watch it yet.</td>
+            </tr>
+            <tr>
               <td>Files</td>
               <td><span class="etichetta no">coming</span></td>
               <td>The data channel already splits long messages into pieces, which is the hard
               part.</td>
-            </tr>
-            <tr>
-              <td>Calls</td>
-              <td><span class="etichetta no">coming</span></td>
-              <td>Voice and video on the same connection that carries messages today.</td>
             </tr>
             <tr>
               <td>Board</td>
@@ -721,9 +926,10 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
       <div class="griglia">
         <article class="carta">
           <h3>Between two</h3>
-          <p>Nearly trivial once the data channel exists: it is the same connection, and the
-          camera stream is added with one line. This part is not a technical problem, it is
-          work still to be done.</p>
+          <p>Done — and the part that looked trivial was not. The same connection is enough,
+          but adding a track to a live connection means renegotiating it: two offers that
+          cross, and a rule for deciding who gives way. The last piece is missing — showing
+          the video you receive.</p>
         </article>
         <article class="carta">
           <h3>Three or four</h3>
@@ -740,16 +946,23 @@ footer > div { max-width: var(--largh); margin: 0 auto; }
         </article>
       </div>
       <p style="max-width:74ch;margin-top:18px;color:var(--testo-2)">
-        So: the two-way call follows directly from what is already there; the group call can
-        be done <strong>with a declared limit and a way out</strong>, not lightly. When
-        bandwidth runs short, the room must offer "audio and screen" instead of degrading in
-        silence.
+        So: the two-way call did turn out to follow directly from what was already there, and
+        it is here now. The group call can be done <strong>with a declared limit and a way
+        out</strong>, not lightly. When bandwidth runs short, the room must offer "audio and
+        screen" instead of degrading in silence.
       </p>
     </section>
 
     <section>
       <h2>What is missing</h2>
       <ul class="manca">
+        <li><b>The address book.</b> Today every new connection starts with an invite to copy
+        by hand. That can be removed by remembering <em>how you reach</em> someone you have
+        already met: the connection is still new — it cannot be reused — but the road is not.
+        It is the first item in the queue.</li>
+        <li><b>The video you receive.</b> It arrives, it is measured, and it is not shown. The
+        place to watch it is missing, and until it exists this is not a feature: it is a
+        half-successful experiment.</li>
         <li><b>Groups.</b> Three or more people in the same room. Synchronisation is already
         symmetric, so it is not another protocol — but it has not been tried, and until it is,
         it is not true.</li>

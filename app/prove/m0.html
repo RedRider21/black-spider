@@ -70,8 +70,15 @@ try {
   const a1 = orol.adesso();
   const a2 = orol.adesso();
   riga(confrontaHlc(a1, a2) < 0, 'due istanti consecutivi sono ordinati');
-  orol.osserva([Date.now() + 60000, 5, 'sp_altro']);
-  riga(orol.stato[0] >= Date.now() + 60000, 'l\'orologio si allinea a un istante futuro ricevuto');
+  // L'istante futuro si calcola **una volta sola**. Chiamando `Date.now()` di
+  // nuovo nel confronto, il controllo chiedeva che l'orologio fosse avanti di
+  // un minuto rispetto a un momento *successivo* al proprio — cioè che il tempo
+  // non fosse passato fra le due righe. Passava solo quando le due chiamate
+  // cadevano nello stesso millisecondo, e falliva ogni tanto da sola: un falso
+  // guasto dell'applicazione, che è la specie peggiore.
+  const avanti = Date.now() + 60000;
+  orol.osserva([avanti, 5, 'sp_altro']);
+  riga(orol.stato[0] >= avanti, 'l\'orologio si allinea a un istante futuro ricevuto');
 
   const h1 = [1000, 0, 'sp_a'], h2 = [1000, 1, 'sp_a'], h3 = [1000, 0, 'sp_b'];
   riga(confrontaHlc(h1, h2) < 0 && confrontaHlc(h1, h3) < 0 && confrontaHlc(h2, h3) > 0,

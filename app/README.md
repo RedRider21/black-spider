@@ -103,6 +103,26 @@ funzione, che stanno quasi tutti i guasti.
 | `chiamata.html` | la **chiamata dentro l'app**: due esemplari dell'applicazione vera, che si chiamano cliccando i loro pulsanti — squillo, accetta, muto, telecamera accesa e spenta, riattacca |
 | `stile.html` | un campione del foglio di stile con tutti i pezzi in vista — anche quelli che si vedono solo a conversazione avviata |
 
+E poi c'è `prove/sguardo.py`, che non è una prova ma **un paio di occhi**: apre due
+browser veri, li pilota dal protocollo DevTools e **fotografa** la chiamata nei
+momenti che contano.
+
+```sh
+python3 app/prove/sguardo.py      # le fotografie finiscono in /tmp/bsapp/sguardo
+```
+
+Serve perché «funziona» e «si vede bene» sono due domande diverse. Una barra della
+chiamata può superare tutti i controlli — stato giusto, pulsanti giusti, byte che
+passano — e avere comunque il testo che sborda o un pulsante spento che sembra
+acceso. Nessuna asserzione se ne accorge. Clicca con `Input.dispatchMouseEvent`
+sulle coordinate del pulsante, non con `element.click()`: un evento del mouse
+attraversa i gestori e il disegno come li attraversa un dito, e se un pulsante è
+fuori dallo schermo il clic semplicemente non arriva — che è quello che succede a
+chi lo cerca. È così che sono saltati fuori tre difetti che le prove non vedevano:
+il video che arriva e non si mostra, il pulsante «Chiama» acceso durante la
+chiamata, e l'intestazione che a larghezza telefono finiva sotto il chip
+dell'identità.
+
 `collegamento.html` e `chiamata.html` vanno aperte in due esemplari — `?ruolo=A` e
 `?ruolo=B` — in due profili diversi, con un piccolo server che fa da punto
 d'incontro per i due codici (`prove/server.py`). La chiamata ha bisogno in più di
@@ -124,15 +144,29 @@ identità separate.
 ricarica di B: i due messaggi erano ancora lì, e nessun evento duplicato.
 21 controlli su 21.
 
-*Chiamata.* La voce arriva: **8 763 byte in tre secondi**, cioè ≈23 kbps in Opus —
-lo stesso ordine dei 24-40 dichiarati. Accendendo la telecamera, solo per il
-video ne arrivano **70 977** negli stessi tre secondi, e **zero** dopo averla
-spenta. Niente STUN, microfono finto, tutto dentro `127.0.0.1`. 62 controlli su
-62 (36 in un ruolo, 26 nell'altro).
+*Chiamata.* La voce arriva: **fra 5 000 e 8 900 byte in tre secondi** secondo il
+giro, cioè ≈15-24 kbps in Opus — lo stesso ordine dei 24-40 dichiarati. Il numero
+balla da un giro all'altro e va detto: Opus è a bitrate variabile, e tre secondi
+sono un campione corto. Accendendo la telecamera, solo per il video ne arrivano
+**70 000-72 500** negli stessi tre secondi, e **zero** dopo averla spenta.
+Niente STUN, microfono finto, tutto dentro `127.0.0.1`. 62 controlli su 62
+(36 in un ruolo, 26 nell'altro).
 
-Un numero vale più di una frase: la voce costa 23 kbps e il video quasi dieci
-volte tanto. È quella differenza che rende la sola voce il caso base e il video
-l'aggiunta.
+Un numero vale più di una frase: la voce costa 15-24 kbps e il video molto di
+più. Ma va detto *quale* video è stato misurato: quello finto di Chrome, un
+disegno sintetico che si comprime benissimo e sta in 193 kbps. Una telecamera
+vera manda molto di più — l'1,5 Mbps che si legge in giro è quella stima lì. La
+differenza che conta non è un fattore esatto: è che il video costa molto di più
+e non serve quasi mai.
+
+*E poi guardata, che è un'altra cosa.* Le prove dicono se una cosa funziona, non
+come si vede: `prove/sguardo.py` apre due browser veri, clicca con il mouse sulle
+coordinate dei pulsanti e fotografa la chiamata. Il primo giro ha trovato tre
+cose che nessuna asserzione vedeva. Due erano difetti, e sono corretti: il
+pulsante «Chiama» che restava acceso mentre si parlava, e l'intestazione che
+sotto i 410 px finiva sotto il chip dell'identità (rimisurata a 360, 390, 400,
+430 e 1240 px). La terza non è un difetto ma una funzione che manca: il video
+arriva e non si mostra.
 
 ## La chiamata, e perché è fatta così
 
@@ -177,6 +211,20 @@ dato a un elemento `<audio>`: senza, la traccia arriva, i byte passano, e non si
 sente niente. E il numero che conta non è «connesso»: è quanti byte sono arrivati
 davvero, perché una traccia collegata con zero byte è il guasto classico delle
 chiamate WebRTC — si vede il nome dell'altro e non si sente nulla.
+
+**Il video, invece, si ferma esattamente lì.** La stessa regola vale per lui, e
+per il video non è stata applicata: il gestore della traccia in ingresso scarta
+tutto ciò che non è audio (`if (ev.track.kind !== 'audio') return`), quindi i
+fotogrammi arrivano, si contano nei byte, e non c'è nessun elemento che li
+mostri. **Il video non è una funzione: è un esperimento a metà.** Le prove non se
+ne accorgevano — misuravano i byte, e i byte c'erano. È saltato fuori guardando
+lo schermo, che è una cosa diversa dal misurare.
+
+**Il tempo della chiamata si vede.** La durata non è più un `0:03` in coda a una
+frase — dove non la guarda nessuno — ma un numero grande sotto il nome di chi si
+ha davanti, come su un telefono. È l'unica cosa nella barra che cambia da sola, e
+come tale va vista senza doverla cercare. La frase, di conseguenza, non ripete più
+«Riattacca»: il pulsante che lo fa è a due centimetri.
 
 ## Le due domande che tornano sempre
 
@@ -308,6 +356,11 @@ via d'uscita**, non a cuor leggero.
 
 ## Cosa manca
 
+- **Il video che si riceve non si vede.** Arriva — i byte si contano — ma nessun
+  elemento lo mostra: il gestore della traccia in ingresso scarta ciò che non è
+  audio. È il primo pezzo da fare della chiamata, ed è piccolo: un `<video>` e
+  `srcObject` dal flusso remoto. Finché manca, il video va chiamato esperimento,
+  non funzione.
 - **L'indirizzario.** Oggi per parlare con qualcuno si rifà lo scambio a mano,
   ogni volta. Salvando in IndexedDB chi si è incontrato e per quale percorso
   (vedi «Perché non si può riusare lo stesso invito»), l'offerta **nuova** può

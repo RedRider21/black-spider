@@ -227,8 +227,13 @@ try {
 
           <div id="barraChiamata" class="chiamata" hidden>
             <svg class="icona chiamata-segno"><use href="#i-microfono"></use></svg>
-            <span class="chiamata-testo" id="chiamataTesto"></span>
-            <span class="chiamata-durata" id="chiamataDurata"></span>
+            <!-- Chi e da quanto: il nome sopra, il tempo sotto e grande. Sulla
+                 stessa riga il tempo non si leggeva — era un «0:03» in coda a
+                 una frase, che è il posto in cui non lo guarda nessuno. -->
+            <span class="chiamata-info">
+              <span class="chiamata-testo" id="chiamataTesto"></span>
+              <span class="chiamata-durata" id="chiamataDurata"></span>
+            </span>
             <div class="chiamata-pulsanti">
               <button id="btnAccetta" class="piccola" type="button"
                       data-i18n="chiamata.accetta">Accetta</button>

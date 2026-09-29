@@ -155,6 +155,8 @@
 <ul>
 <li><a href="#dove-vive-la-chiamata">Dove vive la chiamata</a></li>
 <li><a href="#le-quattro-scelte-che-sembrano-dettagli">Le quattro scelte che sembrano dettagli</a></li>
+<li><a href="#la-durata-a-vista">La durata, a vista</a></li>
+<li><a href="#il-video-arriva-ma-non-si-vede">Il video arriva, ma non si vede</a></li>
 <li><a href="#verificato-il-29-settembre-2026">Verificato il 29 settembre 2026</a></li>
 <li><a href="#riusare-linvito-no-e-vale-la-pena-dire-perché">Riusare l’invito? No, e vale la pena dire perché</a></li>
 </ul></li>
@@ -827,6 +829,11 @@ attraverso B (o C), che fa da relay.</code></pre>
 <li><strong>Chi risponde all’invito è il «polite» della negoziazione.</strong> Una rinegoziazione può partire da entrambi i lati insieme — due che accendono la telecamera nello stesso istante — e in quel caso uno dei due deve ritirarsi. Cede chi ha <em>ricevuto</em> l’invito: è la stessa asimmetria che esiste già fra chi invita e chi risponde, riusata invece che inventata.</li>
 <li><strong>Niente trickle ICE.</strong> I candidati si aspettano e l’SDP si manda intero, come fa già l’invito. Costa qualche decimo di secondo e toglie di mezzo una classe di guasti — il candidato che arriva prima della descrizione remota, la coda da tenere, l’ordine da rispettare — che altrimenti si paga in produzione.</li>
 </ul>
+<h4 id="la-durata-a-vista">La durata, a vista</h4>
+<p>La barra della chiamata mostra il nome sopra e la <strong>durata sotto, in grande</strong> (corpo 25, cifre a larghezza fissa): la si guarda come su un telefono, non la si cerca in fondo a una frase. Il tempo parte quando la chiamata è <strong>in corso</strong>, e non esiste negli altri due stati — chi squilla non deve vedere un cronometro, e chi non ha ancora risposto nemmeno.</p>
+<p>Una nota di dettaglio che non è un dettaglio: la durata si disegna con <code>font-variant-numeric: tabular-nums</code>. Senza, ogni cifra ha la sua larghezza e il numero balla a ogni secondo che cambia — un tremolio che in una schermata che si guarda di sfuggita si nota.</p>
+<h4 id="il-video-arriva-ma-non-si-vede">Il video arriva, ma non si vede</h4>
+<p>I byte di video in ingresso si contano, e sono la prova che il video <strong>arriva</strong>; ma l’applicazione <strong>non lo mostra</strong>: non c’è nessun elemento <code>&lt;video&gt;</code> legato alla traccia in ingresso. È una funzione che manca, non un guasto — e va detto perché la misura da sola non poteva accorgersene: 62 controlli dicevano «il video arriva», e nessuno diceva «il video si vede». Se n’è accorto <code>sguardo.py</code> (<code>app/prove/sguardo.py</code>), al primo giro in cui si è <em>guardata</em> la chiamata invece di misurarla.</p>
 <h4 id="verificato-il-29-settembre-2026">Verificato il 29 settembre 2026</h4>
 <p>In <code>app/prove/chiamata.html</code>, che <strong>non chiama funzioni</strong>: apre due esemplari dell’applicazione vera in un riquadro e ne clicca i pulsanti — «Chiama», «Accetta», «Muto», «Video», «Riattacca». Fra il pulsante e la funzione sta quasi tutto lo spazio in cui vivono i guasti veri.</p>
 <table>
@@ -864,6 +871,8 @@ attraverso B (o C), che fa da relay.</code></pre>
 </tbody>
 </table>
 <p>62 controlli su 62. La differenza fra i due numeri — 23 kbps contro quasi dieci volte tanto — è la ragione per cui la sola voce è il caso base e non il caso ridotto.</p>
+<p>Il numero del video va letto con la sua avvertenza: <strong>70 977 byte in tre secondi sono ≈ 190 kbps</strong>, molto meno dei ~1,5 Mbps citati più sopra, perché il dispositivo finto di Chrome genera un motivo sintetico che si comprime benissimo. Non è il video di una telecamera vera, che sta molto più in alto. La misura dimostra che <strong>arriva</strong>, non quanto peserebbe una ripresa reale.</p>
+<p>Poi la chiamata è stata <strong>guardata</strong>, non solo misurata: <code>sguardo.py</code> apre due browser veri, li pilota sul protocollo DevTools e clicca i pulsanti con il mouse, fotografando il risultato. Ha trovato tre cose che le asserzioni non potevano vedere — il video che arriva e non si disegna, il pulsante «Chiama» che resta acceso per tutta la chiamata, e l’intestazione che sotto i 410 px finisce sotto il chip dell’identità. Le ultime due sono state riparate e rimisurate; la prima è la funzione mancante descritta sopra. «Funziona» e «si vede bene» sono due domande diverse, e servono due strumenti diversi per rispondere.</p>
 <h4 id="riusare-linvito-no-e-vale-la-pena-dire-perché">Riusare l’invito? No, e vale la pena dire perché</h4>
 <p>Domanda che torna: si potrebbe salvare l’invito e la risposta e riusarli, invece di riscambiarli? <strong>No — e la ragione non è che le connessioni cambiano</strong>, quella si capisce subito. La ragione è che <strong>l’invito non è un indirizzo: è il verbale di uno scambio già avvenuto.</strong> Contiene quattro cose che nascono nuove a ogni collegamento:</p>
 <table>
@@ -966,7 +975,7 @@ attraverso B (o C), che fa da relay.</code></pre>
 <tr class="even">
 <td>Call</td>
 <td>v1</td>
-<td><strong>fatto, dentro l’app</strong>: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, sulla stessa connessione della chat. Restano i gruppi piccoli e Encoded Transform. Provato: <code>app/prove/chiamata.html</code></td>
+<td><strong>fatto, dentro l’app</strong>: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, <strong>durata a vista</strong> come su un telefono, sulla stessa connessione della chat. <strong>Manca il disegno del video ricevuto</strong>: i byte si contano, l’immagine non si mostra. Restano i gruppi piccoli e Encoded Transform. Provato: <code>app/prove/chiamata.html</code></td>
 </tr>
 <tr class="odd">
 <td>File</td>
@@ -1000,6 +1009,7 @@ attraverso B (o C), che fa da relay.</code></pre>
 <li><strong>La scheda in background tiene?</strong> Una scheda non in primo piano mantiene un DataChannel attivo e reattivo per ore, su Chrome desktop e su Android? E su iOS: la riconnessione al ritorno in primo piano funziona con lo schema di §11.2? (Se no, §11 va ridimensionato.)</li>
 <li><strong>Quale TURN gratuito regge?</strong> Verificare empiricamente la quota reale di Cloudflare Realtime (la cifra di 1.000 GB/mese è di fonte comunitaria) e provare Metered Open Relay. Provare anche a <strong>misurare la percentuale di fallimenti senza TURN</strong> sulle proprie reti, invece di fidarsi della statistica.</li>
 </ol>
+<p>E una quinta, che non decide l’architettura ma decide se ci si crede: <strong>si vede bene?</strong> Le quattro qui sopra dicono se il meccanismo regge; non dicono se la schermata è comprensibile, se il pulsante è al posto giusto, se il numero si legge. Sono due domande diverse e vogliono due strumenti diversi — le asserzioni e gli occhi. Per la chiamata il secondo strumento è <code>app/prove/sguardo.py</code>, e al primo giro ha trovato quello che le 62 asserzioni non vedevano (§12.1).</p>
 <h3 id="rischi">14.2 Rischi</h3>
 <table>
 <colgroup>

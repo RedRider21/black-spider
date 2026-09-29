@@ -506,6 +506,13 @@ function disegnaChiamata(stato, info = {}) {
   document.body.dataset.chiamataVideoByte = String(info.byteVideo || 0);
   document.body.dataset.chiamataTipi = info.tipi || '';
 
+  // «Chiama» dipende anche dalla chiamata, non solo dalla connessione: mentre si
+  // parla deve spegnersi, e quando si riattacca deve riaccendersi. Sta qui, sopra
+  // l'uscita anticipata, perché una chiamata che finisce è proprio uno dei casi in
+  // cui la barra sparisce — e da sotto non lo si aggiornerebbe più: il pulsante
+  // resterebbe spento per sempre, che è peggio di com'era prima.
+  aggiornaPulsanteChiama();
+
   const viva = stato === CHIAMATA.CHIAMANDO || stato === CHIAMATA.SQUILLA
     || stato === CHIAMATA.IN_CORSO;
   barra.hidden = !viva;
@@ -520,7 +527,9 @@ function disegnaChiamata(stato, info = {}) {
     ? `${chi} ${t('chiamata.tiChiama')} · ${modo}`
     : stato === CHIAMATA.CHIAMANDO
       ? `${t('chiamata.stoChiamando', { chi })} · ${modo}`
-      : `${t('chiamata.inCorso')} ${chi} · ${modo} · ${t('chiamata.riattacca')}`;
+      // Niente «Riattacca» in fondo alla frase: il pulsante che lo fa è a due
+      // centimetri, e ripeterlo qui era rumore. Al suo posto, sotto, il tempo.
+      : `${t('chiamata.inCorso')} ${chi} · ${modo}`;
 
   const secondi = info.durata || 0;
   $('#chiamataDurata').textContent = stato === CHIAMATA.IN_CORSO

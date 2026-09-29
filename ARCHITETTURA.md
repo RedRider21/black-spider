@@ -758,6 +758,26 @@ leggere l'archivio non deve vedersi chiedere il permesso di ascoltare.
   candidato che arriva prima della descrizione remota, la coda da tenere, l'ordine da
   rispettare — che altrimenti si paga in produzione.
 
+#### La durata, a vista
+
+La barra della chiamata mostra il nome sopra e la **durata sotto, in grande** (corpo 25, cifre
+a larghezza fissa): la si guarda come su un telefono, non la si cerca in fondo a una frase. Il
+tempo parte quando la chiamata è **in corso**, e non esiste negli altri due stati — chi squilla
+non deve vedere un cronometro, e chi non ha ancora risposto nemmeno.
+
+Una nota di dettaglio che non è un dettaglio: la durata si disegna con `font-variant-numeric:
+tabular-nums`. Senza, ogni cifra ha la sua larghezza e il numero balla a ogni secondo che
+cambia — un tremolio che in una schermata che si guarda di sfuggita si nota.
+
+#### Il video arriva, ma non si vede
+
+I byte di video in ingresso si contano, e sono la prova che il video **arriva**; ma
+l'applicazione **non lo mostra**: non c'è nessun elemento `<video>` legato alla traccia in
+ingresso. È una funzione che manca, non un guasto — e va detto perché la misura da sola non
+poteva accorgersene: 62 controlli dicevano «il video arriva», e nessuno diceva «il video si
+vede». Se n'è accorto `sguardo.py` (`app/prove/sguardo.py`), al primo giro in cui si è
+*guardata* la chiamata invece di misurarla.
+
 #### Verificato il 29 settembre 2026
 
 In `app/prove/chiamata.html`, che **non chiama funzioni**: apre due esemplari dell'applicazione
@@ -774,6 +794,19 @@ Fra il pulsante e la funzione sta quasi tutto lo spazio in cui vivono i guasti v
 
 62 controlli su 62. La differenza fra i due numeri — 23 kbps contro quasi dieci volte tanto —
 è la ragione per cui la sola voce è il caso base e non il caso ridotto.
+
+Il numero del video va letto con la sua avvertenza: **70 977 byte in tre secondi sono ≈ 190
+kbps**, molto meno dei ~1,5 Mbps citati più sopra, perché il dispositivo finto di Chrome genera
+un motivo sintetico che si comprime benissimo. Non è il video di una telecamera vera, che sta
+molto più in alto. La misura dimostra che **arriva**, non quanto peserebbe una ripresa reale.
+
+Poi la chiamata è stata **guardata**, non solo misurata: `sguardo.py` apre due browser veri, li
+pilota sul protocollo DevTools e clicca i pulsanti con il mouse, fotografando il risultato. Ha
+trovato tre cose che le asserzioni non potevano vedere — il video che arriva e non si disegna,
+il pulsante «Chiama» che resta acceso per tutta la chiamata, e l'intestazione che sotto i 410 px
+finisce sotto il chip dell'identità. Le ultime due sono state riparate e rimisurate; la prima è
+la funzione mancante descritta sopra. «Funziona» e «si vede bene» sono due domande diverse, e
+servono due strumenti diversi per rispondere.
 
 #### Riusare l'invito? No, e vale la pena dire perché
 
@@ -873,7 +906,7 @@ giusta:
 | Modulo | Priorità | Note |
 |---|---|---|
 | Chat | v0 | testo, risposte, reazioni, presenza, "sta scrivendo" |
-| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, sulla stessa connessione della chat. Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
+| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, **durata a vista** come su un telefono, sulla stessa connessione della chat. **Manca il disegno del video ricevuto**: i byte si contano, l'immagine non si mostra. Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
 | File | v1 | invio, ricezione, ripresa, quota, OPFS |
 | Bacheca | v1 | stato condiviso modificabile (editor collaborativo semplice) |
 | Blocchi | v2 | note/liste condivise, buon caso di test per lo stato mutabile e per Yjs |
@@ -901,6 +934,13 @@ mezza giornata l'uno, e se uno fallisce cambia il progetto.
    Realtime (la cifra di 1.000 GB/mese è di fonte comunitaria) e provare Metered Open Relay.
    Provare anche a **misurare la percentuale di fallimenti senza TURN** sulle proprie reti,
    invece di fidarsi della statistica.
+
+E una quinta, che non decide l'architettura ma decide se ci si crede: **si vede bene?** Le
+quattro qui sopra dicono se il meccanismo regge; non dicono se la schermata è comprensibile,
+se il pulsante è al posto giusto, se il numero si legge. Sono due domande diverse e vogliono
+due strumenti diversi — le asserzioni e gli occhi. Per la chiamata il secondo strumento è
+`app/prove/sguardo.py`, e al primo giro ha trovato quello che le 62 asserzioni non vedevano
+(§12.1).
 
 ### 14.2 Rischi
 
