@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Chiamata solo voce — Black Spider</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; background: #0c0d14; color: #e8eaf2; }
+  #riporto { padding: 14px 18px; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
+  #onde { margin: 0 18px 18px; height: 64px; width: calc(100% - 36px);
+          background: #12141f; border: 1px solid #272b3c; border-radius: 6px; }
+  .ok { color: #3ecf8e; } .no { color: #e86b73; } .tenue { color: #6c7492; }
+</style>
+</head>
+<body>
+<div id="riporto">chiamata in corso…</div>
+<canvas id="onde" width="1200" height="64"></canvas>
+<script type="module">
+/* Prova della chiamata **a sola voce** fra due browser.
+ *
+ * Cosa dimostra, e perché vale la pena dimostrarlo: che una chiamata vocale
+ * passa dallo **stesso invito** che l'app usa già per la chat. Non c'è un
+ * secondo protocollo, un secondo signaling o una seconda libreria: si prende
+ * `js/invito.js`, quello vero, si aggiunge una traccia audio alla connessione
+ * prima di creare l'offerta, e il resto è identico al collegamento testuale.
+ *
+ * Le due cose che si misurano e che nessuna lettura del codice può sostituire:
+ *
+ *  - la traccia audio **arriva davvero** dall'altra parte (`ontrack`), e
+ *  - ci passano davvero dei byte (`inbound-rtp.bytesReceived` che cresce).
+ *
+ * Una traccia «collegata» con zero byte ricevuti è il guasto classico delle
+ * chiamate WebRTC: si vede il nome dell'altro, si sente silenzio, e nessuno sa
+ * dire perché. Qui il silenzio è un numero, e il numero si controlla.
+ *
+ * Niente STUN, come le altre prove: i due browser sono sulla stessa macchina e
+ * si trovano con i candidati locali. Niente esce da qui.
+ */
+
+import { creaPeer, creaInvito, creaRisposta, completa, decodifica, statistiche }
+  from '../js/invito.js';
+
+const RUOLO = new URLSearchParams(location.search).get('ruolo') || 'A';
+const ATTESA_MAX = 45000;
+const riporto = [];
+let finito = false;
+
+function riga(testo, esito) {
+  riporto.push({ testo: `[${RUOLO}] ${String(testo)}`, esito });
+  document.getElementById('riporto').innerHTML = riporto.map((r) => {
+    const segno = r.esito === true ? '<span class="ok">OK  </span>'
+      : r.esito === false ? '<span class="no">NO  </span>' : '    ';
+    return segno + r.testo.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  }).join('\n');
+}
+
+function verifica(descrizione, condizione) {
+  riga(descrizione, !!condizione);
+  return !!condizione;
+}
+
+function invia() {
+  if (finito) return;
+  finito = true;
+  const esiti = riporto.filter((r) => r.esito !== null);
+  fetch('/api/esito-chiamata-' + RUOLO, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      ruolo: RUOLO,
+      quando: new Date().toISOString(),
+      passati: esiti.filter((r) => r.esito === true).length,
+      falliti: esiti.filter((r) => r.esito === false).length,
+      righe: riporto,
+    }),
+  }).catch(() => {});
+}
+
+const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function finche(fn, descrizione, ms = ATTESA_MAX) {
+  const inizio = Date.now();
+  for (;;) {
+    let v = null;
+    try { v = await fn(); } catch { v = null; }
+    if (v) return v;
+    if (Date.now() - inizio > ms) {
+      riga(`scaduto: ${descrizione}`, false);
+      invia();
+      throw new Error('scaduto: ' + descrizione);
+    }
+    await attendi(150);
+  }
+}
+
+async function leggi(chiave) {
+  const r = await fetch('/api/' + chiave);
+  if (!r.ok) return null;
+  const v = await r.json();
+  return v && v.valore;
+}
+
+const scrivi = (chiave, valore) => fetch('/api/' + chiave, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ valore }),
+});
+
+/* ---------------------------------------------------------------- la voce */
+
+/** Quanti byte di audio sono entrati finora, dalle statistiche di WebRTC. */
+async function byteAudio(pc) {
+  let byte = 0;
+  let codec = null;
+  let campioni = null;
+  let pacchettiPersi = null;
+  let jitter = null;
+  try {
+    const report = await pc.getStats();
+    report.forEach((s) => {
+      if (s.type !== 'inbound-rtp') return;
+      if (s.kind && s.kind !== 'audio') return;
+      if (s.mediaType && s.mediaType !== 'audio') return;
+      byte += s.bytesReceived || 0;
+      pacchettiPersi = (s.packetsLost || 0) + (pacchettiPersi || 0);
+      jitter = s.jitter != null ? s.jitter : jitter;
+      if (s.codecId) codec = s.codecId;
+    });
+    // Il nome vero del codificatore sta nella riga del codec, non in quella
+    // dell'ingresso: è lì che WebRTC scrive «opus».
+    if (codec) {
+      report.forEach((s) => {
+        if (s.type === 'codec' && s.id === codec) campioni = s.mimeType || null;
+      });
+    }
+  } catch { /* la connessione può non essere ancora pronta: zero va bene */ }
+  return { byte, codec: campioni, pacchettiPersi, jitter };
+}
+
+/** Un'onda disegnata dai byte che arrivano: se non arriva niente, è piatta. */
+const storia = [];
+function disegnaOnda() {
+  const c = document.getElementById('onde');
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, c.width, c.height);
+  g.strokeStyle = '#3ecf8e';
+  g.lineWidth = 2;
+  g.beginPath();
+  const passo = c.width / Math.max(1, storia.length - 1);
+  storia.forEach((v, i) => {
+    const y = c.height - 6 - Math.min(1, v / 2000) * (c.height - 12);
+    i ? g.lineTo(i * passo, y) : g.moveTo(0, y);
+  });
+  g.stroke();
+}
+
+/* --------------------------------------------------------------- la prova */
+
+(async function () {
+  try {
+    /* 1. La voce. In headless Chrome il microfono è un dispositivo finto che
+     *    emette un tono: quello che conta non è che suoni bene, ma che sia un
+     *    flusso vero, con una traccia vera di tipo audio. */
+    let flusso;
+    try {
+      flusso = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (e) {
+      verifica('il browser concede il microfono (' + (e && e.name) + ')', false);
+      throw e;
+    }
+    const traccia = flusso.getAudioTracks()[0];
+    verifica('il microfono è aperto', !!traccia);
+    verifica('la traccia è audio, non video', traccia && traccia.kind === 'audio');
+    verifica('non c\'è nessuna traccia video nel flusso locale',
+      flusso.getVideoTracks().length === 0);
+
+    /* 2. La connessione. Vuota di server ICE: la prova resta in questa
+     *    macchina. La traccia si aggiunge **prima** dell'offerta, che è
+     *    l'unica differenza vera fra una chiamata e una chat. */
+    const pc = creaPeer([]);
+    pc.addTrack(traccia, flusso);
+
+    const remoti = [];
+    pc.addEventListener('track', (e) => {
+      if (e.track) remoti.push(e.track);
+    });
+
+    let codice;
+    if (RUOLO === 'A') {
+      const invito = await creaInvito(pc, 'A', 'prova-chiamata', [], 8000);
+      codice = invito.codice;
+      verifica('l\'invito è stato creato (' + codice.length + ' caratteri)', codice.length > 40);
+
+      const offerta = pc.localDescription.sdp;
+      verifica('l\'offerta chiede l\'audio', /m=audio/.test(offerta));
+      verifica('l\'offerta NON chiede il video: è una chiamata solo voce',
+        !/m=video/.test(offerta));
+
+      await scrivi('chiamata-invito', codice);
+      riga('invito depositato, aspetto che B risponda…', null);
+
+      const risposta = await finche(() => leggi('chiamata-risposta'), 'arrivi la risposta di B');
+      const oggetto = await decodifica(risposta);
+      await completa(pc, oggetto);
+      verifica('la risposta di B è stata accettata', true);
+
+    } else {
+      const invito = await finche(() => leggi('chiamata-invito'), 'arrivi l\'invito di A');
+      const oggetto = await decodifica(invito);
+      verifica('l\'invito ricevuto è un invito di Black Spider', oggetto.t === 'offer');
+      verifica('l\'invito è per una chiamata solo voce', !/m=video/.test(oggetto.sdp || ''));
+
+      const risposta = await creaRisposta(pc, oggetto, 'B', [], 8000);
+      verifica('la risposta è stata preparata (' + risposta.codice.length + ' caratteri)',
+        risposta.codice.length > 40);
+      await scrivi('chiamata-risposta', risposta.codice);
+    }
+
+    /* 3. Il canale. Non basta «connected»: si aspetta che i byte arrivino. */
+    await finche(() => pc.connectionState === 'connected' || pc.connectionState === 'failed',
+      'la connessione si apra', 25000);
+    verifica(`lo stato della connessione è: ${pc.connectionState}`,
+      pc.connectionState === 'connected');
+    if (pc.connectionState !== 'connected') throw new Error('la connessione non si è aperta');
+
+    const prima = await byteAudio(pc);
+    for (let i = 0; i < 14; i++) {
+      const ora = await byteAudio(pc);
+      storia.push(Math.max(0, ora.byte - prima.byte));
+      disegnaOnda();
+      await attendi(200);
+    }
+    const dopo = await byteAudio(pc);
+
+    /* 4. Le cose che contano, misurate e non lette nel codice. */
+    verifica('è arrivata una traccia dall\'altra parte', remoti.length > 0);
+    verifica('la traccia ricevuta è audio', remoti[0] && remoti[0].kind === 'audio');
+    verifica('non è arrivata nessuna traccia video (solo voce)',
+      remoti.every((rt) => rt.kind === 'audio'));
+    verifica('la traccia ricevuta è viva e non muta', remoti[0] && remoti[0].enabled);
+
+    const fluiti = dopo.byte - prima.byte;
+    verifica(`dall'altra parte sono arrivati ${fluiti} byte di audio in circa 3 secondi`,
+      fluiti > 3000);
+    verifica('il codificatore è Opus' + (dopo.codec ? ` (${dopo.codec})` : ''),
+      !dopo.codec || /opus/i.test(dopo.codec));
+
+    const s = await statistiche(pc);
+    verifica(`la strada è ${s.tipoLocale || '—'} → ${s.tipoRemoto || '—'}, andata e ritorno ${s.rtt} ms`,
+      !s.viaRelay);
+    verifica('c\'è una misura di andata e ritorno', s.rtt !== null && s.rtt >= 0);
+
+    riga('niente STUN: la prova non ha contattato nessun server esterno.', null);
+    for (const rt of remoti) {
+      // `getSettings()` su una traccia *ricevuta* spesso non dichiara né campioni
+      // né canali: WebRTC li conosce lato ricevitore, non lato traccia. Si dice
+      // solo quello che c'è, invece di stampare un trattino che sembra un guasto.
+      const imp = (rt.getSettings && rt.getSettings()) || {};
+      const dettagli = [];
+      if (imp.sampleRate) dettagli.push(`${imp.sampleRate} Hz`);
+      if (imp.channelCount) dettagli.push(`${imp.channelCount} canali`);
+      riga(`traccia ricevuta: ${rt.kind}${dettagli.length ? ', ' + dettagli.join(', ') : ''}`,
+        null);
+    }
+
+    // Il microfono si spegne: una prova non deve lasciare acceso niente.
+    flusso.getTracks().forEach((tr) => tr.stop());
+    pc.close();
+
+  } catch (e) {
+    riga(`interrotta: ${e && e.message}`, false);
+  }
+  invia();
+})();
+</script>
+</body>
+</html>

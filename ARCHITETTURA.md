@@ -712,6 +712,30 @@ proprio".
 - **Cifratura dei media**: se la stanza è cifrata, i flussi vanno cifrati con WebRTC Encoded
   Transform (§10.2), previsto fin dal progetto del modulo.
 
+### 12.1 Solo voce, come modalità di prima classe
+
+La chiamata **a sola voce** non è una videocall con la telecamera spenta: è la modalità
+predefinita, e il video è l'aggiunta.
+
+- L'offerta contiene `m=audio` e nient'altro (`addTrack` di una sola traccia, nessun
+  `m=video`). Una chiamata solo voce pesa circa **24-40 kbps** in Opus, contro 1,5 Mbps di
+  un video: sta su qualunque uplink, ed è la ragione per cui è lei a essere il caso base e
+  non il caso ridotto.
+- Il bottone «Video» aggiunge la traccia a una chiamata in corso con una **rinegoziazione**
+  (`addTrack` + nuova offerta sul canale dati già aperto). Non serve rifare l'invito: il
+  canale dei dati c'è già, ci passa la rinegoziazione.
+- Spegnere la telecamera **ferma la traccia** (`track.stop()`), non la mette in pausa: una
+  traccia muta continua a consumare uplink, che è esattamente quello che una chiamata solo
+  voce vuole evitare.
+- Il degrado descritto sopra scende di conseguenza: prima si rinuncia al video, poi, se
+  nemmeno l'audio passa, la chiamata si dichiara caduta invece di restare muta.
+
+**Verificato il 29 settembre 2026** in `app/prove/chiamata.html`: due browser veri, due
+microfoni finti, niente STUN. Audio Opus ricevuto da entrambe le parti — 7248 e 7565 byte in
+tre secondi — percorso `host → host`, andata e ritorno 1 ms, e **nessuna traccia video in
+nessun punto della connessione, né nell'offerta né in arrivo**. La prova usa `js/invito.js`,
+lo stesso invito della chat: la chiamata non ha un secondo signaling.
+
 Onestà necessaria: **la videocall di gruppo in mesh non è una promessa che si può fare a
 cuor leggero**. Va progettata con un limite dichiarato e una via d'uscita (relay peer).
 
@@ -786,7 +810,7 @@ giusta:
 |---|---|---|
 | Chat | v0 | testo, risposte, reazioni, presenza, "sta scrivendo" |
 | File | v1 | invio, ricezione, ripresa, quota, OPFS |
-| Call | v1 | 1:1, poi gruppi piccoli, Encoded Transform |
+| Call | v1 | **solo voce prima** (§12.1), poi il video e i gruppi piccoli, Encoded Transform. Il motore della sola voce è già provato: `app/prove/chiamata.html` |
 | Bacheca | v1 | stato condiviso modificabile (editor collaborativo semplice) |
 | Blocchi | v2 | note/liste condivise, buon caso di test per lo stato mutabile e per Yjs |
 | Moduli di terzi | v2 | sandbox + bridge |

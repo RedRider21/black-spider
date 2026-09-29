@@ -99,11 +99,16 @@ funzione, che stanno quasi tutti i guasti.
 | `m0.html` | le fondamenta: firme, catene, orologi, archivio (26 controlli) |
 | `avvio.html` | che l'applicazione si accenda: identità, archivio, service worker, menu, temi, lingue, manifesto, icone |
 | `collegamento.html` | il collegamento vero fra due browser, lo scambio di messaggi, la sopravvivenza al ricaricamento |
+| `chiamata.html` | la **chiamata a sola voce** fra due browser: microfono, traccia ricevuta, byte di audio che passano davvero, e nessuna traccia video |
 | `stile.html` | un campione del foglio di stile con tutti i pezzi in vista — anche quelli che si vedono solo a conversazione avviata |
 
-`collegamento.html` va aperta in due esemplari — `?ruolo=A` e `?ruolo=B` — in due
-profili diversi, con un piccolo server che fa da punto d'incontro per i due
-codici (`prove/server.py`).
+`collegamento.html` e `chiamata.html` vanno aperte in due esemplari — `?ruolo=A` e
+`?ruolo=B` — in due profili diversi, con un piccolo server che fa da punto
+d'incontro per i due codici (`prove/server.py`). La chiamata ha bisogno in più di
+un microfono finto, che nei browser comandati da `prove.sh` è già previsto.
+
+Il modo più semplice per eseguirle tutte resta `./prove.sh` dalla cartella di
+progetto, che avvia il server se non c'è, aspetta i risultati e dice il verdetto.
 
 Le prove non cercano frasi italiane nel registro: le frasi cambiano con la
 lingua, e una prova che si rompe traducendo l'app non segnala un guasto, segnala
@@ -153,7 +158,7 @@ lo stesso elenco, con le stesse priorità, sta in `ARCHITETTURA.md` §13.3.
 |---|---|---|
 | **Chat** | c'è | testo, firme, storico. Con tre o più persone è un gruppo: la sincronizzazione è già simmetrica |
 | **File** | dopo | il canale dati già spezza i messaggi lunghi in pezzi, che è la parte difficile |
-| **Chiamate** | dopo | la stessa connessione che oggi porta i messaggi porta anche il flusso della videocamera. In due è quasi banale; è nei gruppi che diventa un problema di banda |
+| **Chiamate** | **solo voce: provata**; il video e i gruppi dopo | la stessa connessione che oggi porta i messaggi porta anche il suono. Una voce sola, in due, è già misurata (`prove/chiamata.html`); il video è la traccia in più, e sono i gruppi a diventare un problema di banda |
 | **Bacheca** | dopo | uno stato condiviso che più persone modificano: un editor semplice |
 | **Blocchi** | dopo | note e liste fatte di pezzi. Il caso di prova più duro per uno stato che cambia mentre lo si guarda |
 

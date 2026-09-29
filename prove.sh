@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Black Spider — esegue tutte le prove e dice l'esito.
 #
-#   ./prove.sh              tutte e tre (m0, avvio, collegamento fra due browser)
-#   ./prove.sh avvio        una sola: m0 | avvio | collegamento
+#   ./prove.sh              tutte: m0, avvio, collegamento, chiamata
+#   ./prove.sh avvio        una sola: m0 | avvio | collegamento | chiamata
 #   ./prove.sh tutte --tieni    lascia il server acceso e i profili sul disco
 #
 # Perché esiste. Le prove vanno eseguite **in tempo reale**, una per una, con una
@@ -86,14 +86,21 @@ attendi() {
   return 0
 }
 
-apri() {   # apri <ruolo> <indirizzo>
+apri() {   # apri <ruolo> <indirizzo> [altre opzioni di Chrome...]
   local ruolo="$1" url="$2"
+  shift 2
   rm -rf "$PROFILI/$ruolo"
   mkdir -p "$PROFILI/$ruolo"
-  "$CHROME" $HEADLESS --disable-gpu --no-sandbox --no-first-run \
+  "$CHROME" $HEADLESS --disable-gpu --no-sandbox --no-first-run "$@" \
     --user-data-dir="$PROFILI/$ruolo" "$url" > "${TMPDIR:-/tmp}/bsapp/$ruolo.log" 2>&1 &
   PIDS+=("$!")
 }
+
+# Un microfono finto, che emette un tono: serve alla prova della chiamata.
+# `--use-fake-ui-for-media-stream` concede il permesso senza chiedere (non c'è
+# nessuno a rispondere) e `--autoplay-policy` lascia suonare senza un gesto.
+# Non sono opzioni dell'applicazione: sono di questa prova.
+FINTI="--use-fake-device-for-media-stream --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required"
 
 # Aspetta che uno dei due browser abbia depositato un codice sul banco.
 # Si guarda il *codice*, non l'esito: chi invita deposita l'invito e poi aspetta,
@@ -172,6 +179,24 @@ if fare collegamento; then
   else
     echo "  A non ha depositato l'invito: niente da provare."
     fallito collegamento-A
+  fi
+fi
+
+if fare chiamata; then
+  echo
+  echo "── chiamata: solo voce fra due browser ───────────────────"
+  echo "  Microfono finto, niente STUN: la voce non esce da questa macchina."
+  rm -f "$STATO/esito-chiamata-A.json" "$STATO/esito-chiamata-B.json"
+  apri chiamataA "$BASE/prove/chiamata.html?ruolo=A" $FINTI
+  if attendi_codice chiamata-invito 40; then
+    apri chiamataB "$BASE/prove/chiamata.html?ruolo=B" $FINTI
+    attendi "$STATO/esito-chiamata-A.json" 120
+    attendi "$STATO/esito-chiamata-B.json" 120
+    riporta "$STATO/esito-chiamata-A.json" "A" || fallito chiamata-A
+    riporta "$STATO/esito-chiamata-B.json" "B" || fallito chiamata-B
+  else
+    echo "  A non ha depositato l'invito: niente da provare."
+    fallito chiamata-A
   fi
 fi
 

@@ -149,7 +149,10 @@
 <li><a href="#quote-reali">11.3 Quote reali</a></li>
 <li><a href="#push">11.4 Push</a></li>
 </ul></li>
-<li><a href="#videocall">12. Videocall</a></li>
+<li><a href="#videocall">12. Videocall</a>
+<ul>
+<li><a href="#solo-voce-come-modalità-di-prima-classe">12.1 Solo voce, come modalità di prima classe</a></li>
+</ul></li>
 <li><a href="#api-interna-e-moduli">13. API interna e moduli</a>
 <ul>
 <li><a href="#api">13.1 API</a></li>
@@ -793,6 +796,15 @@ attraverso B (o C), che fa da relay.</code></pre>
 <li><strong>Degrado</strong>: con più peer di quanti ne regga, la stanza deve proporre la modalità “audio + condivisione schermo” invece di fallire silenziosamente.</li>
 <li><strong>Cifratura dei media</strong>: se la stanza è cifrata, i flussi vanno cifrati con WebRTC Encoded Transform (§10.2), previsto fin dal progetto del modulo.</li>
 </ul>
+<h3 id="solo-voce-come-modalità-di-prima-classe">12.1 Solo voce, come modalità di prima classe</h3>
+<p>La chiamata <strong>a sola voce</strong> non è una videocall con la telecamera spenta: è la modalità predefinita, e il video è l’aggiunta.</p>
+<ul>
+<li>L’offerta contiene <code>m=audio</code> e nient’altro (<code>addTrack</code> di una sola traccia, nessun <code>m=video</code>). Una chiamata solo voce pesa circa <strong>24-40 kbps</strong> in Opus, contro 1,5 Mbps di un video: sta su qualunque uplink, ed è la ragione per cui è lei a essere il caso base e non il caso ridotto.</li>
+<li>Il bottone «Video» aggiunge la traccia a una chiamata in corso con una <strong>rinegoziazione</strong> (<code>addTrack</code> + nuova offerta sul canale dati già aperto). Non serve rifare l’invito: il canale dei dati c’è già, ci passa la rinegoziazione.</li>
+<li>Spegnere la telecamera <strong>ferma la traccia</strong> (<code>track.stop()</code>), non la mette in pausa: una traccia muta continua a consumare uplink, che è esattamente quello che una chiamata solo voce vuole evitare.</li>
+<li>Il degrado descritto sopra scende di conseguenza: prima si rinuncia al video, poi, se nemmeno l’audio passa, la chiamata si dichiara caduta invece di restare muta.</li>
+</ul>
+<p><strong>Verificato il 29 settembre 2026</strong> in <code>app/prove/chiamata.html</code>: due browser veri, due microfoni finti, niente STUN. Audio Opus ricevuto da entrambe le parti — 7248 e 7565 byte in tre secondi — percorso <code>host → host</code>, andata e ritorno 1 ms, e <strong>nessuna traccia video in nessun punto della connessione, né nell’offerta né in arrivo</strong>. La prova usa <code>js/invito.js</code>, lo stesso invito della chat: la chiamata non ha un secondo signaling.</p>
 <p>Onestà necessaria: <strong>la videocall di gruppo in mesh non è una promessa che si può fare a cuor leggero</strong>. Va progettata con un limite dichiarato e una via d’uscita (relay peer).</p>
 <hr />
 <h2 id="api-interna-e-moduli">13. API interna e moduli</h2>
@@ -866,7 +878,7 @@ attraverso B (o C), che fa da relay.</code></pre>
 <tr class="odd">
 <td>Call</td>
 <td>v1</td>
-<td>1:1, poi gruppi piccoli, Encoded Transform</td>
+<td><strong>solo voce prima</strong> (§12.1), poi il video e i gruppi piccoli, Encoded Transform. Il motore della sola voce è già provato: <code>app/prove/chiamata.html</code></td>
 </tr>
 <tr class="even">
 <td>Bacheca</td>

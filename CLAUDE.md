@@ -92,7 +92,7 @@ divergono, uno dei tre mente.
 |---|---|
 | Chat | **c'è.** Con tre o più persone è un gruppo: la sincronizzazione è già simmetrica |
 | File | progettata |
-| Chiamate (voce e video) | progettata — vedi §7 |
+| Chiamate (voce e video) | **solo voce: provata** a livello di motore; il video e l'interfaccia no — vedi §7 |
 | Bacheca | progettata |
 | Blocchi | progettata |
 
@@ -105,6 +105,7 @@ divergono, uno dei tre mente.
 # una sola
 ./prove.sh avvio
 ./prove.sh collegamento
+./prove.sh chiamata
 ./prove.sh m0
 
 # senza uccidere il server alla fine (per guardarci dentro)
@@ -137,6 +138,7 @@ python3 -m http.server 8766 --bind 127.0.0.1
 | `m0.html` | firme, catene, orologi, persistenza — **senza rete** | da sola |
 | `avvio.html` | che l'applicazione si accenda: identità, archivio, service worker, menu, temi, lingue, manifesto, icone | da sola |
 | `collegamento.html` | **il collegamento vero fra due browser**: invito, risposta, canale, messaggi, sopravvivenza al ricaricamento | in due esemplari, `?ruolo=A` e `?ruolo=B`, profili diversi |
+| `chiamata.html` | **la chiamata a sola voce**: microfono, traccia audio ricevuta, byte che passano davvero, nessuna traccia video | in due esemplari, con microfono finto (`prove.sh` lo passa da sé) |
 | `stile.html` | un campione del foglio di stile con tutti i pezzi in vista | da guardare, non da eseguire |
 
 `prove/server.py` serve `app/` **e** fa da messaggero per i due ruoli, con `/api/<chiave>`
@@ -156,16 +158,25 @@ la lingua, e una prova che si rompe traducendo l'app non segnala un guasto — s
 | `m0` — le fondamenta | **tutto ok** (26 controlli) |
 | `avvio` — l'applicazione si accende | **50 / 50** |
 | `collegamento` — due browser veri | **21 / 21** (7 nel ruolo A + 14 nel ruolo B) |
+| `chiamata` — solo voce, due browser veri | **31 / 31** (16 + 15) |
 
 Il collegamento è stato misurato fra **due processi Chrome distinti, profili distinti,
 identità distinte**: invito → risposta → canale aperto in circa un secondo, **in diretto
 (`host`), 2 ms di andata e ritorno**. Poi un messaggio da A a B, la risposta, e la ricarica di
 B: i due messaggi erano ancora lì e nessun evento era duplicato.
 
-**Costruito e funzionante**: la chat fra due browser, installabile come PWA, apribile senza
-rete; il guscio con le cinque sezioni; tema chiaro/scuro; italiano e inglese.
+La chiamata a sola voce, misurata il 29 settembre 2026 fra due browser veri con microfono
+finto e **niente STUN**: audio Opus ricevuto da entrambe le parti — 7248 e 7565 byte in tre
+secondi — percorso `host → host`, andata e ritorno 1 ms, e nessuna traccia video né
+nell'offerta né in arrivo. La prova usa `js/invito.js`, lo stesso invito della chat: la
+chiamata **non ha un secondo signaling**.
 
-**Progettato ma non costruito**: gruppi, file, chiamate, bacheca, blocchi.
+**Costruito e funzionante**: la chat fra due browser, installabile come PWA, apribile senza
+rete; il guscio con le cinque sezioni; tema chiaro/scuro; italiano e inglese; la chiamata a
+sola voce fra due browser (provata a livello di motore, non ancora con un'interfaccia dentro
+l'app).
+
+**Progettato ma non costruito**: gruppi, file, video nelle chiamate, bacheca, blocchi.
 
 **Non fatto, e va detto**: le prove 1-4 di `spikes/` (invito fra browser su reti diverse, LAN
 senza internet, scheda in background per ore, quanti NAT richiedono un relay). Il banco è
@@ -174,8 +185,15 @@ definitive** finché non sono state misurate.
 
 ## 7. La videocall, e perché la risposta è articolata
 
-L'utente l'ha chiesta esplicitamente. La posizione onesta, che sta anche in `app/README.md` e
-in `ARCHITETTURA.md` §12:
+L'utente l'ha chiesta esplicitamente, e ha chiesto anche la **sola voce**. La posizione
+onesta, che sta anche in `app/README.md` e in `ARCHITETTURA.md` §12 e §12.1:
+
+**Solo voce è la modalità di prima classe, il video è l'aggiunta.** Una chiamata a sola voce
+sono 24-40 kbps in Opus, contro 1,5 Mbps di un video: sta su qualunque uplink. L'offerta
+contiene `m=audio` e nient'altro; il bottone «Video» aggiunge la traccia con una
+rinegoziazione sul canale dati già aperto, senza rifare l'invito; spegnere la telecamera
+**ferma** la traccia invece di metterla in pausa, perché una traccia muta consuma uplink lo
+stesso. **È già provata**: `app/prove/chiamata.html`.
 
 - **in due** è quasi banale una volta che il canale dati esiste: è la stessa
   `RTCPeerConnection`, il flusso si aggiunge con `addTrack`;
@@ -248,7 +266,52 @@ Non ripagarle.
   `data-i18n`. Una scritta nuova in pagina e non nel dizionario resta in italiano anche in
   inglese: si vede subito.
 
-## 11. Sulla storia di git
+## 11. Le due domande che tornano sempre
+
+### Servono server STUN esterni?
+
+**No, in tre casi su quattro.** Si usa uno STUN solo quando i due peer sono su **reti diverse
+e tutte e due dietro un NAT**, perché in quel caso nessuno dei due conosce il proprio
+indirizzo come lo vede il mondo, e solo uno STUN lo può dire.
+
+| situazione | serve uno STUN? |
+|---|---|
+| stessa macchina, o stessa rete locale | **no** — bastano i candidati `host`, l'indirizzo locale |
+| due dispositivi sulla stessa LAN, anche con NAT | **quasi mai** |
+| reti diverse, dietro NAT | **sì**, per conoscere l'indirizzo pubblico; poi il traffico va diretto |
+| NAT simmetrico da entrambi i lati | lo STUN non basta: serve un **relay** (TURN) |
+
+**Cosa vede uno STUN: niente contenuto.** Gli si chiede «da che indirizzo mi vedi?» e
+risponde con la tua coppia IP:porta pubblica. Nessun pacchetto dei tuoi dati passa di lì.
+Sa però che quella coppia esiste e in che momento: è **metadato**, e questo va detto.
+
+Nell'app lo STUN è **spento per difetto** (la casella `#usaStun` non è preselezionata):
+senza la casella, creare un invito non contatta nessuno. Tutte le prove girano a STUN spento
+e dentro `127.0.0.1`, quindi **non esce niente da questa macchina** — è la ragione per cui si
+possono eseguire in un ufficio su una rete monitorata.
+
+### Stiamo cifrando le comunicazioni, o usiamo solo HTTPS?
+
+**Né l'una né l'altra come sono intese di solito: le comunicazioni sono cifrate *fra i due
+browser*, non verso un server — e questo è più forte di HTTPS, non più debole.**
+
+- WebRTC cifra **sempre**, e non è una scelta: i dati viaggiano in **DTLS**, i media in
+  **SRTP**. Fra i due peer, punto a punto. Nessun intermediario può leggerli, perché non c'è
+  nessun intermediario.
+- **HTTPS protegge la consegna della pagina, non il contenuto della conversazione.** Qui il
+  contenuto non passa da nessun HTTP.
+- Le **firme** (Ed25519) dicono *chi* ha scritto. Non nascondono *cosa*: firma e cifratura
+  sono due cose diverse. Il progetto ha la prima, non ancora la seconda.
+- **Quello che manca davvero è la cifratura a riposo.** Il canale è cifrato, ma gli eventi
+  restano **in chiaro dentro IndexedDB**: chi esporta il proprio archivio esporta tutto. È il
+  punto 3 di §8, ed è il prossimo lavoro di sostanza.
+- **Il metadato**: chi passa da un relay TURN non fa leggere il contenuto, ma dice a quel
+  relay chi parla con chi, quando e quanto. Non è un difetto correggibile — è il prezzo di un
+  relay.
+- La chiave privata **non è estraibile**: la prova di chi ha scritto non si può rubare
+  leggendo l'archivio locale.
+
+## 12. Sulla storia di git
 
 Il progetto è stato scritto **prima** che esistesse un repository. Il primo commit raccoglie
 quindi uno stato già completo, diviso per **aree** (la ricerca, le fondamenta, il guscio, le
