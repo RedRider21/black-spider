@@ -43,7 +43,7 @@ Per far parlare due browser bisogna aprirne due — uno normale e uno in incogni
 ## Com'è disposta la cartella
 
 ```
-black spider/
+black-spider/
 ├── README.md            questo file — la porta d'ingresso
 ├── CLAUDE.md            da dove si riprende: stato, comandi, prossimi passi
 ├── ARCHITETTURA.md      il documento di progetto (e .html, versione da leggere)

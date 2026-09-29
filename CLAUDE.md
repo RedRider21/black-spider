@@ -40,7 +40,7 @@ o conseguenze di dove lavora.
 ## 3. Dove sta cosa
 
 ```
-black spider/
+black-spider/
 ├── README.md            la porta d'ingresso, per una persona
 ├── CLAUDE.md            questo file
 ├── ARCHITETTURA.md      il documento di progetto — 929 righe, 17 sezioni + 2 appendici.

@@ -12,7 +12,7 @@ Il banco di prova è già pronto. Non va installato niente.
 ## Come si avvia
 
 ```bash
-cd "black spider/spikes"
+cd black-spider/spikes
 ./avvia.sh                 # porta 8080, solo questa macchina
 ./avvia.sh 8080 rete       # anche verso la rete locale — serve per le prove 2 e 4
 ```
