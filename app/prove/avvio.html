@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Prova di avvio — Black Spider</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; background: #0c0d14; color: #e8eaf2; }
+  #riporto { padding: 14px 18px; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
+  .ok { color: #3ecf8e; } .no { color: #e86b73; }
+  iframe { width: 100%; height: 1000px; border: 0; border-top: 1px solid #272b3c; }
+</style>
+</head>
+<body>
+<div id="riporto">prova di avvio in corso…</div>
+<iframe id="app" src="../index.html"></iframe>
+<script>
+/* Apre l'app vera in un riquadro e la usa: preme i pulsanti del menu, cambia
+ * tema, cambia lingua, e guarda cosa succede.
+ *
+ * Non è un doppione delle prove di m0: là si verificano firme e catene, qui
+ * interessa che l'applicazione si accenda e che l'impianto regga — identità,
+ * archivio, service worker, menu, temi, lingue.
+ *
+ * Due accorgimenti che hanno una ragione precisa:
+ *
+ *  - si guarda dentro il riquadro a intervalli invece di aspettarne l'evento
+ *    `load`: quell'evento, se non arriva mai — che è il caso da diagnosticare —
+ *    lascia ad aspettare senza sapere niente;
+ *  - si aspetta `body.dataset.pronto`, non una frase del registro: le frasi
+ *    cambiano con la lingua, e una prova che si rompe tradicendo l'app non
+ *    segnala un guasto, segnala sé stessa.
+ */
+
+const ATTESA = 25000;
+const riporto = [];
+let finito = false;
+
+function riga(testo, esito) {
+  riporto.push({ testo: String(testo), esito });
+  document.getElementById('riporto').innerHTML = riporto.map((r) => {
+    const segno = r.esito === true ? '<span class="ok">OK  </span>'
+      : r.esito === false ? '<span class="no">NO  </span>' : '    ';
+    return segno + r.testo.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  }).join('\n');
+}
+
+function verifica(descrizione, condizione) { riga(descrizione, !!condizione); }
+
+function invia() {
+  if (finito) return;
+  finito = true;
+  const esiti = riporto.filter((r) => r.esito !== null);
+  fetch('/api/avvio', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      quando: new Date().toISOString(),
+      passati: esiti.filter((r) => r.esito === true).length,
+      falliti: esiti.filter((r) => r.esito === false).length,
+      righe: riporto,
+    }, null, 2),
+  }).catch(() => {});
+}
+
+const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+(async function () {
+  const riquadro = document.getElementById('app');
+  const inizio = Date.now();
+  let doc = null;
+
+  while (Date.now() - inizio < ATTESA) {
+    doc = riquadro.contentDocument;
+    const b = doc && doc.body;
+    if (b && (b.dataset.pronto === '1' || b.dataset.avvioFallito)) break;
+    await attendi(200);
+  }
+
+  const b = doc && doc.body;
+  const registro = doc ? doc.querySelector('#registro').textContent : '';
+  const $ = (s) => (doc ? doc.querySelector(s) : null);
+  const $$ = (s) => (doc ? [...doc.querySelectorAll(s)] : []);
+
+  riga('--- stato del riquadro ---', null);
+  riga('documento raggiungibile: ' + (doc ? 'sì' : 'no'), null);
+  if (doc) {
+    riga('readyState: ' + doc.readyState, null);
+    riga('moduli caricati: ' + doc.querySelectorAll('script[type=module]').length, null);
+  }
+  riga('atteso: ' + ((Date.now() - inizio) / 1000).toFixed(1) + ' s', null);
+  riga('--- registro dell\'app ---', null);
+  for (const r of registro.split('\n')) if (r.trim()) riga(r.trim(), null);
+  riga('--- verifiche ---', null);
+
+  verifica('l\'app si è avviata (nessun "avvio fallito")',
+    !(b && b.dataset.avvioFallito) && !/avvio fallito|non registrato/.test(registro));
+  verifica('l\'identità è stata creata', /^sp_/.test(($('#mioId') || {}).textContent
+    .trim().replace(/…$/, '')));
+  verifica('l\'archivio è stato letto', /^\d+$/.test((b && b.dataset.eventi) || ''));
+  verifica('il service worker è registrato', b && b.dataset.sw === 'si');
+
+  /* --- la testata --------------------------------------------------------- */
+
+  verifica('il modulo dell\'invito c\'è', !!$('#btnCrea'));
+  verifica('il campo dei messaggi c\'è', !!$('#testo'));
+  verifica('l\'elenco dei partecipanti è popolato', $('#datiArchivio').children.length > 0);
+  verifica('la chat è nascosta finché non c\'è nessuno', $('#pannelloChat').hidden);
+  verifica('il collegamento è in primo piano', !$('#pannelloCollegamento').hidden);
+  verifica('lo stile è stato applicato',
+    riquadro.contentWindow.getComputedStyle($('.pannello')).borderRadius !== '0px');
+  const marchio = $('.marchio img');
+  verifica('il marchio si vede', marchio && marchio.complete && marchio.naturalWidth > 0);
+
+  /* --- il menu ------------------------------------------------------------ */
+
+  const voci = $$('.voce[data-vista]');
+  verifica(`il menu ha cinque voci in verticale (${voci.length})`, voci.length === 5);
+  verifica('le voci hanno icona e scritta',
+    voci.every((v) => v.querySelector('svg use') && v.querySelector('.voce-titolo').textContent.trim()));
+  verifica('la voce attiva è segnata', voci.filter((v) =>
+    v.getAttribute('aria-current') === 'page').length === 1);
+  verifica('all\'avvio si vede la chat',
+    b.dataset.vista === 'chat' && !$('#vista-chat').hidden && $('#vista-persone').hidden);
+
+  // Si cambia sezione come farebbe una persona: cliccando la voce.
+  const vocePersone = voci.find((v) => v.dataset.vista === 'persone');
+  vocePersone.click();
+  await attendi(250);
+  verifica('cliccando «Persone» si cambia schermata',
+    b.dataset.vista === 'persone' && !$('#vista-persone').hidden && $('#vista-chat').hidden);
+  verifica('la sezione nuova è dichiarata nella voce attiva',
+    vocePersone.getAttribute('aria-current') === 'page');
+  verifica('la schermata mostra l\'identificativo per esteso',
+    /^sp_/.test($('#tuoId').textContent));
+  verifica('la schermata mostra un numero di sicurezza leggibile',
+    /^[A-Z2-7]{4}( [A-Z2-7]{4}){5}$/.test($('#numeroSicurezza').textContent.trim()));
+
+  // Il pulsante del menu: su schermo stretto apre il cassetto, su schermo largo
+  // comprime la barra. Si accetta l'uno o l'altro, ma qualcosa deve succedere.
+  const primaBarra = doc.documentElement.dataset.barra + '/' +
+    doc.documentElement.dataset.menu;
+  $('#btnBarra').click();
+  await attendi(250);
+  const dopoBarra = doc.documentElement.dataset.barra + '/' +
+    doc.documentElement.dataset.menu;
+  verifica(`il pulsante del menu fa qualcosa (${primaBarra} → ${dopoBarra})`,
+    primaBarra !== dopoBarra);
+  $('#btnBarra').click();
+  await attendi(250);
+
+  /* --- tema --------------------------------------------------------------- */
+
+  voci.find((v) => v.dataset.vista === 'impostazioni').click();
+  await attendi(250);
+  verifica('la schermata delle impostazioni si apre', b.dataset.vista === 'impostazioni');
+
+  const colore = () => riquadro.contentWindow.getComputedStyle(doc.body).backgroundColor;
+  const temaScuro = $('[data-controllo="tema"] button[data-valore="scuro"]');
+  const temaChiaro = $('[data-controllo="tema"] button[data-valore="chiaro"]');
+  const temaAuto = $('[data-controllo="tema"] button[data-valore="auto"]');
+  verifica('i tre temi sono offerti',
+    !!(temaScuro && temaChiaro && temaAuto && $$('[data-controllo="tema"]').length >= 1));
+  verifica('il tema in uso è segnato', !!$('[data-controllo="tema"] button[aria-pressed="true"]'));
+
+  temaChiaro.click();
+  await attendi(250);
+  const chiaro = colore();
+  verifica('scegliendo «Chiaro» la pagina cambia davvero colore',
+    doc.documentElement.dataset.tema === 'chiaro'
+    && temaChiaro.getAttribute('aria-pressed') === 'true'
+    && temaScuro.getAttribute('aria-pressed') === 'false');
+  temaScuro.click();
+  await attendi(250);
+  const scuro = colore();
+  verifica('scegliendo «Scuro» la pagina cambia davvero colore',
+    doc.documentElement.dataset.tema === 'scuro' && scuro !== chiaro);
+  // I pulsanti non devono essere buttati giù e rifatti a ogni cambio: chi usa la
+  // tastiera perderebbe il fuoco, perché il pulsante che aveva sotto le dita non
+  // esisterebbe più.
+  verifica('i pulsanti del tema restano quelli di prima',
+    temaChiaro.isConnected && temaScuro.isConnected && temaAuto.isConnected);
+  verifica('il colore della barra del browser segue il tema',
+    /^rgb/.test(doc.querySelector('meta[name="theme-color"]').content));
+
+  /* --- lingua ------------------------------------------------------------- */
+
+  const inglese = $('[data-controllo="lingua"] button[data-valore="en"]');
+  const italiano = $('[data-controllo="lingua"] button[data-valore="it"]');
+  verifica('le due lingue sono offerte', !!(inglese && italiano));
+
+  // «Persone» e non «Chat»: chat si scrive uguale nelle due lingue, e una prova
+  // che confronta due parole identiche non prova niente.
+  const vocePersone2 = voci.find((v) => v.dataset.vista === 'persone');
+  const primaDellaVoce = vocePersone2.querySelector('.voce-titolo').textContent;
+  inglese.click();
+  await attendi(300);
+  verifica('scegliendo l\'inglese cambia la lingua dichiarata dalla pagina',
+    doc.documentElement.lang === 'en');
+  const dopoLaVoce = vocePersone2.querySelector('.voce-titolo').textContent;
+  verifica(`i testi sono tradotti («${primaDellaVoce}» → «${dopoLaVoce}»)`,
+    dopoLaVoce !== primaDellaVoce && dopoLaVoce === 'People'
+    && $('#btnCrea').textContent.trim() === 'Create an invite');
+  // In questo momento la sezione aperta è «Impostazioni», quindi il titolo è
+  // quello: la lingua non deve cambiare solo le scritte ferme.
+  verifica(`il titolo della finestra segue la lingua («${doc.title}»)`,
+    doc.title.includes('Black Spider') && doc.title.includes('Settings'));
+  verifica('anche i testi lunghi sono tradotti',
+    $('.spiega').textContent.length > 40 && !/server: per parlare/.test($('.spiega').textContent));
+  verifica('i pulsanti della lingua restano quelli di prima',
+    inglese.isConnected && italiano.isConnected);
+
+  italiano.click();
+  await attendi(300);
+  verifica('tornando all\'italiano i testi tornano com\'erano',
+    doc.documentElement.lang === 'it'
+    && vocePersone2.querySelector('.voce-titolo').textContent === primaDellaVoce
+    && $('#btnCrea').textContent.trim() === 'Crea un invito'
+    && doc.title.includes('Impostazioni'));
+
+  /* --- le app ------------------------------------------------------------- */
+
+  voci.find((v) => v.dataset.vista === 'app').click();
+  await attendi(250);
+  const moduli = $$('#elencoModuli .modulo');
+  verifica(`l'elenco delle app ha cinque voci (${moduli.length})`, moduli.length === 5);
+  verifica('una sola app è dichiarata pronta',
+    $$('#elencoModuli .modulo.pronto').length === 1);
+  verifica('ogni app ha nome e descrizione',
+    moduli.every((m) => m.querySelector('.modulo-nome').textContent.trim().length > 2
+      && m.querySelector('.modulo-desc').textContent.trim().length > 20));
+  verifica('le app non ancora pronte non si possono aprire',
+    $$('#elencoModuli .modulo.spento[data-apre]').length === 0);
+
+  // La scheda dell'app pronta riporta alla chat.
+  $('#elencoModuli .modulo.pronto').click();
+  await attendi(250);
+  verifica('la scheda dell\'app pronta riapre la chat',
+    b.dataset.vista === 'chat' && !$('#vista-chat').hidden);
+
+  /* --- l'archivio --------------------------------------------------------- */
+
+  voci.find((v) => v.dataset.vista === 'archivio').click();
+  await attendi(250);
+  verifica('l\'archivio mostra i suoi numeri',
+    /^\d+$/.test($('#arcTotali').textContent) && /^\d+$/.test($('#arcAutori').textContent));
+  verifica('la tabella del log ha le sue colonne', $$('#vista-archivio th').length === 5);
+
+  /* --- il manifesto e le icone -------------------------------------------- */
+
+  try {
+    const m = await (await fetch('../manifest.webmanifest')).json();
+    verifica('il manifesto ha nome e modalità standalone', !!m.name && m.display === 'standalone');
+    verifica('il manifesto dichiara un\'icona 192 e una 512',
+      m.icons.some((i) => i.sizes === '192x192') && m.icons.some((i) => i.sizes === '512x512'));
+    verifica('il manifesto ha un\'icona maskable', m.icons.some((i) => i.purpose === 'maskable'));
+  } catch (e) {
+    verifica('manifesto leggibile: ' + e.message, false);
+  }
+
+  // Un'icona che non si carica è il modo più silenzioso di rompere
+  // l'installabilità: si controlla che i file ci siano davvero.
+  for (const i of ['icona-192.png', 'icona-512.png', 'icona-180.png',
+                   'icona-maskable-512.png', 'icona.svg', 'icona-48.png']) {
+    const r = await fetch('../icone/' + i, { method: 'HEAD' }).catch(() => null);
+    verifica('icona presente: ' + i, r && r.ok);
+  }
+
+  // Si lascia la finestra di prova come l'abbiamo trovata.
+  temaAuto.click();
+  await attendi(150);
+
+  invia();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Collegamento fra due browser — Black Spider</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; background: #0c0d14; color: #e8eaf2; }
+  #riporto { padding: 14px 18px; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
+  .ok { color: #3ecf8e; } .no { color: #e86b73; } .tenue { color: #6c7492; }
+  iframe { width: 100%; height: 760px; border: 0; border-top: 1px solid #272b3c; }
+</style>
+</head>
+<body>
+<div id="riporto">collegamento in corso…</div>
+<iframe id="app" src="../index.html"></iframe>
+<script>
+/* Prova di collegamento: due browser, l'app vera, un messaggio che va da uno
+ * all'altro.
+ *
+ * Questa pagina non parla con l'app per magia: le clicca i pulsanti e le
+ * riempie i campi, esattamente come farebbe una persona. È il punto — una prova
+ * che chiama le funzioni di sotto non direbbe niente su quello che succede a
+ * chi usa l'app, e quasi tutti i guasti veri stanno proprio nel pezzo fra il
+ * pulsante e la funzione.
+ *
+ * La pagina si apre in due esemplari, ?ruolo=A e ?ruolo=B. I due non si vedono;
+ * si scambiano il codice d'invito attraverso il server della prova, che qui fa
+ * la parte del messaggero (WhatsApp, email, quello che sia).
+ */
+
+const RUOLO = new URLSearchParams(location.search).get('ruolo') || 'A';
+const ATTESA_MAX = 40000;
+const riporto = [];
+let finito = false;
+
+function riga(testo, esito) {
+  riporto.push({ testo: String(testo), esito });
+  document.getElementById('riporto').innerHTML = riporto.map((r) => {
+    const segno = r.esito === true ? '<span class="ok">OK  </span>'
+      : r.esito === false ? '<span class="no">NO  </span>' : '    ';
+    return segno + r.testo.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  }).join('\n');
+}
+
+function verifica(descrizione, condizione) {
+  riga(`[${RUOLO}] ${descrizione}`, !!condizione);
+  return !!condizione;
+}
+
+function invia() {
+  if (finito) return;
+  finito = true;
+  const esiti = riporto.filter((r) => r.esito !== null);
+  fetch('/api/esito-' + RUOLO, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      ruolo: RUOLO,
+      quando: new Date().toISOString(),
+      passati: esiti.filter((r) => r.esito === true).length,
+      falliti: esiti.filter((r) => r.esito === false).length,
+      righe: riporto,
+    }, null, 2),
+  }).catch(() => {});
+}
+
+const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Aspetta che una funzione restituisca qualcosa di vero, o che scada il tempo. */
+async function finche(fn, descrizione, ms = ATTESA_MAX) {
+  const inizio = Date.now();
+  for (;;) {
+    let v = null;
+    // La funzione può essere asincrona — «è arrivato il codice dell'altro?» lo è
+    // — e una promessa è sempre vera: senza l'await la prima risposta sarebbe
+    // «sì» e si proseguirebbe con in mano una promessa invece del valore.
+    try { v = await fn(); } catch (e) { v = null; }
+    if (v) return v;
+    if (Date.now() - inizio > ms) {
+      riga(`scaduto: ${descrizione}`, false);
+      invia();
+      throw new Error('scaduto: ' + descrizione);
+    }
+    await attendi(150);
+  }
+}
+
+const riquadro = document.getElementById('app');
+const d = () => riquadro.contentDocument;
+const $ = (sel) => d().querySelector(sel);
+const testo = (sel) => ($(sel) || {}).textContent || '';
+
+/** Il registro dell'app, che è la sua voce: serve a sapere cosa sta pensando. */
+function registro() { return testo('#registro'); }
+
+/* Si aspetta un segno che non dipende dalla lingua: la frase del registro
+ * cambierebbe tradicendo l'app, e una prova che si rompe per quello non
+ * segnala un guasto. */
+async function attendiAvvio() {
+  await finche(() => {
+    const b = d() && d().body;
+    return b && (b.dataset.pronto === '1' || b.dataset.avvioFallito);
+  }, 'l\'app finisca di avviarsi');
+  const fallito = d().body.dataset.avvioFallito;
+  if (fallito) throw new Error('avvio fallito: ' + fallito);
+}
+
+async function leggi(chiave) {
+  const r = await fetch('/api/' + chiave);
+  if (!r.ok) return null;
+  const v = await r.json();
+  return v && v.valore;
+}
+
+const scrivi = (chiave, valore) => fetch('/api/' + chiave, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ valore }),
+});
+
+/** Riporta ciò che l'app dice di sé: serve a capire come è passata la connessione. */
+function stato() {
+  return {
+    stato: testo('#pillStato'),
+    percorso: testo('#pillPercorso'),
+    rtt: testo('#pillRtt'),
+  };
+}
+
+(async function () {
+  try {
+    await attendiAvvio();
+    verifica('l\'app si è avviata', true);
+    const mioId = testo('#mioId');
+    verifica('ha un\'identità: ' + mioId, /^sp_/.test(mioId.trim().replace(/…$/, '')));
+
+    // Niente STUN: la prova resta dentro la macchina.
+    $('#usaStun').checked = false;
+
+    if (RUOLO === 'A') {
+      $('#btnCrea').click();
+      const link = await finche(() => $('#invitoOut').value, 'l\'invito sia pronto');
+      verifica('l\'invito è stato creato (' + link.length + ' caratteri)', link.length > 40);
+      await scrivi('invito', link);
+      riga('invito depositato, aspetto la risposta…', null);
+
+      const risposta = await finche(() => leggi('risposta'), 'arrivi la risposta di B');
+      $('#rispostaIn').value = risposta;
+      $('#btnCompleta').click();
+
+    } else {
+      const link = await finche(() => leggi('invito'), 'arrivi l\'invito di A');
+      verifica('l\'invito ricevuto è un link di Black Spider',
+        link.includes('#invito=') || link.length > 40);
+      $('#invitoIn').value = link;
+      $('#btnRispondi').click();
+      const risposta = await finche(() => $('#rispostaOut').value, 'la risposta sia pronta');
+      verifica('la risposta è stata preparata (' + risposta.length + ' caratteri)',
+        risposta.length > 40);
+      await scrivi('risposta', risposta);
+    }
+
+    await finche(() => !$('#pannelloChat').hidden, 'il canale si apra');
+    verifica('il canale è aperto', true);
+    await attendi(1200);   // il tempo che le statistiche del percorso si assestino
+    const s = stato();
+    verifica(`lo stato dice: ${s.stato} · ${s.percorso || '—'} · ${s.rtt || '—'}`,
+      /collegato|connected/.test(s.stato));
+
+    if (RUOLO === 'A') {
+      $('#testo').value = 'Ciao da A, questo è il primo messaggio.';
+      $('#moduloInvio').requestSubmit();
+      await finche(() => ($('#messaggi').textContent || '').includes('Ciao da A'),
+                   'il mio messaggio compaia qui');
+      verifica('il messaggio scritto da A compare subito nella sua schermata', true);
+
+      await finche(() => ($('#messaggi').textContent || '').includes('Ricevuto'),
+                   'arrivi la risposta di B');
+      verifica('la risposta di B è arrivata ad A', true);
+
+    } else {
+      await finche(() => ($('#messaggi').textContent || '').includes('Ciao da A'),
+                   'arrivi il messaggio di A');
+      verifica('il messaggio di A è arrivato a B', true);
+      verifica('il messaggio porta l\'ora', /\d{2}:\d{2}/.test($('#messaggi').textContent));
+      verifica('il messaggio è attribuito a chi l\'ha scritto, non a me',
+        !!d().querySelector('.messaggio.altrui'));
+
+      $('#testo').value = 'Ricevuto, sono B.';
+      $('#moduloInvio').requestSubmit();
+      await finche(() => ($('#messaggi').textContent || '').includes('Ricevuto, sono B'),
+                   'la mia risposta compaia qui');
+      verifica('B ha risposto', true);
+
+      // La prova che conta davvero: chiudere e riaprire.
+      const prima = $('#messaggi').textContent;
+      verifica('prima di ricaricare ci sono due messaggi',
+        d().querySelectorAll('.messaggio').length === 2);
+      riquadro.contentWindow.location.reload();
+      await attendiAvvio();
+      await finche(() => ($('#messaggi').textContent || '').includes('Ciao da A'),
+                   'i messaggi tornino dopo il ricaricamento');
+      const dopo = $('#messaggi').textContent;
+      verifica('dopo il ricaricamento i messaggi ci sono ancora',
+        dopo.includes('Ciao da A') && dopo.includes('Ricevuto, sono B'));
+      verifica('e sono gli stessi di prima', dopo.includes(prima.trim().slice(0, 20)));
+      verifica('il conteggio degli eventi non è cresciuto',
+        d().querySelectorAll('.messaggio').length === 2);
+    }
+
+    riga(`[${RUOLO}] --- registro dell'app ---`, null);
+    for (const r of registro().split('\n')) if (r.trim()) riga(r.trim(), null);
+
+  } catch (e) {
+    riga(`[${RUOLO}] interrotta: ${e && e.message}`, false);
+  }
+  invia();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>M0 — verifica del nucleo</title>
+<link rel="stylesheet" href="../stile.css">
+<style>
+  /* Questa pagina non è il guscio: non ha menu né sezioni, e del foglio di stile
+   * usa le variabili e i pannelli. Il poco che serve a leggerla sta qui. */
+  header, main { max-width: 900px; margin: 0 auto; padding: 18px 20px; }
+  header { border-bottom: 1px solid var(--bordo); }
+  header h1 { margin: 0 0 4px; font-size: 19px; }
+  .meta { margin: 0; color: var(--testo-3); font-size: 12.5px; }
+  #out { font-family: var(--mono); font-size: 12px; line-height: 1.7; }
+  #out > div { padding: 2px 0; border-bottom: 1px solid var(--bordo); }
+  [data-esito="KO"] { color: var(--err); font-weight: 600; }
+  #sommario { font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>M0 — verifica del nucleo</h1>
+  <p class="meta">Identità, firme, catena, orologio, persistenza. Niente rete: tutto
+  quello che si può provare senza uscire dal browser.</p>
+</header>
+<main>
+  <div class="pannello"><h2>Esiti</h2><div id="out"></div></div>
+  <p id="sommario">in corso…</p>
+</main>
+
+<script type="module">
+import { creaOErecupera, numeroSicurezza, idDaSpki, base32, daBase32 } from '../js/identita.js';
+import { creaOrologio, crea, verificaEvento, verificaCatena, confrontaHlc, canonico } from '../js/eventi.js';
+import { apri, STORE, leggi, conta, chiediPersistenza } from '../js/archivio.js';
+
+const out = document.getElementById('out');
+let ko = 0;
+const riga = (ok, testo) => {
+  if (!ok) ko++;
+  out.insertAdjacentHTML('beforeend',
+    `<div data-esito="${ok ? 'OK' : 'KO'}">${ok ? 'OK' : 'KO'}  ${testo}</div>`);
+};
+
+try {
+  /* ---------------------------------------------------------- identità */
+  const t0 = performance.now();
+  const id = await creaOErecupera();
+  const msCreazione = Math.round(performance.now() - t0);
+
+  riga(id.algoritmo === 'ED25519', `algoritmo scelto: ${id.algoritmo}`);
+  riga(/^sp_[a-z2-7]{32}$/.test(id.spiderId),
+    `identificativo nel formato giusto: ${id.spiderId}`);
+  riga(id.privata.extractable === false,
+    'la chiave privata è NON estraibile');
+  riga(id.privata.usages.includes('sign') && !id.privata.usages.includes('verify'),
+    'la chiave privata sa solo firmare');
+
+  // davvero non esportabile?
+  let esportabile = false;
+  try { await crypto.subtle.exportKey('pkcs8', id.privata); esportabile = true; } catch { /* atteso */ }
+  riga(!esportabile, 'tentare di esportarla fallisce, come deve');
+
+  // base32 andata e ritorno
+  const prova32 = new Uint8Array([0, 1, 2, 250, 255, 128, 64, 7]);
+  riga(base32(prova32) && daBase32(base32(prova32)).every((v, i) => v === prova32[i]),
+    'base32: andata e ritorno corretto');
+
+  /* ------------------------------------------------------ orologio HLC */
+  const orol = creaOrologio(id.spiderId);
+  const a1 = orol.adesso();
+  const a2 = orol.adesso();
+  riga(confrontaHlc(a1, a2) < 0, 'due istanti consecutivi sono ordinati');
+  orol.osserva([Date.now() + 60000, 5, 'sp_altro']);
+  riga(orol.stato[0] >= Date.now() + 60000, 'l\'orologio si allinea a un istante futuro ricevuto');
+
+  const h1 = [1000, 0, 'sp_a'], h2 = [1000, 1, 'sp_a'], h3 = [1000, 0, 'sp_b'];
+  riga(confrontaHlc(h1, h2) < 0 && confrontaHlc(h1, h3) < 0 && confrontaHlc(h2, h3) > 0,
+    'l\'ordine degli HLC è totale e deterministico');
+
+  /* ---------------------------------------------------------- eventi */
+  const catena = { seq: 0, prev: null };
+  const ev1 = await crea(id, orol, catena, { room: 'rm_prova', kind: 'chat/msg', body: { testo: 'primo' } });
+  catena.seq = ev1.seq; catena.prev = ev1.id;
+
+  riga(ev1.id.startsWith('b3:'), `evento creato, id = ${ev1.id.slice(0, 16)}…`);
+  riga(ev1.author === id.spiderId && ev1.seq === 1 && ev1.prev === null,
+    'l\'evento porta autore, numero di sequenza e collegamento al precedente');
+
+  const chiavi = { [id.spiderId]: { spki: id.pubblicaSpki, algoritmo: id.algoritmo } };
+  const v1 = await verificaEvento(ev1, chiavi);
+  riga(v1.valido === true, 'la firma dell\'evento è valida');
+
+  // manomissione del corpo
+  const manomesso = { ...ev1, body: { testo: 'manomesso' } };
+  const v2 = await verificaEvento(manomesso, chiavi);
+  riga(v2.valido === false && v2.motivo.includes('identificativo'),
+    'cambiare il corpo invalida l\'identificativo');
+
+  // manomissione della firma
+  const firmaFalsa = { ...ev1, sig: ev1.sig.slice(0, -4) + 'aaaa' };
+  const v3 = await verificaEvento(firmaFalsa, chiavi);
+  riga(v3.valido === false, 'una firma alterata viene rifiutata');
+
+  // autore senza chiave nota
+  const v4 = await verificaEvento(ev1, {});
+  riga(v4.valido === 'chiave-ignota', 'autore di cui non si ha la chiave: "chiave-ignota", non "falso"');
+
+  /* ----------------------------------------- un secondo peer, e l'imbroglio */
+  const idB = await (async () => {
+    // identità B in memoria, senza toccare quella salvata
+    const cfg = { name: 'Ed25519' };
+    const coppia = await crypto.subtle.generateKey(cfg, true, ['sign', 'verify']);
+    const spki = await crypto.subtle.exportKey('spki', coppia.publicKey);
+    const pkcs8 = await crypto.subtle.exportKey('pkcs8', coppia.privateKey);
+    const privata = await crypto.subtle.importKey('pkcs8', pkcs8, cfg, false, ['sign']);
+    new Uint8Array(pkcs8).fill(0);
+    return { spiderId: await idDaSpki(spki), algoritmo: 'ED25519', privata, pubblicaSpki: spki };
+  })();
+
+  riga(idB.spiderId !== id.spiderId, 'due identità indipendenti hanno identificativi diversi');
+
+  // B si spaccia per A. La contraffazione va costruita *bene*: se mi limitassi a
+  // riscrivere il campo `author` dopo la firma, l'identificativo non tornerebbe più
+  // e l'evento verrebbe respinto per il motivo sbagliato. Qui il nucleo dichiara
+  // author = A fin dall'inizio, l'identificativo è quindi coerente, e l'unica cosa
+  // che può fermarlo è la firma.
+  const orolB = creaOrologio(idB.spiderId);
+  const nucleoFalso = {
+    author: id.spiderId, seq: 1, prev: null, refs: [],
+    room: 'rm_prova', kind: 'chat/msg',
+    hlc: orolB.adesso(), body: { testo: 'sono A, fidatevi' },
+  };
+  const byteFalsi = new TextEncoder().encode(canonico(nucleoFalso));
+  const improntaFalsa = new Uint8Array(await crypto.subtle.digest('SHA-256', byteFalsi));
+  const firmaDiB = new Uint8Array(await crypto.subtle.sign('Ed25519', idB.privata, byteFalsi));
+  const b64 = (b) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const travestito = {
+    id: 'b3:' + base32(improntaFalsa.subarray(0, 20)),
+    ...nucleoFalso, sig: b64(firmaDiB),
+  };
+
+  const v5 = await verificaEvento(travestito, chiavi);
+  riga(v5.valido === false && v5.motivo.includes('firma'),
+    'un evento ben formato ma firmato da B e attribuito ad A: respinto sulla firma (' + v5.motivo + ')');
+  riga(travestito.id.length > 3, 'la contraffazione aveva un identificativo coerente, quindi non è stata fermata da quello');
+
+  /* ---------------------------------------------------------- la catena */
+  const eventi = [ev1];
+  const cat = { seq: ev1.seq, prev: ev1.id };
+  for (let i = 2; i <= 4; i++) {
+    const e = await crea(id, orol, cat, { room: 'rm_prova', kind: 'chat/msg', body: { testo: 'n' + i } });
+    cat.seq = e.seq; cat.prev = e.id;
+    eventi.push(e);
+  }
+  riga(verificaCatena(eventi).valida, 'catena di 4 eventi: continua');
+
+  const rotta = [...eventi];
+  rotta[2] = { ...rotta[2], prev: 'b3:inesistente' };
+  const esitoRotta = verificaCatena(rotta);
+  riga(esitoRotta.valida === false, 'una catena manomessa viene riconosciuta: ' + esitoRotta.motivo);
+
+  /* ---------------------------------------- determinismo della serializzazione */
+  riga(canonico({ b: 1, a: { d: 2, c: 3 } }) === canonico({ a: { c: 3, d: 2 }, b: 1 }),
+    'la serializzazione è stabile qualunque sia l\'ordine delle chiavi');
+
+  /* ------------------------------------------------------- archiviazione */
+  const id2 = await creaOErecupera();
+  riga(id2.spiderId === id.spiderId, 'riletta dall\'archivio: stesso identificativo');
+  riga(id2.creato === id.creato, 'riletta dall\'archivio: è proprio la stessa identità, non una nuova');
+  const v6 = await verificaEvento(ev1, { [id2.spiderId]: { spki: id2.pubblicaSpki, algoritmo: id2.algoritmo } });
+  riga(v6.valido === true, 'la chiave riletta dall\'archivio firma e verifica ancora');
+
+  const num = await numeroSicurezza(id);
+  riga(/^([A-Z2-7]{4} ){5}[A-Z2-7]{4}$/.test(num), `numero di sicurezza leggibile: ${num}`);
+
+  const p = await chiediPersistenza();
+  riga(true, `persistenza dello spazio: ${p.concesso ? 'CONCESSA' : 'negata'}${p.stima ? ` (usati ${Math.round(p.stima.usage / 1024)} KB)` : ''}`);
+
+  document.getElementById('out').insertAdjacentHTML('beforeend',
+    `<div id="impronta" data-creato="${id.creato}">SPIDERID: ${id.spiderId}<br>CREATO: ${id.creato}<br>MS_CREAZIONE: ${msCreazione}</div>`);
+
+} catch (e) {
+  riga(false, 'eccezione: ' + (e && e.stack || e));
+}
+
+document.getElementById('sommario').textContent =
+  ko === 0 ? 'ESITO: TUTTO OK' : `ESITO: ${ko} CONTROLLI FALLITI`;
+document.title = ko === 0 ? 'TUTTO OK' : `${ko} FALLITI`;
+
+/* Deposito degli esiti sul banco, se c'è. Serve quando la pagina viene aperta
+ * senza finestra (Chrome headless): senza questo non resta traccia del risultato.
+ * Se il banco non c'è, il fetch fallisce e non succede niente. */
+try {
+  const id = document.querySelector('#impronta');
+  await fetch('/esito', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Nome': 'm0' },
+    body: JSON.stringify({
+      controlli: ko, testo: document.getElementById('sommario').textContent,
+      spiderId: id ? (id.textContent.match(/SPIDERID: (\S+)/) || [])[1] : null,
+      creato: id ? id.dataset.creato : null,
+      righe: [...document.querySelectorAll('[data-esito]')].map((d) => d.textContent.trim()),
+    }),
+  });
+} catch { /* nessun banco: pazienza */ }
+</script>
+</body>
+</html>

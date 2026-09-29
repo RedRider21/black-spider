@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campione di stile — Black Spider</title>
+<meta name="theme-color" content="#14161f">
+<meta name="color-scheme" content="dark light">
+<link rel="stylesheet" href="../stile.css">
+<style>
+  /* Nessuna correzione all'impianto: la barra resta alta quanto la finestra e il
+   * contenuto scorre, esattamente come nell'app. Un campione che si guarda in un
+   * impianto diverso da quello vero non dice niente su quello vero.
+   *
+   * L'unica aggiunta è la spaziatura fra i pezzi: qui sono tutti in fila, e senza
+   * un po' d'aria fra l'uno e l'altro sembrerebbero un blocco solo. */
+  .esempio { display: flex; flex-direction: column; gap: 18px; }
+  .esempio > h2 { margin: 6px 0 -6px; font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--testo-3); }
+</style>
+<script>
+/* L'unico script del campione: legge ?tema= e ?barra= dall'indirizzo, per poter
+ * guardare le due facce della stessa pagina senza cambiare le impostazioni del
+ * sistema. Aprire stile.html?tema=chiaro o ?barra=stretta. */
+const q = new URLSearchParams(location.search);
+if (q.get('tema')) document.documentElement.dataset.tema = q.get('tema');
+if (q.get('barra')) document.documentElement.dataset.barra = q.get('barra');
+</script>
+</head>
+<body>
+
+<!--
+  Un campione, non una schermata dell'app.
+
+  Serve a guardare il foglio di stile con tutti i pezzi in una volta — compresi
+  quelli che nell'app si vedono solo a conversazione avviata — senza dover
+  davvero collegare due browser e senza dover cambiare tema al sistema. Qui
+  dentro c'è tutto quello che il CSS sa disegnare; se manca qualcosa, si vede
+  che manca.
+
+  Non carica nessuno dei moduli dell'app: quello che si vede è esattamente
+  quello che fa il foglio di stile, niente di più.
+-->
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 5.5H4v10h6l4 4v-4h6z"/></symbol>
+  <symbol id="i-persone" viewBox="0 0 24 24">
+    <circle cx="9" cy="8.5" r="3.2"/>
+    <path d="M3.5 19.5c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/>
+    <path d="M16 5.6a2.6 2.6 0 0 1 0 5.2"/>
+    <path d="M17 14.6c2.2.4 3.8 2.2 3.8 4.9"/>
+  </symbol>
+  <symbol id="i-archivio" viewBox="0 0 24 24">
+    <path d="M12 3.5 20.5 8 12 12.5 3.5 8z"/>
+    <path d="M3.5 12 12 16.5 20.5 12"/>
+    <path d="M3.5 16 12 20.5 20.5 16"/>
+  </symbol>
+  <symbol id="i-app" viewBox="0 0 24 24">
+    <rect x="3.8" y="3.8" width="7" height="7" rx="1.6"/>
+    <rect x="13.2" y="3.8" width="7" height="7" rx="1.6"/>
+    <rect x="3.8" y="13.2" width="7" height="7" rx="1.6"/>
+    <rect x="13.2" y="13.2" width="7" height="7" rx="1.6"/>
+  </symbol>
+  <symbol id="i-impostazioni" viewBox="0 0 24 24">
+    <path d="M4 7.5h16M4 16.5h16"/>
+    <circle cx="9" cy="7.5" r="2.3"/><circle cx="15" cy="16.5" r="2.3"/>
+  </symbol>
+  <symbol id="i-freccia" viewBox="0 0 24 24"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24">
+    <path d="M6.5 3.5h6.8l4.7 4.7v12.3H6.5z"/><path d="M13.3 3.5v4.7h4.7"/>
+  </symbol>
+  <symbol id="i-chiamate" viewBox="0 0 24 24">
+    <path d="M4.6 5.4c0-1 .8-1.9 1.9-1.9h2.2l1.3 3.6-2 1.4a12.2 12.2 0 0 0 5.7 5.7l1.4-2 3.6 1.3v2.2c0 1-.9 1.9-1.9 1.9A15.5 15.5 0 0 1 4.6 5.4Z"/>
+  </symbol>
+  <symbol id="i-note" viewBox="0 0 24 24">
+    <path d="M5.5 3.5h13v17h-13z"/><path d="M9 8.2h6M9 12h6M9 15.8h3.4"/>
+  </symbol>
+  <symbol id="i-bacheca" viewBox="0 0 24 24">
+    <rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/>
+    <path d="M12 4.5v15M3.5 9.5h8.5"/>
+  </symbol>
+</svg>
+
+<div class="app">
+
+  <header class="testata">
+    <button class="tondo" type="button"><svg class="icona"><use href="#i-menu"></use></svg></button>
+    <div class="marchio">
+      <img src="../icone/icona.svg" alt="" width="30" height="30">
+      <h1>Black Spider</h1>
+    </div>
+    <button class="chip" type="button">
+      <span>Daniele</span><code>sp_cscvhhgutgv…</code>
+    </button>
+  </header>
+
+  <div class="corpo">
+
+    <nav class="barra">
+      <ul class="barra-voci">
+        <li><button class="voce" type="button" aria-current="page">
+          <svg class="icona"><use href="#i-chat"></use></svg>
+          <span class="voce-titolo">Chat</span></button></li>
+        <li><button class="voce" type="button">
+          <svg class="icona"><use href="#i-persone"></use></svg>
+          <span class="voce-titolo">Persone</span></button></li>
+        <li><button class="voce" type="button">
+          <svg class="icona"><use href="#i-archivio"></use></svg>
+          <span class="voce-titolo">Archivio</span></button></li>
+        <li><button class="voce" type="button">
+          <svg class="icona"><use href="#i-app"></use></svg>
+          <span class="voce-titolo">App</span></button></li>
+        <li><button class="voce" type="button">
+          <svg class="icona"><use href="#i-impostazioni"></use></svg>
+          <span class="voce-titolo">Impostazioni</span></button></li>
+      </ul>
+      <div class="barra-piede">
+        <div class="gruppo-controllo">
+          <span class="etichetta">Tema</span>
+          <div class="segmento" data-controllo="tema">
+            <button type="button" aria-pressed="true">Auto</button>
+            <button type="button" aria-pressed="false">Chiaro</button>
+            <button type="button" aria-pressed="false">Scuro</button>
+          </div>
+        </div>
+        <div class="gruppo-controllo">
+          <span class="etichetta">Lingua</span>
+          <div class="segmento" data-controllo="lingua">
+            <button type="button" aria-pressed="true">Italiano</button>
+            <button type="button" aria-pressed="false">English</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="contenuto">
+      <div class="vista esempio">
+
+        <h2>Collegamento</h2>
+
+        <section class="pannello">
+          <h2>Collega qualcuno</h2>
+          <p class="spiega">
+            Non c'è nessun server: per parlare bisogna prima scambiarsi un codice.
+            Mandalo con qualunque mezzo — WhatsApp, email, un messaggio.
+          </p>
+          <div class="due-colonne">
+            <div class="colonna">
+              <h3>Invita</h3>
+              <label class="scelta">
+                <input type="checkbox" checked>
+                <span>Prova anche attraverso internet <span class="tenue">(usa i server STUN di
+                Google; senza, si resta dentro la rete locale)</span></span>
+              </label>
+              <button>Crea un invito</button>
+              <div>
+                <label for="c1">Manda questo link</label>
+                <textarea id="c1" readonly rows="2">http://127.0.0.1:8765/#invito=3QKAAHJv…troncato…</textarea>
+                <div class="riga-pulsanti" style="margin-top:10px">
+                  <button class="secondaria piccola">Copia il link</button>
+                </div>
+              </div>
+            </div>
+            <div class="colonna">
+              <h3>Oppure rispondi</h3>
+              <label for="c2">Incolla l'invito ricevuto</label>
+              <textarea id="c2" rows="2" placeholder="Il link o il codice…"></textarea>
+              <button class="secondaria">Prepara la risposta</button>
+              <p class="tenue" style="margin:0">
+                La risposta è un secondo codice, da rimandare a chi ti ha invitato.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <h2>Conversazione</h2>
+
+        <section class="pannello" id="pannelloChat">
+          <div class="barra-chat">
+            <span class="pill ok">collegato</span>
+            <span class="pill ok">diretto (host)</span>
+            <span class="pill">14 ms</span>
+            <span class="pill warn">connessione instabile</span>
+            <span class="pill err">non riuscito</span>
+            <button class="secondaria piccola">Chiudi la connessione</button>
+          </div>
+          <div class="messaggi">
+            <div class="messaggio altrui">
+              <div class="intestazione"><span class="chi">Marco</span><span class="quando">14:02</span></div>
+              <div class="corpo">Ciao, ci sono</div>
+            </div>
+            <div class="messaggio mio">
+              <div class="intestazione"><span class="chi">tu</span><span class="quando">14:02</span></div>
+              <div class="corpo">Ti vedo. Provo a mandarti una cosa lunga per vedere come
+si comporta il riquadro quando il testo va a capo più volte di seguito.</div>
+            </div>
+            <div class="messaggio altrui">
+              <div class="intestazione"><span class="chi">Marco</span><span class="quando">14:03</span></div>
+              <div class="corpo">https://un-indirizzo-molto-lungo-che-non-deve-sfondare-la-bolla.example/percorso/ancora</div>
+            </div>
+          </div>
+          <form class="riga-invio" onsubmit="return false">
+            <input type="text" placeholder="Scrivi…">
+            <button type="submit">Invia</button>
+          </form>
+        </section>
+
+        <section class="pannello">
+          <h2>Conversazione vuota</h2>
+          <div class="messaggi"><p class="vuoto">Ancora nessun messaggio. Collega qualcuno e scrivi.</p></div>
+        </section>
+
+        <h2>Persone</h2>
+
+        <section class="pannello">
+          <h2>Tu</h2>
+          <p class="spiega">
+            Il tuo identificativo è l'impronta della tua chiave pubblica: non è un nome
+            che qualcuno può assegnarti, e non cambia mai.
+          </p>
+          <dl class="dati">
+            <dt>Identificativo</dt>
+            <dd><code>sp_cscvhhgutgvqk3m7vbn2xw4yd8pfrtz</code></dd>
+            <dt>Numero di sicurezza</dt>
+            <dd><code>K7QH 2M4X VBNT ZPFR TZCS 6AJ9</code></dd>
+          </dl>
+          <p class="spiega tenue" style="margin-top:12px">
+            Confrontalo a voce con l'altra persona: se è lo stesso, non c'è nessuno in mezzo.
+          </p>
+        </section>
+
+        <section class="pannello">
+          <h2>Chi hai incontrato</h2>
+          <ul class="elenco">
+            <li class="riga-dato">
+              <span class="nome">Marco</span>
+              <code>sp_7fh2k9qm3xvbn2w4yd8pfrtzcs6aj</code>
+              <span class="stato tenue">ha scritto qui</span>
+            </li>
+            <li class="riga-dato">
+              <span class="nome">senza nome</span>
+              <code>sp_x4yd8pfrtzcs6aj7fh2k9qm3xvbn2</code>
+              <span class="stato tenue">non ha ancora scritto qui</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="pannello">
+          <h2>Chi scrive in questa stanza</h2>
+          <dl class="dati">
+            <dt>Daniele (tu)</dt><dd><code>sp_cscvhhgutgvqk3m7vbn2xw4yd8pfrtz</code></dd>
+            <dt>Marco</dt><dd><code>sp_7fh2k9qm3xvbn2w4yd8pfrtzcs6aj</code></dd>
+          </dl>
+        </section>
+
+        <h2>Archivio</h2>
+
+        <section class="pannello">
+          <h2>Archivio</h2>
+          <p class="spiega">
+            Il log è la verità: ogni evento è firmato da chi l'ha scritto e legato al
+            precedente. Quello che vedi nelle altre schermate è solo una sua proiezione.
+          </p>
+          <div class="riassunto">
+            <div><span class="numero">37</span><span class="etichetta">Eventi</span></div>
+            <div><span class="numero">2</span><span class="etichetta">Autori</span></div>
+            <div><span class="numero">1</span><span class="etichetta">Stanze</span></div>
+          </div>
+          <div class="scorri">
+            <table class="tabella">
+              <thead><tr><th>#</th><th>Tipo</th><th>Autore</th><th>Quando</th><th>Stanza</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">12</td><td>chat/msg</td><td class="mono">sp_cscvhhgutgv…</td>
+                    <td class="mono">29/09/26, 14:02:11</td><td class="mono">rm_4f2a91c7</td></tr>
+                <tr><td class="mono">13</td><td>profilo/nome</td><td class="mono">sp_7fh2k9qm3x…</td>
+                    <td class="mono">29/09/26, 14:02:14</td><td class="mono">rm_4f2a91c7</td></tr>
+                <tr><td class="mono">14</td><td>chat/msg</td><td class="mono">sp_7fh2k9qm3x…</td>
+                    <td class="mono">29/09/26, 14:03:02</td><td class="mono">rm_4f2a91c7</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <h2>App</h2>
+
+        <section class="pannello">
+          <h2>App</h2>
+          <p class="spiega">
+            Black Spider non è una chat: è un modo per far parlare due browser direttamente.
+          </p>
+          <div class="elenco-moduli">
+            <button class="modulo pronto" type="button">
+              <svg class="icona"><use href="#i-chat"></use></svg>
+              <span class="modulo-testo">
+                <span class="modulo-nome">Chat <span class="pill ok">pronta</span></span>
+                <span class="modulo-desc">Una stanza, due persone, messaggi firmati che restano nel tuo browser.</span>
+              </span>
+              <svg class="icona freccia"><use href="#i-freccia"></use></svg>
+            </button>
+            <div class="modulo spento">
+              <svg class="icona"><use href="#i-file"></use></svg>
+              <span class="modulo-testo">
+                <span class="modulo-nome">File <span class="pill">in arrivo</span></span>
+                <span class="modulo-desc">Mandarsi un file direttamente fra due browser.</span>
+              </span>
+            </div>
+            <div class="modulo spento">
+              <svg class="icona"><use href="#i-chiamate"></use></svg>
+              <span class="modulo-testo">
+                <span class="modulo-nome">Chiamate <span class="pill">in arrivo</span></span>
+                <span class="modulo-desc">Voce e video sulla stessa connessione che oggi porta i messaggi.</span>
+              </span>
+            </div>
+            <div class="modulo spento">
+              <svg class="icona"><use href="#i-bacheca"></use></svg>
+              <span class="modulo-testo">
+                <span class="modulo-nome">Bacheca <span class="pill">in arrivo</span></span>
+                <span class="modulo-desc">Uno stato condiviso che più persone modificano insieme.</span>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <h2>Impostazioni</h2>
+
+        <section class="pannello">
+          <h2>Memoria</h2>
+          <p class="spiega">
+            Il browser ha concesso la memoria permanente: quello che scrivi non verrà
+            buttato via per fare spazio.
+          </p>
+          <dl class="dati" style="margin-bottom:16px">
+            <dt>Eventi nell'archivio</dt><dd>37</dd>
+          </dl>
+          <div class="riga-pulsanti">
+            <button class="secondaria">Chiedi la memoria permanente</button>
+            <button class="secondaria">Esporta l'archivio</button>
+          </div>
+          <p class="spiega tenue" style="margin-top:14px">
+            Scarica tutto il log in un file, tuo. Attenzione: esce in chiaro.
+          </p>
+        </section>
+
+        <h2>Registro</h2>
+
+        <details class="pannello" open>
+          <summary>Registro</summary>
+          <div class="registro"><div><span class="t">15:48</span> Identità pronta: sp_cscvhhgutgv… (ED25519).</div>
+<div><span class="t">15:48</span> Eventi nell'archivio: 12.</div>
+<div><span class="t">15:48</span> Creo un invito per la rete locale…</div>
+<div><span class="t">15:48</span> Raccolta ICE: in quiete.</div>
+<div><span class="t">15:48</span> Invito pronto: 418 caratteri.</div>
+<div><span class="t">15:49</span> Incontrato Marco.</div>
+<div><span class="t">15:49</span> Eventi accettati: 3 (già noti: 0).</div>
+<div class="grave"><span class="t">15:49</span> Evento respinto da sp_7fh2k9qm3x…: firma non valida.</div>
+<div class="grave"><span class="t">15:50</span> Catena di sp_7fh2k9qm3x… non continua: catena rotta all'evento 9.</div></div>
+        </details>
+
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>
