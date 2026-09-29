@@ -29,7 +29,7 @@ aprirla senza rete. La porta d'ingresso del sito è [`index.html`](index.html).
 | Se vuoi… | Vai a |
 |---|---|
 | **usare l'applicazione subito** | <https://redrider21.github.io/black-spider/app/> |
-| **vedere com'è fatto**, in una pagina sola da leggere o da mandare a qualcuno | [`presentazione.html`](presentazione.html) |
+| **vedere com'è fatto**, in una pagina sola da leggere o da mandare a qualcuno | [`index.html`](index.html) — è la pagina d'ingresso del sito |
 | capire **perché** è fatto così — tutte le decisioni, i vincoli, i rischi, la ricerca | [`ARCHITETTURA.md`](ARCHITETTURA.md) — 929 righe, è il documento principale |
 | **usare l'applicazione** e sapere cosa c'è dentro | [`app/README.md`](app/README.md) |
 | vedere le **prove di fattibilità** che hanno preceduto il codice | [`spikes/README.md`](spikes/README.md) |
@@ -39,11 +39,10 @@ aprirla senza rete. La porta d'ingresso del sito è [`index.html`](index.html).
 Serve Python 3 e un browser basato su Chromium. Niente da installare, niente compilare.
 
 ```sh
-# 1. guardare il sito intero: pagina d'ingresso, presentazione, applicazione
+# 1. guardare il sito: la pagina d'ingresso e l'applicazione
 python3 -m http.server 8766 --bind 127.0.0.1
 #      → http://127.0.0.1:8766/            (la pagina d'ingresso)
 #      → http://127.0.0.1:8766/app/
-#      → http://127.0.0.1:8766/presentazione.html
 
 # 2. eseguire tutte le prove e avere il verdetto
 ./prove.sh
@@ -59,12 +58,11 @@ pubblicato su Pages**: in locale serve per lavorarci, non per usarlo.
 
 ```
 black-spider/
-├── index.html           la pagina d'ingresso del sito: porta dentro l'applicazione
+├── index.html           la pagina d'ingresso del sito: la presentazione, autonoma e bilingue
 ├── README.md            questo file — la porta d'ingresso, per una persona
 ├── LICENSE              AGPL-3.0 — il testo della licenza
 ├── .nojekyll            dice a Pages di servire i file come sono
 ├── ARCHITETTURA.md      il documento di progetto: il *perché* di ogni scelta
-├── presentazione.html   la pagina di presentazione, autonoma e bilingue
 ├── prove.sh             esegue tutte le prove e dice l'esito
 ├── app/                 l'applicazione: il guscio PWA e la chat
 │   ├── js/              identità, eventi, archivio, invito, trasporto, sincronizzazione
