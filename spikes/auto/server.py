@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
 """Black Spider — M0.5, esecuzione automatica delle prove 1 e 2.
 
 Serve le pagine e fa da "banco": tiene i codici che i due browser si scambierebbero

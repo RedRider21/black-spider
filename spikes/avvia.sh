@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+#
 # Black Spider — banco di prova M0.5.
 # Serve le pagine delle prove e basta: nessun backend, nessuna richiesta in uscita.
 #

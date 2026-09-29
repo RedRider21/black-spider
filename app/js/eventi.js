@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Daniele Deplano (RedRider21) */
+
 /* Black Spider — gli eventi.
  *
  * Il log è la verità; lo stato è una sua proiezione (§6.2). Un evento è un fatto

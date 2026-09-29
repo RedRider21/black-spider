@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+#
 # Black Spider — M0.5, esecuzione automatica di una prova.
 #   ./esegui.sh stun     candidati host + riflessi (STUN di Google)
 #   ./esegui.sh host     solo rete locale, nessun contatto con l'esterno

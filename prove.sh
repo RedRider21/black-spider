@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+#
 # Black Spider — esegue tutte le prove e dice l'esito.
 #
 #   ./prove.sh              tutte: m0, avvio, collegamento, chiamata

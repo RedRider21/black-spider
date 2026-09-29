@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Daniele Deplano (RedRider21) */
+
 /* Black Spider — le preferenze dell'interfaccia.
  *
  * Tema, lingua e menu stanno in `localStorage` e non in IndexedDB, e la ragione

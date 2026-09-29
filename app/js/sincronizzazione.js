@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Daniele Deplano (RedRider21) */
+
 /* Black Spider — la sincronizzazione.
  *
  * Due peer che si incontrano si scambiano ciò che all'altro manca. Il protocollo è

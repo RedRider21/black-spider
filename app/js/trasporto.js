@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Daniele Deplano (RedRider21) */
+
 /* Black Spider — il trasporto.
  *
  * Un canale dati WebRTC, con due cose che a prima vista sembrano dettagli e non lo sono.

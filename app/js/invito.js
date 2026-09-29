@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Daniele Deplano (RedRider21) */
+
 /* Black Spider — l'invito.
  *
  * È il livello A di §7.1: due messaggi scambiati con qualunque mezzo, nessun

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2026 Daniele Deplano (RedRider21) */
+
 /* Black Spider — le lingue.
  *
  * Un dizionario solo, due colonne. Le chiavi sono le stesse per tutte le lingue,
