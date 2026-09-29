@@ -31,7 +31,7 @@ aprirla senza rete. La porta d'ingresso del sito è [`index.html`](index.html).
 | **usare l'applicazione subito** | <https://redrider21.github.io/black-spider/app/> |
 | **vedere com'è fatto**, in una pagina sola da leggere o da mandare a qualcuno | [`index.html`](index.html) — è la pagina d'ingresso del sito |
 | capire **perché** è fatto così — tutte le decisioni, i vincoli, i rischi, la ricerca | [`ARCHITETTURA.md`](ARCHITETTURA.md) — 929 righe, è il documento principale |
-| **usare l'applicazione** e sapere cosa c'è dentro | [`app/README.md`](app/README.md) |
+| **sapere cosa c'è dentro l'applicazione**, e come si prova | [`app/README.md`](app/README.md) |
 | vedere le **prove di fattibilità** che hanno preceduto il codice | [`spikes/README.md`](spikes/README.md) |
 
 ## Provare l'applicazione in locale
