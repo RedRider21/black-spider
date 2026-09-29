@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PeerJS — l'issue che ne documenta l'inaffidabilità</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">PeerJS — l'issue che ne documenta l'inaffidabilità</h1>
+</header>
+<h1 id="extreme-websocket-connection-delay-6-minutes-on-0peerjscom-1350">Extreme WebSocket connection delay (6+ minutes) on 0.peerjs.com #1350</h1><p><a href="https://github.com/peers/peerjs/issues/1350">https://github.com/peers/peerjs/issues/1350</a></p><hr /><p><em>red-reddington — 2025-10-14T20:53:19Z — stato: open</em></p><h3 id="please-check-for-existing-issues-to-avoid-duplicates">Please, check for existing issues to avoid duplicates.</h3><ul class="task-list"><li><input type="checkbox" disabled="" checked="" />No similar issues found.</li></ul><h3 id="what-happened">What happened?</h3><h2 id="description">Description</h2><p>The PeerJS cloud server (0.peerjs.com) is experiencing extreme connection delays of 6+ minutes, despite the status page showing all systems operational.</p><h2 id="additional-notes">Additional Notes</h2><p>Status page (<a href="https://status.peerjs.com/ib0l">https://status.peerjs.com/ib0l</a>) shows all systems operational (green), but the issue is reproducible consistently across:</p><ul><li>Different networks (home ISP, mobile data)</li><li>Different devices (desktop, mobile)</li><li>Both local and deployed (Vercel) applications</li></ul><p>The delay occurs specifically during the WebSocket handshake phase before <code>peer.on('open')</code> fires.</p><h2 id="console-output">Console Output</h2><pre><code>[MP] Before new Peer(): 3118.3000000000466
+[MP] After new Peer(): 3119
+PeerJS: Socket open
+[... 6 minute delay ...]
+PeerJS: Server message received: {type: &#39;OPEN&#39;}
+peer-open: 373694.9450683594 ms
+</code></pre><h3 id="how-can-we-reproduce-the-issue">How can we reproduce the issue?</h3><h2 id="steps-to-reproduce">Steps to Reproduce</h2><div class="sourceCode" id="cb2"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">const</span> peer <span class="op">=</span> <span class="kw">new</span> <span class="fu">Peer</span>({ <span class="dt">debug</span><span class="op">:</span> <span class="dv">3</span> })<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">const</span> start <span class="op">=</span> <span class="bu">performance</span><span class="op">.</span><span class="fu">now</span>()<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>peer<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;open&#39;</span><span class="op">,</span> (id) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Connected after:&#39;</span><span class="op">,</span> <span class="bu">performance</span><span class="op">.</span><span class="fu">now</span>() <span class="op">-</span> start<span class="op">,</span> <span class="st">&#39;ms&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>})<span class="op">;</span></span></code></pre></div><h2 id="expected-behavior">Expected Behavior</h2><p>Connection should complete in 1-3 seconds</p><h2 id="actual-behavior">Actual Behavior</h2><ul><li>Connection takes 373,000+ ms (6+ minutes)</li><li>Tested from multiple networks (home ISP, mobile data)</li><li>Tested from multiple devices (desktop, mobile)</li><li>Affects both local development and deployed applications</li></ul><h3 id="what-do-you-expected-to-happen">What do you expected to happen?</h3><p>Please advise.</p><h3 id="environment-setup">Environment setup</h3><h2 id="environment">Environment</h2><ul><li>Browser: Chrome (latest)</li><li>PeerJS version: Latest from CDN</li></ul><h3 id="is-this-a-regression">Is this a regression?</h3><p><em>No response</em></p><h3 id="anything-else">Anything else?</h3><p>This used to work flawlessly up to a couple hours ago.</p>
+</body>
+</html>

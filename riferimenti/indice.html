@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Spider — Indice dei riferimenti</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <h1>Black Spider &mdash; Riferimenti</h1>
+  <p class="meta">
+    Biblioteca locale del progetto. Ogni voce è un documento salvato sul disco:
+    si legge senza rete. I testi originali in markdown sono in
+    <code>sorgenti/</code>.
+  </p>
+</header>
+
+<main>
+
+  <p>
+    <strong>Documento di progetto:</strong>
+    <a href="../ARCHITETTURA.html">Black Spider &mdash; Architettura</a>
+    <span style="color:var(--muted)"> &mdash; la versione 0.2, con tutte le decisioni prese
+    e le questioni ancora aperte.</span>
+  </p>
+
+  <!-- ============ IL PROGETTO ============ -->
+  <p class="gruppo">Il progetto</p>
+  <ul class="elenco">
+    <li>
+      <a class="titolo" href="00-dialogo-origine.html">Il dialogo di origine</a>
+      <div class="perche">
+        La conversazione da cui è nata l'idea. Contiene le domande giuste e le risposte
+        sbagliate: tutte presuppongono un server centrale, cioè esattamente ciò che il
+        progetto vuole evitare. In fondo c'è la tabella di ciò che la ricerca successiva
+        ha corretto.
+      </div>
+      <div class="fonte">chat.deepseek.com/share/giua35no5rxappywst</div>
+    </li>
+  </ul>
+
+  <!-- ============ SIGNALING ============ -->
+  <p class="gruppo">Signaling &mdash; come due browser si trovano</p>
+  <ul class="elenco">
+    <li>
+      <a class="titolo" href="01-trystero.html">Trystero</a>
+      <div class="perche">
+        La libreria scelta per il livello B. Leggi la tabella delle strategie in cima al
+        README: la stessa API con una riga di import diversa per Nostr, BitTorrent, MQTT,
+        IPFS. È l'assicurazione contro il rischio "il servizio di terzi sparisce".
+        Cerca anche l'opzione <code>redundancy</code>.
+      </div>
+      <div class="fonte">github.com/dmotz/trystero</div>
+    </li>
+    <li>
+      <a class="titolo" href="02-qwbp-invito-qr.html">QWBP &mdash; handshake WebRTC dentro un QR</a>
+      <div class="perche">
+        La prova che il livello A (invito fuori banda) è realizzabile: l'SDP compresso da
+        ~2.500 byte a poche decine, abbastanza per un QR. Da studiare per capire cosa
+        comprimono e come, prima di scrivere il nostro.
+      </div>
+      <div class="fonte">github.com/magarcia/qwbp</div>
+    </li>
+    <li>
+      <a class="titolo" href="03-thinair.html">ThinAir</a>
+      <div class="perche">
+        Handshake fuori banda in tre modi diversi: QR, copia-incolla, <em>e chirp audio</em>.
+        Piccolo, ma mostra bene quanto si può allargare il concetto di "canale di
+        incontro" quando non si vuole dipendere da nulla.
+      </div>
+      <div class="fonte">github.com/mbarlow/thinair</div>
+    </li>
+    <li>
+      <a class="titolo" href="21-peerjs-issue-1350.html">PeerJS &mdash; l'issue che ne documenta l'inaffidabilità</a>
+      <div class="perche">
+        Da leggere quando viene la tentazione di usare il broker pubblico più comodo.
+        Ritardi WebSocket di oltre sei minuti intermittenti, con la status page che dice
+        "operational". È il motivo per cui §7.2 li scarta.
+      </div>
+      <div class="fonte">github.com/peers/peerjs/issues/1350</div>
+    </li>
+  </ul>
+
+  <!-- ============ SINCRONIZZAZIONE ============ -->
+  <p class="gruppo">Sincronizzazione e CRDT</p>
+  <ul class="elenco">
+    <li>
+      <a class="titolo" href="04-willow.html">Willow / Earthstar</a>
+      <div class="perche">
+        Il modello concettuale più vicino a ciò che vogliamo costruire: log firmato,
+        capability, sincronizzazione a intervalli. Da studiare come <em>progetto</em>, non
+        da adottare come dipendenza.
+      </div>
+      <div class="fonte">github.com/earthstar-project/willow-rs</div>
+    </li>
+    <li>
+      <a class="titolo" href="05-yjs.html">Yjs</a>
+      <div class="perche">
+        Il CRDT che useremo <em>dentro</em> i moduli con stato mutabile ricco (bacheche,
+        editor). Leggi le sezioni su come gestisce i tombstone e il garbage collector:
+        sono la ragione per cui è leggero nonostante conservi la storia.
+      </div>
+      <div class="fonte">github.com/yjs/yjs</div>
+    </li>
+    <li>
+      <a class="titolo" href="06-y-indexeddb.html">y-indexeddb</a>
+      <div class="perche">
+        Il ponte tra Yjs e la persistenza locale. Documento breve: serve a capire cosa
+        succede al documento quando la scheda si chiude e si riapre.
+      </div>
+      <div class="fonte">github.com/yjs/y-indexeddb</div>
+    </li>
+    <li>
+      <a class="titolo" href="07-y-webrtc.html">y-webrtc</a>
+      <div class="perche">
+        Da leggere per <strong>non</strong> usarlo: due dei tre server di signaling di
+        default sono morti e la libreria è ferma dal 2024. Ma il README spiega bene il
+        modello di room/password e vale come esempio di cosa non fare.
+      </div>
+      <div class="fonte">github.com/yjs/y-webrtc</div>
+    </li>
+    <li>
+      <a class="titolo" href="08-automerge.html">Automerge</a>
+      <div class="perche">
+        L'alternativa a Yjs quando serve la storia completa in stile Git. Confronta il
+        peso (~320 kB, WASM) con quello di Yjs: è il compromesso che ci ha fatto scegliere
+        Yjs per i moduli.
+      </div>
+      <div class="fonte">github.com/automerge/automerge</div>
+    </li>
+    <li>
+      <a class="titolo" href="09-loro.html">Loro</a>
+      <div class="perche">
+        Il CRDT più recente e veloce. Da tenere d'occhio se in futuro la proiezione diventa
+        il collo di bottiglia; oggi l'ecosistema è troppo acerbo per un progetto che deve
+        durare.
+      </div>
+      <div class="fonte">github.com/loro-dev/loro</div>
+    </li>
+    <li>
+      <a class="titolo" href="10-js-waku.html">js-waku</a>
+      <div class="perche">
+        Gossip nel browser senza backend. Candidato per una fase successiva, quando la
+        mesh tra peer dovrà estendersi oltre chi è online insieme.
+      </div>
+      <div class="fonte">github.com/waku-org/js-waku</div>
+    </li>
+  </ul>
+
+  <!-- ============ BROWSER ============ -->
+  <p class="gruppo">Le API del browser che ci vincolano</p>
+  <ul class="elenco">
+    <li>
+      <a class="titolo" href="11-mdn-web-locks.html">Web Locks API</a>
+      <div class="perche">
+        Come si elegge una scheda leader quando l'utente ne apre tre (§6.6). Leggi la
+        sezione sull'ambito del lock: è il pezzo che impedisce a tre schede di aprire tre
+        volte le stesse connessioni.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; Web Locks API</div>
+    </li>
+    <li>
+      <a class="titolo" href="12-mdn-quote-storage.html">Quote di storage ed eviction</a>
+      <div class="perche">
+        <strong>Il documento più importante di questa sezione.</strong> Cerca la regola dei
+        sette giorni di Safari: è il rischio di perdita dati più concreto del progetto, e la
+        ragione per cui l'installazione come PWA non è opzionale.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; Storage quotas and eviction criteria</div>
+    </li>
+    <li>
+      <a class="titolo" href="13-mdn-opfs.html">Origin Private File System (OPFS)</a>
+      <div class="perche">
+        Dove vivranno i file, al posto dei blob in IndexedDB. Confronta la tabella di
+        supporto con quella di <code>showSaveFilePicker</code>: OPFS va su Firefox e Safari,
+        il picker no. È la differenza che conta.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; Origin private file system</div>
+    </li>
+    <li>
+      <a class="titolo" href="16-mdn-persist.html">StorageManager.persist()</a>
+      <div class="perche">
+        La chiamata da fare appena l'app si avvia. Nota che è tutto-o-niente: si protegge
+        l'origine intera, non una singola stanza.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; StorageManager.persist()</div>
+    </li>
+    <li>
+      <a class="titolo" href="17-mdn-perfect-negotiation.html">Perfect negotiation</a>
+      <div class="perche">
+        Lo schema di negoziazione WebRTC da implementare in M1, quando due peer possono
+        inviare un'offerta nello stesso istante. Senza questo pattern si ottengono
+        deadlock intermittenti difficilissimi da diagnosticare.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; Perfect negotiation</div>
+    </li>
+    <li>
+      <a class="titolo" href="14-mdn-encoded-transform.html">WebRTC Encoded Transform</a>
+      <div class="perche">
+        Come si cifra il video end-to-end (§10.2). Da leggere <em>prima</em> di scrivere il
+        modulo call: aggiungere la cifratura ai media dopo significa riscrivere la pipeline.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; Using Encoded Transforms</div>
+    </li>
+    <li>
+      <a class="titolo" href="15-mdn-webtransport.html">WebTransport</a>
+      <div class="perche">
+        Il trasporto di domani per il peer sempre acceso (§8.4). Diventato Baseline a marzo
+        2026. Non serve ora, ma sapere che esiste cambia il modo in cui si progetta il relay.
+      </div>
+      <div class="fonte">developer.mozilla.org &mdash; WebTransport API</div>
+    </li>
+  </ul>
+
+  <!-- ============ NAT ============ -->
+  <p class="gruppo">NAT, STUN e TURN</p>
+  <ul class="elenco">
+    <li>
+      <a class="titolo" href="18-metered-openrelay.html">Metered Open Relay</a>
+      <div class="perche">
+        Il TURN gratuito da documentare come primo suggerimento (20 GB al mese). Cerca le
+        porte e i protocolli supportati: sono ciò che decide se passa attraverso una rete
+        aziendale.
+      </div>
+      <div class="fonte">metered.ca/tools/openrelay</div>
+    </li>
+    <li>
+      <a class="titolo" href="19-cloudflare-turn.html">Cloudflare Realtime &mdash; TURN</a>
+      <div class="perche">
+        L'alternativa con la quota più generosa, ma <strong>la cifra di 1.000 GB/mese è di
+        fonte comunitaria e va verificata</strong>: è il primo punto dell'Appendice B.
+        Pagina lunga: cerca la sezione sui prezzi e quella sui limiti di allocation.
+      </div>
+      <div class="fonte">developers.cloudflare.com/realtime/turn</div>
+    </li>
+    <li>
+      <a class="titolo" href="20-cloudflare-turn-faq.html">Cloudflare Realtime &mdash; FAQ</a>
+      <div class="perche">
+        Le risposte alle domande che vengono dopo aver letto la pagina precedente: cosa
+        succede quando la quota finisce, come si generano le credenziali, se serve una
+        carta di credito.
+      </div>
+      <div class="fonte">developers.cloudflare.com/realtime/turn/faq</div>
+    </li>
+  </ul>
+
+  <hr>
+
+  <p style="color:var(--muted);font-size:0.92rem">
+    Questi documenti sono stati salvati il 29 settembre 2026. In questo settore sei mesi
+    cambiano le risposte: i punti da riverificare per primi sono elencati nell'Appendice B
+    di <a href="../ARCHITETTURA.html">ARCHITETTURA</a>.
+  </p>
+
+</main>
+
+</body>
+</html>

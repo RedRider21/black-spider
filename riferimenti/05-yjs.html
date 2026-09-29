@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Yjs — CRDT per il testo collaborativo</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">Yjs — CRDT per il testo collaborativo</h1>
+</header>
+<h1 id="yjs"><img src="https://yjs.dev/images/logo/yjs-120x120.png" alt="Yjs" /></h1><blockquote><p>A CRDT framework with a powerful abstraction of shared data</p></blockquote><p>Yjs is a <a href="#yjs-crdt-algorithm">CRDT implementation</a> that exposes its internal data structure as <em>shared types</em>. Shared types are common data types like <code>Map</code> or <code>Array</code> with superpowers: changes are automatically distributed to other peers and merged without merge conflicts.</p><p>Yjs is <strong>network agnostic</strong> (p2p!), supports many existing <strong>rich text editors</strong>, <strong>offline editing</strong>, <strong>version snapshots</strong>, <strong>undo/redo</strong> and <strong>shared cursors</strong>. It scales well with an unlimited number of users and is well suited for even large documents.</p><ul><li>Demos: <a href="https://github.com/yjs/yjs-demos">https://github.com/yjs/yjs-demos</a></li><li>Discuss: <a href="https://discuss.yjs.dev">https://discuss.yjs.dev</a></li><li>Chat: <a href="https://gitter.im/Yjs/community">Gitter</a> | <a href="https://discord.gg/T3nqMT6qbM">Discord</a></li><li>Benchmark Yjs vs. Automerge: <a href="https://github.com/dmonad/crdt-benchmarks">https://github.com/dmonad/crdt-benchmarks</a></li><li>Podcast <a href="https://www.tag1consulting.com/blog/deep-dive-real-time-collaborative-editing-solutions-tagteamtalk-001-0"><strong>"Yjs Deep Dive into real time collaborative editing solutions":</strong></a></li><li>Podcast <a href="https://publishpress.com/blog/yjs/"><strong>"Google Docs-style editing in Gutenberg with the YJS framework":</strong></a></li></ul><p><span class="emoji" data-emoji="construction_worker_woman">👷‍♀️</span> If you are looking for professional support, please consider supporting this project via a "support contract" on <a href="https://github.com/sponsors/dmonad">GitHub Sponsors</a>. I will attend your issues quicker and we can discuss questions and problems in regular video conferences. Otherwise you can find help on our community <a href="https://discuss.yjs.dev">discussion board</a>.</p><h2 id="sponsorship">Sponsorship</h2><p>Yjs is MIT licensed and free to use. However, if you use Yjs in a commercial application, there is a <strong>social expectation to sponsor</strong> the project financially. It's what keeps Yjs maintained. <a href="https://github.com/sponsors/dmonad"><img src="https://img.shields.io/static/v1?label=Become%20a%20Sponsor&amp;message=%E2%9D%A4&amp;logo=GitHub&amp;style=flat&amp;color=d42f2d" alt="Become a Sponsor" /></a></p><h2 id="professional-support">Professional Support</h2><ul><li><a href="https://github.com/sponsors/dmonad">Support Contract with the Maintainer</a> - By contributing financially to the open-source Yjs project, you can receive professional support directly from the author. This includes the opportunity for weekly video calls to discuss your specific challenges.</li><li><a href="https://synergycodes.com/yjs-services/">Synergy Codes</a> - Specializing in consulting and developing real-time collaborative editing solutions for visual apps, Synergy Codes focuses on interactive diagrams, complex graphs, charts, and various data visualization types. Their expertise empowers developers to build engaging and interactive visual experiences leveraging the power of Yjs. See their work in action at <a href="https://yjs-diagram.synergy.codes/">Visual Collaboration Showcase</a>.</li></ul><h2 id="who-is-using-yjs">Who is using Yjs</h2><ul><li><a href="https://affine.pro/">AFFiNE</a> A local-first, privacy-first, open source knowledge base. <span class="emoji" data-emoji="star2">🌟</span></li><li><a href="https://cargo.site/">Cargo</a> Site builder for designers and artists <span class="emoji" data-emoji="star2">🌟</span></li><li><a href="https://gitbook.com">Gitbook</a> Knowledge management for technical teams <span class="emoji" data-emoji="star2">🌟</span></li><li><a href="https://evernote.com">Evernote</a> Note-taking app <span class="emoji" data-emoji="star2">🌟</span></li><li><a href="https://thelessonspace.com">Lessonspace</a> Enterprise platform for virtual classrooms and online training <span class="emoji" data-emoji="star2">🌟</span></li><li><a href="ellipsus.com">Ellipsus</a> - Collaborative writing app for storytelling etc. Supports versioning, change attribution, and "blame". A solution for the whole publishing process (also selling) <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://dynaboard.com/">Dynaboard</a> Build web apps collaboratively. <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://www.relm.us/">Relm</a> A collaborative gameworld for teamwork and community. <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://huly.io/">Huly</a> - Open Source All-in-One Project Management Platform</li><li><a href="https://room.sh/">Room.sh</a> A meeting application with integrated collaborative drawing, editing, and coding tools. <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://nimbusweb.me/note.php">Nimbus Note</a> A note-taking app designed by Nimbus Web. <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://getradiomanager.com/">Pluxbox RadioManager</a> A web-based app to collaboratively organize radio broadcasts. <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://www.modyfi.com">modyfi</a> - Modyfi is the design platform built for multidisciplinary designers. Design, generate, animate, and more — without switching between apps. <span class="emoji" data-emoji="star">⭐</span></li><li><a href="https://sanalabs.com/">Sana</a> A learning platform with collaborative text editing powered by Yjs.</li><li><a href="https://www.serenity.re/en/notes">Serenity Notes</a> End-to-end encrypted collaborative notes app.</li><li><a href="https://prsm.uk/">PRSM</a> Collaborative mind-mapping and system visualisation. <em><a href="https://github.com/micrology/prsm">(source)</a></em></li><li><a href="https://alldone.app/">Alldone</a> A next-gen project management and collaboration platform.</li><li><a href="https://livingspec.com/">Living Spec</a> A modern way for product teams to collaborate.</li><li><a href="https://slidebeamer.com/">Slidebeamer</a> Presentation app.</li><li><a href="https://blocksurvey.io">BlockSurvey</a> End-to-end encryption for your forms/surveys.</li><li><a href="https://skiff.org/">Skiff</a> Private, decentralized workspace.</li><li><a href="https://jupyter.org/">JupyterLab</a> Collaborative computational Notebooks</li><li><a href="https://jupytercad.readthedocs.io/en/latest/">JupyterCad</a> Extension to JupyterLab that enables collaborative editing of 3d FreeCAD Models.</li><li><a href="https://github.com/geojupyter/jupytergis">JupyterGIS</a> Collaborative GIS (Geographic Information System) editor in Jupyter</li><li><a href="https://hyperquery.ai/">Hyperquery</a> A collaborative data workspace for sharing analyses, documentation, spreadsheets, and dashboards.</li><li><a href="https://nosgestesclimat.fr/groupe">Nosgestesclimat</a> The french carbon footprint calculator has a group P2P mode based on yjs</li><li><a href="https://supakit.app">SupaKit</a> Spaces for every idea, task, or project.</li><li><a href="https://legendkeeper.com">LegendKeeper</a> Collaborative campaign planner and worldbuilding app for tabletop RPGs.</li><li><a href="https://illumidesk.com/">IllumiDesk</a> Build courses and content with A.I.</li><li><a href="https://www.btw.so">btw</a> Open-source Medium alternative</li><li><a href="https://aws.amazon.com/sagemaker/">AWS SageMaker</a> Tools for building Machine Learning Models</li><li><a href="https://linear.app">linear</a> Streamline issues, projects, and product roadmaps.</li><li><a href="https://www.arkiter.com/">Arkiter</a> - Live interview software</li><li><a href="https://www.appflowy.io/">Appflowy</a> - They use Yrs</li><li><a href="https://multi.app">Multi.app</a> - Multiplayer app sharing: Point, draw and edit in shared apps as if they're on your computer. They are using Yrs.</li><li><a href="https://appmaster.io">AppMaster</a> A No-Code platform for creating production-ready applications with source code generation.</li><li><a href="https://www.synthesia.io">Synthesia</a> - Collaborative Video Editor</li><li><a href="https://thinkdeli.com">thinkdeli</a> - A fast and simple notes app powered by AI</li><li><a href="https://github.com/raimohanska/ourboard">ourboard</a> - A collaborative whiteboard application</li><li><a href="https://ellie.ai">Ellie.ai</a> - Data Product Design and Collaboration</li><li><a href="https://gopeer.org/">GoPeer</a> - Collaborative tutoring</li><li><a href="https://screen.garden">screen.garden</a> - Collaborative backend for PKM apps.</li><li><a href="https://nextcloud.com/">NextCloud</a> - Content Collaboration Platform</li><li><a href="https://github.com/Thinkmill/keystatic">keystatic</a> - git-based CMS</li><li><a href="https://qdacity.com">QDAcity</a> - Collaborative qualitative data analysis platform</li><li><a href="https://kanbert.com">Kanbert</a> - Project management software</li><li><a href="https://github.com/eclipse-theia/theia">Eclipse Theia</a> - A cloud &amp; desktop IDE that runs in the browser.</li><li><a href="https://scienhub.com">ScienHub</a> - Collaborative LaTeX editor in the browser.</li><li><a href="https://www.open-collab.tools/">Open Collaboration Tools</a> - Collaborative editing for your IDE or custom editor</li><li><a href="https://typst.app/">Typst</a> - Compose, edit, and automate technical documents</li><li><a href="https://kedyou.com/">Kedyou</a> - Digital workspaces for tutoring</li><li><a href="https://lightpage.com/">Lightpage</a> - Personal living notebook</li><li><a href="https://github.com/reearth/reearth-flow">reearth-flow</a> - Collaboratively calculate and convert various data</li><li><a href="https://proton.me/drive/docs">ProtonMail | Proton Docs</a> - E2E encrypted collaborative documents in Proton Drive.</li><li><a href="https://www.theneo.io/">Theneo</a> - AI-powered API docs with live team collaboration.</li><li><a href="https://tooljet.com/">ToolJet</a> - Build full-stack enterprise internal apps in minutes.</li></ul><h2 id="table-of-contents">Table of Contents</h2><ul><li><a href="#overview">Overview</a><ul><li><a href="#bindings">Bindings</a></li><li><a href="#providers">Providers</a></li><li><a href="#tooling">Tooling</a></li><li><a href="#ports">Ports</a></li></ul></li><li><a href="#getting-started">Getting Started</a></li><li><a href="#api">API</a><ul><li><a href="#shared-types">Shared Types</a></li><li><a href="#ydoc">Y.Doc</a></li><li><a href="#document-updates">Document Updates</a></li><li><a href="#relative-positions">Relative Positions</a></li><li><a href="#yundomanager">Y.UndoManager</a></li></ul></li><li><a href="#yjs-crdt-algorithm">Yjs CRDT Algorithm</a></li><li><a href="#license-and-author">License and Author</a></li></ul><h2 id="overview">Overview</h2><p>This repository contains a collection of shared types that can be observed for changes and manipulated concurrently. Network functionality and two-way-bindings are implemented in separate modules.</p><h3 id="bindings">Bindings</h3><table><thead><tr class="header"><th>Name</th><th style="text-align: center;">Cursors</th><th>Binding</th><th>Demo</th></tr></thead><tbody><tr class="odd"><td><a href="https://prosemirror.net/">ProseMirror</a>                                                  </td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-prosemirror">y-prosemirror</a></td><td><a href="https://demos.yjs.dev/prosemirror/prosemirror.html">demo</a></td></tr><tr class="even"><td><a href="https://quilljs.com/">Quill</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-quill">y-quill</a></td><td><a href="https://demos.yjs.dev/quill/quill.html">demo</a></td></tr><tr class="odd"><td><a href="https://codemirror.net/">CodeMirror</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-codemirror">y-codemirror</a></td><td><a href="https://demos.yjs.dev/codemirror/codemirror.html">demo</a></td></tr><tr class="even"><td><a href="https://microsoft.github.io/monaco-editor/">Monaco</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-monaco">y-monaco</a></td><td><a href="https://demos.yjs.dev/monaco/monaco.html">demo</a></td></tr><tr class="odd"><td><a href="https://ace.c9.io/">Ace</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/bajrangCoder/y-ace">y-ace</a></td><td></td></tr><tr class="even"><td><a href="https://github.com/ianstormtaylor/slate">Slate</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/bitphinix/slate-yjs">slate-yjs</a></td><td><a href="https://bitphinix.github.io/slate-yjs-example">demo</a></td></tr><tr class="odd"><td><a href="https://github.com/toeverything/blocksuite">BlockSuite</a></td><td style="text-align: center;">✔</td><td>(native)</td><td><a href="https://blocksuite-toeverything.vercel.app/?init">demo</a></td></tr><tr class="even"><td><a href="https://lexical.dev/">Lexical</a></td><td style="text-align: center;">✔</td><td>(native)</td><td><a href="https://lexical.dev/docs/collaboration/react#see-it-in-action">demo</a></td></tr><tr class="odd"><td><a href="https://www.blocknotejs.org/docs/collaboration/real-time-collaboration">BlockNote</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-prosemirror">y-prosemirror</a></td><td><a href="https://www.blocknotejs.org/docs/collaboration/real-time-collaboration">demo</a></td></tr><tr class="even"><td><a href="https://tiptap.dev/">Tiptap</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-prosemirror">y-prosemirror</a></td><td><a href="https://template.tiptap.dev/preview/templates/simple">demo</a></td></tr><tr class="odd"><td><a href="https://github.com/Milkdown/milkdown">Milkdown</a></td><td style="text-align: center;">✔</td><td><a href="https://github.com/yjs/y-prosemirror">y-prosemirror</a></td><td><a href="https://milkdown.dev/playground">demo</a></td></tr><tr class="even"><td><a href="https://superdoc.dev/">Superdoc</a></td><td style="text-align: center;">✔</td><td>(native)</td><td><a href="https://superdoc.dev/">demo</a></td></tr><tr class="odd"><td><a href="https://github.com/pmndrs/valtio">valtio</a></td><td style="text-align: center;"></td><td><a href="https://github.com/dai-shi/valtio-yjs">valtio-yjs</a></td><td><a href="https://codesandbox.io/s/valtio-yjs-demo-ox3iy">demo</a></td></tr><tr class="even"><td><a href="https://github.com/immerjs/immer">immer</a></td><td style="text-align: center;"></td><td><a href="https://github.com/sep2/immer-yjs">immer-yjs</a></td><td><a href="https://codesandbox.io/s/immer-yjs-demo-6e0znb">demo</a></td></tr><tr class="odd"><td><a href="https://github.com/unadlib/mutative">mutative</a></td><td style="text-align: center;"></td><td><a href="https://github.com/mutativejs/mutative-yjs">mutative-yjs</a></td><td><a href="https://codesandbox.io/p/sandbox/fjrwk3">demo</a></td></tr><tr class="even"><td>React</td><td style="text-align: center;"></td><td><a href="https://github.com/nikgraf/react-yjs">react-yjs</a></td><td><a href="https://react-yjs-example.vercel.app/">demo</a></td></tr><tr class="odd"><td>React / Vue / Svelte / MobX</td><td style="text-align: center;"></td><td><a href="https://syncedstore.org">SyncedStore</a></td><td><a href="https://syncedstore.org/docs/react">demo</a></td></tr><tr class="even"><td><a href="https://mobx-keystone.js.org/">mobx-keystone</a></td><td style="text-align: center;"></td><td><a href="https://github.com/xaviergonz/mobx-keystone/tree/master/packages/mobx-keystone-yjs">mobx-keystone-yjs</a></td><td><a href="https://mobx-keystone.js.org/examples/yjs-binding">demo</a></td></tr><tr class="odd"><td><a href="https://www.nutrient.io/">PSPDFKit</a></td><td style="text-align: center;"></td><td><a href="https://github.com/hoangqwe159/yjs-pspdfkit">yjs-pspdfkit</a></td><td><a href="https://github.com/hoangqwe159/yjs-pspdfkit">demo</a></td></tr><tr class="even"><td><a href="https://www.rowsncolumns.app/">Rows n'Columns</a></td><td style="text-align: center;">✔</td><td><a href="https://docs.rowsncolumns.app/collaboration/yjs-collaboration">@rowsncolumns/y-spreadsheet</a></td><td></td></tr></tbody></table><h3 id="utilities">Utilities</h3><p>Tools that extend the core functionality of Yjs.</p><dl>
+  <dt><a href="https://github.com/yjs/y-utility">y-utility</a></dt>
+  <dd>
+Library with <code>YMultiDocUndoManager</code> (undo/redo across Yjs docs) and
+<code>YKeyValue</code> (optimized key-value store).
+  </dd>
+  <dt>
+<a href="https://github.com/Tulip-Writer/yjs-orderedtree">yjs-orderedtree</a> 🌳
+  </dt>
+  <dd>
+Class for ordered trees via Y.Map. Handles <code>insert</code>,
+<code>delete</code>, and <code>move</code> operations for folder-like
+hierarchies.  
+  </dd>
+</dl>
+<h3 id="providers">Providers</h3><p>Setting up the communication between clients, managing awareness information, and storing shared data for offline usage is quite a hassle. <strong>Providers</strong> manage all that for you and are the perfect starting point for your collaborative app.</p><blockquote><p>This list of providers is incomplete. Please open PRs to add your providers to this list!</p></blockquote><h4 id="connection-providers">Connection Providers</h4><dl>
+  <dt><a href="https://github.com/yjs/y-websocket">y-websocket</a></dt>
+  <dd>
+A module that contains a simple websocket backend and a websocket client that
+connects to that backend. <a href="https://github.com/yjs/y-redis/"><b>y-redis</b></a>,
+<b>y-sweet</b>, <b>ypy-websocket</b>, <b>yrs-warp</b> and <a href="https://tiptap.dev/docs/hocuspocus/introduction">
+<b>Hocuspocus</b></a> (see below) are alternative
+backends to y-websocket.
+  </dd>
+  <dt><a href="https://github.com/yjs/y-webrtc">y-webrtc</a></dt>
+  <dd>
+Propagates document updates peer-to-peer using WebRTC. The peers exchange
+signaling data over signaling servers. Publicly available signaling servers
+are available. Communication over the signaling servers can be encrypted by
+providing a shared secret, keeping the connection information and the shared
+document private.
+  </dd>
+  <dt><a href="https://github.com/ueberdosis/hocuspocus">Hocuspocus</a> 🌟</dt>
+  <dd>
+A standalone extensible yjs server with sqlite persistence, webhooks, auth and more.
+  </dd>
+  <dt><a href="https://velt.dev/libraries/yjs">Velt YJs</a> ⭐</dt>
+  <dd><a href="https://docs.velt.dev/realtime-collaboration/crdt/overview">Velt</a>
+A managed Yjs backend with realtime WebSocket sync and persistent storage - no
+server setup required. Includes offline support with automatic reconnection,
+version history, end-to-end custom encryption. Additionally it also provides Yjs
+webhook events, REST API to read and update Yjs documents, and a browser
+DevTools extension.
+  </dd>
+  <dt><a href="https://github.com/liveblocks/liveblocks">@liveblocks/yjs</a> ⭐</dt>
+  <dd>
+<a href="https://liveblocks.io/docs/api-reference/liveblocks-yjs">Liveblocks Yjs</a>
+provides a fully hosted WebSocket infrastructure and persisted data
+store for Yjs documents. No configuration or maintenance is required. It
+also features Yjs webhook events, REST API to read and update Yjs
+documents, and a browser DevTools extension.
+  </dd>
+  <dt><a href="https://github.com/nperez0111/teleportal">teleportal</a></dt>
+  <dd>
+Build your own Y.js sync server: any storage, any JS runtime, any transport.
+  </dd>
+  <dt><a href="https://github.com/drifting-in-space/y-sweet">y-sweet</a></dt>
+  <dd>
+A standalone yjs server with persistence to S3 or filesystem. They offer a
+<a href="https://y-sweet.cloud">cloud service</a> as well.
+  </dd>
+  <dt><a href="https://docs.superviz.com/collaboration/integrations/YJS/overview">@superviz/yjs</a></dt>
+  <dd>
+    SuperViz Yjs Provider comes with a secure, scalable real-time infrastructure
+    for Yjs documents, fully compatible with a set of real-time
+    collaboration components offered by SuperViz. This solution ensures
+    synchronization, offline editing, and real-time updates, enabling
+    multiple users to collaborate effectively within shared workspaces.
+  </dd>
+  <dt><a href="https://docs.partykit.io/reference/y-partykit-api/">PartyKit</a></dt>
+  <dd>
+Cloud service for building multiplayer apps.
+  </dd>
+  </dd>
+    <dt><a href="https://github.com/pluv-io/pluv">@pluv/crdt-yjs</a></dt>
+  <dd>
+Use <a href="https://pluv.io/docs/storage/using-yjs">pluv.io</a> as a
+full-featured backend for Yjs. pluv.io can either be be used on its
+fully-managed WebSocket infrastructure, or self-hosted on Cloudflare Workers
+and Node.js runtimes. Offers a typesafe API with authentication, webhooks,
+rooms, and more.
+  <dt><a href="https://github.com/marcopolo/y-libp2p">y-libp2p</a></dt>
+  <dd>
+Uses <a href="https://libp2p.io/">libp2p</a> to propagate updates via
+<a href="https://github.com/libp2p/specs/tree/master/pubsub/gossipsub">GossipSub</a>.
+Also includes a peer-sync mechanism to catch up on missed updates.
+  </dd>
+  <dt><a href="https://github.com/yjs/y-dat">y-dat</a></dt>
+  <dd>
+[WIP] Write document updates efficiently to the dat network using
+<a href="https://github.com/kappa-db/multifeed">multifeed</a>. Each client has
+an append-only log of CRDT local updates (hypercore). Multifeed manages and sync
+hypercores and y-dat listens to changes and applies them to the Yjs document.
+</dd>
+  <dt><a href="https://github.com/yousefED/matrix-crdt">Matrix-CRDT</a></dt>
+  <dd>
+Use <a href="https://www.matrix.org">Matrix</a> as an off-the-shelf backend for
+Yjs by using the <a href="https://github.com/yousefED/matrix-crdt">MatrixProvider</a>.
+Use Matrix as transport and storage of Yjs updates, so you can focus building
+your client app and Matrix can provide powerful features like Authentication,
+Authorization, Federation, hosting (self-hosting or SaaS) and even End-to-End
+Encryption (E2EE).
+  </dd>
+  <dt><a href="https://github.com/y-crdt/yrb-actioncable">yrb-actioncable</a></dt>
+  <dd>
+An ActionCable companion for Yjs clients. There is a fitting
+<a href="https://github.com/y-crdt/yrb-redis">redis extension</a> as well.
+  </dd>
+  <dt><a href="https://github.com/uwx/y-atproto">y-atproto</a></dt>
+  <dd>
+A Yjs provider that syncs documents over the
+<a href="https://atproto.com/">AT Protocol</a> (the decentralized protocol
+behind Bluesky). Documents are stored as ATProto records and real-time updates
+are delivered via <a href="https://github.com/bluesky-social/jetstream">Jetstream</a>.
+  </dd>
+  <dt><a href="https://github.com/y-crdt/ypy-websocket">ypy-websocket</a></dt>
+  <dd>
+Websocket backend, written in Python.
+  </dd>
+  <dt><a href="https://tinybase.org/">Tinybase</a></dt>
+  <dd>
+The reactive data store for local-first apps. They support multiple CRDTs and
+    different network technologies.
+  </dd>
+  <dt><a href="https://codeberg.org/webxdc/y-webxdc">y-webxdc</a></dt>
+  <dd>
+Provider for sharing data in <a href="https://webxdc.org">webxdc chat apps</a>.
+  </dd>
+  <dt><a href="https://www.secsync.com/">secsync</a></dt>
+  <dd>
+An architecture to relay end-to-end encrypted CRDTs over a central service.
+  </dd>
+  <dt><a href="https://www.npmjs.com/package/@electric-sql/y-electric">y-electric</a></dt>
+  <dd>
+    Sync Yjs over <a href="https://electric-sql.com/">ElectricSQL</a>.
+  </dd>
+  <dt><a href="https://github.com/TimoWilhelm/yjs-cf-ws-provider">yjs-cf-ws-provider</a></dt>
+  <dd>
+    Cloudflare provider for Yjs based on durable objects.
+  </dd>
+  <dt><a href="https://github.com/yousefED/nostr-crdt">nostr-crdt</a></dt>
+  <dd>
+    Sync Yjs over <a href="https://github.com/nostr-protocol/">nostr</a>.
+  </dd>
+</dl>
+<h4 id="persistence-providers">Persistence Providers</h4><dl>
+  <dt><a href="https://github.com/yjs/y-indexeddb">y-indexeddb</a></dt>
+  <dd>
+Efficiently persists document updates to the browsers indexeddb database.
+The document is immediately available and only diffs need to be synced through the
+network provider.
+  </dd>
+  <dt><a href="https://github.com/MaxNoetzold/y-mongodb-provider">y-mongodb-provider</a></dt>
+  <dd>
+Adds persistent storage to a server with MongoDB. Can be used with the
+y-websocket provider.
+  </dd>
+  <dt><a href="https://github.com/podraven/y-fire">y-fire</a></dt>
+  <dd>
+A database and connection provider for Yjs based on Firestore.
+  </dd>
+  <dt><a href="https://github.com/malte-j/y-op-sqlite">y-op-sqlite</a></dt>
+  <dd>
+  Persist YJS updates in your React Native app using
+   <a href="https://github.com/OP-Engineering/op-sqlite">op-sqlite</a>
+  , the fastest SQLite library for React Native.  
+  </dd>
+  <dt><a href="https://github.com/MaxNoetzold/y-postgresql">y-postgresql</a></dt>
+  <dd>
+  Provides persistent storage for a web server using PostgreSQL and
+  is easily compatible with y-websocket.  
+  </dd>
+  <dt><a href="https://github.com/kapv89/k_yrs_go">k_yrs_go</a></dt>
+  <dd>
+  Golang database server for YJS CRDT using Postgres + Redis
+  </dd>
+  <dt><a href="https://github.com/malte-j/y-op-sqlite">y-op-sqlite</a></dt>
+  <dd>
+ Yjs persistence provider for op-sqlite
+  </dd>
+</dl>
+<h3 id="tooling">Tooling</h3><ul><li><a href="https://y-sweet.cloud/advanced/debugger">y-sweet debugger</a></li><li><a href="https://liveblocks.io/devtools">liveblocks devtools</a></li><li><a href="https://inspector.yjs.dev">Yjs inspector</a></li><li><a href="https://velt.dev/devtools">velt devtools</a></li></ul><h3 id="ports">Ports</h3><p>There are several Yjs-compatible ports to other programming languages.</p><ul><li><a href="https://github.com/toeverything/y-octo">y-octo</a> - Rust implementation by <a href="https://affine.pro">AFFiNE</a></li><li><a href="https://github.com/y-crdt/y-crdt">y-crdt</a> - Rust implementation with multiple language bindings to other languages<ul><li><a href="https://github.com/y-crdt/y-crdt/tree/main/yrs">yrs</a> - Rust interface</li><li><a href="https://github.com/y-crdt/pycrdt">pycrdt</a> - Python binding</li><li><a href="https://github.com/y-crdt/yrb">yrb</a> - Ruby binding</li><li><a href="https://github.com/y-crdt/yr">yr</a> - R binding</li><li><a href="https://github.com/y-crdt/ydotnet">ydotnet</a> - .NET/C# binding</li><li><a href="https://github.com/y-crdt/yswift">yswift</a> - Swift binding</li><li><a href="https://github.com/y-crdt/ykt">ykt</a> - Kotlin binding</li><li><a href="https://github.com/y-crdt/y-crdt/tree/main/yffi">yffi</a> - C-FFI</li><li><a href="https://github.com/y-crdt/y-crdt/tree/main/ywasm">ywasm</a> - WASM binding</li><li><a href="https://github.com/satoren/y_ex">y_ex</a> - Elixir binding</li><li><a href="https://github.com/y-crdt/ypy">ypy</a> - Python binding (deprecated, use pycrdt)</li></ul></li><li><a href="https://github.com/yjs/ycs">ycs</a> - .Net compatible C# implementation.</li><li><a href="https://github.com/reearth/ygo">ygo</a> - Go implementation.</li><li><a href="https://github.com/Deln0r/ygo">ygo (Deln0r/ygo)</a> - Go implementation.</li><li><a href="https://github.com/antst/go-yjs">go-yjs</a> - Go implementation.</li></ul><h2 id="getting-started">Getting Started</h2><p>Install Yjs and a provider with your favorite package manager:</p><div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ex">npm</span> i yjs y-websocket</span></code></pre></div><p>Start the y-websocket server:</p><div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="va">PORT=</span>1234 <span class="ex">node</span> ./node_modules/y-websocket/bin/server.cjs</span></code></pre></div><h3 id="example-observe-types">Example: Observe types</h3><div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> Y <span class="im">from</span> <span class="st">&#39;yjs&#39;</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="kw">const</span> doc <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="kw">const</span> yarray <span class="op">=</span> doc<span class="op">.</span><span class="fu">getArray</span>(<span class="st">&#39;my-array&#39;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>yarray<span class="op">.</span><span class="fu">observe</span>(<span class="bu">event</span> <span class="kw">=&gt;</span> {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;yarray was modified&#39;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>})</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a><span class="co">// every time a local or remote client modifies yarray, the observer is called</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>yarray<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> [<span class="st">&#39;val&#39;</span>]) <span class="co">// =&gt; &quot;yarray was modified&quot;</span></span></code></pre></div><h3 id="example-nest-types">Example: Nest types</h3><p>Remember, shared types are just plain old data types. The only limitation is that a shared type must exist only once in the shared document.</p><div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">const</span> ymap <span class="op">=</span> doc<span class="op">.</span><span class="fu">getMap</span>(<span class="st">&#39;map&#39;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">const</span> foodArray <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Array</span>()</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>foodArray<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> [<span class="st">&#39;apple&#39;</span><span class="op">,</span> <span class="st">&#39;banana&#39;</span>])</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>ymap<span class="op">.</span><span class="fu">set</span>(<span class="st">&#39;food&#39;</span><span class="op">,</span> foodArray)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>ymap<span class="op">.</span><span class="fu">get</span>(<span class="st">&#39;food&#39;</span>) <span class="op">===</span> foodArray <span class="co">// =&gt; true</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>ymap<span class="op">.</span><span class="fu">set</span>(<span class="st">&#39;fruit&#39;</span><span class="op">,</span> foodArray) <span class="co">// =&gt; Error! foodArray is already defined</span></span></code></pre></div><p>Now you understand how types are defined on a shared document. Next you can jump to the <a href="https://github.com/yjs/yjs-demos">demo repository</a> or continue reading the API docs.</p><h3 id="example-using-and-combining-providers">Example: Using and combining providers</h3><p>Any of the Yjs providers can be combined with each other. So you can sync data over different network technologies.</p><p>In most cases you want to use a network provider (like y-websocket or y-webrtc) in combination with a persistence provider (y-indexeddb in the browser). Persistence allows you to load the document faster and to persist data that is created while offline.</p><p>For the sake of this demo we combine two different network providers with a persistence provider.</p><div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> Y <span class="im">from</span> <span class="st">&#39;yjs&#39;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="im">import</span> { WebrtcProvider } <span class="im">from</span> <span class="st">&#39;y-webrtc&#39;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="im">import</span> { WebsocketProvider } <span class="im">from</span> <span class="st">&#39;y-websocket&#39;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="im">import</span> { IndexeddbPersistence } <span class="im">from</span> <span class="st">&#39;y-indexeddb&#39;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a><span class="kw">const</span> ydoc <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a><span class="co">// this allows you to instantly get the (cached) documents data</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a><span class="kw">const</span> indexeddbProvider <span class="op">=</span> <span class="kw">new</span> <span class="fu">IndexeddbPersistence</span>(<span class="st">&#39;count-demo&#39;</span><span class="op">,</span> ydoc)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>indexeddbProvider<span class="op">.</span><span class="at">whenSynced</span><span class="op">.</span><span class="fu">then</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;loaded data from indexed db&#39;</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>})</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a><span class="co">// Sync clients with the y-webrtc provider.</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a><span class="kw">const</span> webrtcProvider <span class="op">=</span> <span class="kw">new</span> <span class="fu">WebrtcProvider</span>(<span class="st">&#39;count-demo&#39;</span><span class="op">,</span> ydoc)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a><span class="co">// Sync clients with the y-websocket provider</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a><span class="kw">const</span> websocketProvider <span class="op">=</span> <span class="kw">new</span> <span class="fu">WebsocketProvider</span>(</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true"></a>  <span class="st">&#39;wss://demos.yjs.dev&#39;</span><span class="op">,</span> <span class="st">&#39;count-demo&#39;</span><span class="op">,</span> ydoc</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true"></a>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true"></a><span class="co">// array of numbers which produce a sum</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true"></a><span class="kw">const</span> yarray <span class="op">=</span> ydoc<span class="op">.</span><span class="fu">getArray</span>(<span class="st">&#39;count&#39;</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true"></a><span class="co">// observe changes of the sum</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true"></a>yarray<span class="op">.</span><span class="fu">observe</span>(<span class="bu">event</span> <span class="kw">=&gt;</span> {</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true"></a>  <span class="co">// print updates when the data changes</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;new sum: &#39;</span> <span class="op">+</span> yarray<span class="op">.</span><span class="fu">toArray</span>()<span class="op">.</span><span class="fu">reduce</span>((a<span class="op">,</span>b) <span class="kw">=&gt;</span> a <span class="op">+</span> b))</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true"></a>})</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true"></a></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true"></a><span class="co">// add 1 to the sum</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true"></a>yarray<span class="op">.</span><span class="fu">push</span>([<span class="dv">1</span>]) <span class="co">// =&gt; &quot;new sum: 1&quot;</span></span></code></pre></div><h2 id="api">API</h2><div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> Y <span class="im">from</span> <span class="st">&#39;yjs&#39;</span></span></code></pre></div><h3 id="shared-types">Shared Types</h3><details>
+  <summary><b>Y.Array</b></summary>
+  <br>
+  <p>
+A shareable Array-like type that supports efficient insert/delete of elements
+at any position. Internally it uses a linked list of Arrays that is split when
+necessary.
+  </p>
+  <pre>const yarray = new Y.Array()</pre>
+  <dl>
+    <b><code>
+Y.Array.from(Array&lt;object|boolean|Array|string|number|null|Uint8Array|Y.Type&gt;):
+Y.Array
+    </code></b>
+    <dd>An alternative factory function to create a Y.Array based on existing content.</dd>
+    <b><code>parent:Y.AbstractType|null</code></b>
+    <dd></dd>
+    <b><code>insert(index:number, content:Array&lt;object|boolean|Array|string|number|null|Uint8Array|Y.Type&gt;)</code></b>
+    <dd>
+Insert content at <var>index</var>. Note that content is an array of elements.
+I.e. <code>array.insert(0, [1])</code> splices the list and inserts 1 at
+position 0.
+    </dd>
+    <b><code>push(Array&lt;Object|boolean|Array|string|number|null|Uint8Array|Y.Type&gt;)</code></b>
+    <dd></dd>
+    <b><code>unshift(Array&lt;Object|boolean|Array|string|number|null|Uint8Array|Y.Type&gt;)</code></b>
+    <dd></dd>
+    <b><code>delete(index:number, length:number)</code></b>
+    <dd></dd>
+    <b><code>get(index:number)</code></b>
+    <dd></dd>
+    <b><code>slice(start:number, end:number):Array&lt;Object|boolean|Array|string|number|null|Uint8Array|Y.Type&gt;</code></b>
+    <dd>Retrieve a range of content</dd>
+    <b><code>length:number</code></b>
+    <dd></dd>
+    <b>
+      <code>
+forEach(function(value:object|boolean|Array|string|number|null|Uint8Array|Y.Type,
+ index:number, array: Y.Array))
+      </code>
+    </b>
+    <dd></dd>
+    <b><code>map(function(T, number, YArray):M):Array&lt;M&gt;</code></b>
+    <dd></dd>
+    <b><code>clone(): Y.Array</code></b>
+    <dd>
+Clone all values into a fresh Y.Array instance. The returned type can be
+included into the Yjs document.
+    </dd>
+    <b><code>toArray():Array&lt;object|boolean|Array|string|number|null|Uint8Array|Y.Type&gt;</code></b>
+    <dd>Copies the content of this YArray to a new Array.</dd>
+    <b><code>toJSON():Array&lt;Object|boolean|Array|string|number|null&gt;</code></b>
+    <dd>
+Copies the content of this YArray to a new Array. It transforms all child types
+to JSON using their <code>toJSON</code> method.
+    </dd>
+    <b><code>[Symbol.Iterator]</code></b>
+    <dd>
+      Returns an YArray Iterator that contains the values for each index in
+      the array.
+      <pre>for (let value of yarray) { .. }</pre>
+    </dd>
+    <b><code>observe(function(YArrayEvent, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type is modified. In the case this type is modified in the event listener,
+the event listener will be called again after the current event listener returns.
+    </dd>
+    <b><code>unobserve(function(YArrayEvent, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observe</code> event listener from this type.
+    </dd>
+    <b><code>observeDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type or any of its children is modified. In the case this type is modified
+in the event listener, the event listener will be called again after the current
+event listener returns. The event listener receives all Events created by itself
+or any of its children.
+    </dd>
+    <b><code>unobserveDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observeDeep</code> event listener from this type.
+    </dd>
+  </dl>
+</details>
+<details>
+  <summary><b>Y.Map</b></summary>
+  <br>
+  <p>
+    A shareable Map type.
+  </p>
+  <pre><code>const ymap = new Y.Map()</code></pre>
+  <dl>
+    <b><code>parent:Y.AbstractType|null</code></b>
+    <dd></dd>
+    <b><code>size: number</code></b>
+    <dd>Total number of key/value pairs.</dd>
+    <b><code>get(key:string):object|boolean|string|number|null|Uint8Array|Y.Type</code></b>
+    <dd></dd>
+    <b><code>set(key:string, value:object|boolean|string|number|null|Uint8Array|Y.Type)</code></b>
+    <dd></dd>
+    <b><code>delete(key:string)</code></b>
+    <dd></dd>
+    <b><code>has(key:string):boolean</code></b>
+    <dd></dd>
+    <b><code>clear()</code></b>
+    <dd>Removes all elements from this YMap.</dd>
+    <b><code>clone():Y.Map</code></b>
+    <dd>Clone this type into a fresh Yjs type.</dd>
+    <b><code>toJSON():Object&lt;string, Object|boolean|Array|string|number|null|Uint8Array&gt;</code></b>
+    <dd>
+Copies the <code>[key,value]</code> pairs of this YMap to a new Object.It
+transforms all child types to JSON using their <code>toJSON</code> method.
+    </dd>
+    <b><code>forEach(function(value:object|boolean|Array|string|number|null|Uint8Array|Y.Type,
+ key:string, map: Y.Map))</code></b>
+    <dd>
+      Execute the provided function once for every key-value pair.
+    </dd>
+    <b><code>[Symbol.Iterator]</code></b>
+    <dd>
+      Returns an Iterator of <code>[key, value]</code> pairs.
+      <pre>for (let [key, value] of ymap) { .. }</pre>
+    </dd>
+    <b><code>entries()</code></b>
+    <dd>
+      Returns an Iterator of <code>[key, value]</code> pairs.
+    </dd>
+    <b><code>values()</code></b>
+    <dd>
+      Returns an Iterator of all values.
+    </dd>
+    <b><code>keys()</code></b>
+    <dd>
+      Returns an Iterator of all keys.
+    </dd>
+    <b><code>observe(function(YMapEvent, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type is modified. In the case this type is modified in the event listener,
+the event listener will be called again after the current event listener returns.
+    </dd>
+    <b><code>unobserve(function(YMapEvent, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observe</code> event listener from this type.
+    </dd>
+    <b><code>observeDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type or any of its children is modified. In the case this type is modified
+in the event listener, the event listener will be called again after the current
+event listener returns. The event listener receives all Events created by itself
+or any of its children.
+    </dd>
+    <b><code>unobserveDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observeDeep</code> event listener from this type.
+    </dd>
+  </dl>
+</details>
+<details>
+  <summary><b>Y.Text</b></summary>
+  <br>
+  <p>
+A shareable type that is optimized for shared editing on text. It allows to
+assign properties to ranges in the text. This makes it possible to implement
+rich-text bindings to this type.
+  </p>
+  <p>
+This type can also be transformed to a delta
+(<a href="https://github.com/dmonad/lib0">lib0/delta</a>). Similarly the
+events compute changes as deltas.
+  </p>
+  <pre>const ytext = new Y.Text()</pre>
+  <dl>
+    <b><code>parent:Y.AbstractType|null</code></b>
+    <dd></dd>
+    <b><code>insert(index:number, content:string, [formattingAttributes:Object&lt;string,string&gt;])</code></b>
+    <dd>
+      Insert a string at <var>index</var> and assign formatting attributes to it.
+      <pre>ytext.insert(0, 'bold text', { bold: true })</pre>
+    </dd>
+    <b><code>delete(index:number, length:number)</code></b>
+    <dd></dd>
+    <b><code>format(index:number, length:number, formattingAttributes:Object&lt;string,string&gt;)</code></b>
+    <dd>Assign formatting attributes to a range in the text</dd>
+    <b><code>applyDelta(delta: Delta, [origin: any], [opts: {renderer: AbstractRenderer}])</code></b>
+    <dd>
+        Apply a delta (<a href="https://github.com/dmonad/lib0">lib0/delta</a>)
+        on this shared type. The optional <var>origin</var> is stored on the
+        transaction (<code>transaction.origin</code>) and forwarded verbatim
+        on the emitted <code>'delta'</code> event, so listeners can recognize
+        — and skip — changes they produced themselves (see the lib0
+        <code>RDT</code> spec). <code>opts.renderer</code> renders the content
+        with attributions; positions in the delta are then interpreted
+        relative to the attributed content.
+        <pre>ytext.applyDelta(delta.create().retain(5).insert('!').done(), origin)</pre>
+    </dd>
+    <b><code>length:number</code></b>
+    <dd></dd>
+    <b><code>toString():string</code></b>
+    <dd>Transforms this type, without formatting options, into a string.</dd>
+    <b><code>toJSON():string</code></b>
+    <dd>See <code>toString</code></dd>
+    <b><code>toDelta([opts: { renderer: AbstractRenderer }]):Delta</code></b>
+    <dd>
+Transforms this type to a delta (<a href="https://github.com/dmonad/lib0">lib0/delta</a>),
+optionally rendering attributed content with <code>opts.renderer</code>.
+    </dd>
+    <b><code>observe(function(YTextEvent, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type is modified. In the case this type is modified in the event listener,
+the event listener will be called again after the current event listener returns.
+    </dd>
+    <b><code>unobserve(function(YTextEvent, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observe</code> event listener from this type.
+    </dd>
+    <b><code>observeDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type or any of its children is modified. In the case this type is modified
+in the event listener, the event listener will be called again after the current
+event listener returns. The event listener receives all Events created by itself
+or any of its children.
+    </dd>
+    <b><code>unobserveDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observeDeep</code> event listener from this type.
+    </dd>
+  </dl>
+</details>
+<details>
+  <summary><b>Y.XmlFragment</b></summary>
+  <br>
+  <p>
+    A container that holds an Array of Y.XmlElements.
+  </p>
+  <pre><code>const yxml = new Y.XmlFragment()</code></pre>
+  <dl>
+    <b><code>parent:Y.AbstractType|null</code></b>
+    <dd></dd>
+    <b><code>firstChild:Y.XmlElement|Y.XmlText|null</code></b>
+    <dd></dd>
+    <b><code>insert(index:number, content:Array&lt;Y.XmlElement|Y.XmlText&gt;)</code></b>
+    <dd></dd>
+    <b><code>delete(index:number, length:number)</code></b>
+    <dd></dd>
+    <b><code>get(index:number)</code></b>
+    <dd></dd>
+    <b><code>slice(start:number, end:number):Array&lt;Y.XmlElement|Y.XmlText&gt;</code></b>
+    <dd>Retrieve a range of content</dd>
+    <b><code>length:number</code></b>
+    <dd></dd>
+    <b><code>clone():Y.XmlFragment</code></b>
+    <dd>Clone this type into a fresh Yjs type.</dd>
+    <b><code>toArray():Array&lt;Y.XmlElement|Y.XmlText&gt;</code></b>
+    <dd>Copies the children to a new Array.</dd>
+    <b><code>toString():string</code></b>
+    <dd>Get the XML serialization of all descendants.</dd>
+    <b><code>toJSON():string</code></b>
+    <dd>See <code>toString</code>.</dd>
+    <b><code>createTreeWalker(filter: function(AbstractType&lt;any&gt;):boolean):Iterable</code></b>
+    <dd>Create an Iterable that walks through the children.</dd>
+    <b><code>observe(function(YXmlEvent, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type is modified. In the case this type is modified in the event listener,
+the event listener will be called again after the current event listener returns.
+    </dd>
+    <b><code>unobserve(function(YXmlEvent, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observe</code> event listener from this type.
+    </dd>
+    <b><code>observeDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type or any of its children is modified. In the case this type is modified
+in the event listener, the event listener will be called again after the current
+event listener returns. The event listener receives all Events created by itself
+or any of its children.
+    </dd>
+    <b><code>unobserveDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observeDeep</code> event listener from this type.
+    </dd>
+  </dl>
+</details>
+<details>
+  <summary><b>Y.XmlElement</b></summary>
+  <br>
+  <p>
+A shareable type that represents an XML Element. It has a <code>nodeName</code>,
+attributes, and a list of children. But it makes no effort to validate its
+content and be actually XML compliant.
+  </p>
+  <pre><code>const yxml = new Y.XmlElement()</code></pre>
+  <dl>
+    <b><code>parent:Y.AbstractType|null</code></b>
+    <dd></dd>
+    <b><code>firstChild:Y.XmlElement|Y.XmlText|null</code></b>
+    <dd></dd>
+    <b><code>nextSibling:Y.XmlElement|Y.XmlText|null</code></b>
+    <dd></dd>
+    <b><code>prevSibling:Y.XmlElement|Y.XmlText|null</code></b>
+    <dd></dd>
+    <b><code>insert(index:number, content:Array&lt;Y.XmlElement|Y.XmlText&gt;)</code></b>
+    <dd></dd>
+    <b><code>delete(index:number, length:number)</code></b>
+    <dd></dd>
+    <b><code>get(index:number)</code></b>
+    <dd></dd>
+    <b><code>length:number</code></b>
+    <dd></dd>
+    <b><code>setAttribute(attributeName:string, attributeValue:string)</code></b>
+    <dd></dd>
+    <b><code>removeAttribute(attributeName:string)</code></b>
+    <dd></dd>
+    <b><code>getAttribute(attributeName:string):string</code></b>
+    <dd></dd>
+    <b><code>getAttributes():Object&lt;string,string&gt;</code></b>
+    <dd></dd>
+    <b><code>get(i:number):Y.XmlElement|Y.XmlText</code></b>
+    <dd>Retrieve the i-th element.</dd>
+    <b><code>slice(start:number, end:number):Array&lt;Y.XmlElement|Y.XmlText&gt;</code></b>
+    <dd>Retrieve a range of content</dd>
+    <b><code>clone():Y.XmlElement</code></b>
+    <dd>Clone this type into a fresh Yjs type.</dd>
+    <b><code>toArray():Array&lt;Y.XmlElement|Y.XmlText&gt;</code></b>
+    <dd>Copies the children to a new Array.</dd>
+    <b><code>toString():string</code></b>
+    <dd>Get the XML serialization of all descendants.</dd>
+    <b><code>toJSON():string</code></b>
+    <dd>See <code>toString</code>.</dd>
+    <b><code>observe(function(YXmlEvent, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every
+time this type is modified. In the case this type is modified in the event
+listener, the event listener will be called again after the current event
+listener returns.
+    </dd>
+    <b><code>unobserve(function(YXmlEvent, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observe</code> event listener from this type.
+    </dd>
+    <b><code>observeDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+Adds an event listener to this type that will be called synchronously every time
+this type or any of its children is modified. In the case this type is modified
+in the event listener, the event listener will be called again after the current
+event listener returns. The event listener receives all Events created by itself
+or any of its children.
+    </dd>
+    <b><code>unobserveDeep(function(Array&lt;YEvent&gt;, Transaction):void)</code></b>
+    <dd>
+      Removes an <code>observeDeep</code> event listener from this type.
+    </dd>
+  </dl>
+</details>
+<h3 id="ydoc">Y.Doc</h3><div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">const</span> doc <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()</span></code></pre></div><dl>
+  <b><code>clientID</code></b>
+  <dd>A unique id that identifies this client. (readonly)</dd>
+  <b><code>gc</code></b>
+  <dd>
+Whether garbage collection is enabled on this doc instance. Set `doc.gc = false`
+in order to disable gc and be able to restore old content. See https://github.com/yjs/yjs#yjs-crdt-algorithm
+for more information about gc in Yjs.
+  </dd>
+  <b><code>transact(function(Transaction):void [, origin:any])</code></b>
+  <dd>
+Every change on the shared document happens in a transaction. Observer calls and
+the <code>update</code> event are called after each transaction. You should
+<i>bundle</i> changes into a single transaction to reduce the amount of event
+calls. I.e. <code>doc.transact(() => { yarray.insert(..); ymap.set(..) })</code>
+triggers a single change event. <br>You can specify an optional <code>origin</code>
+parameter that is stored on <code>transaction.origin</code> and
+<code>on('update', (update, origin) => ..)</code>.
+  </dd>
+  <b><code>toJSON():any</code></b>
+  <dd>
+Deprecated: It is recommended to call toJSON directly on the shared types.
+Converts the entire document into a js object, recursively traversing each yjs
+type. Doesn't log types that have not been defined (using
+<code>ydoc.getType(..)</code>).
+  </dd>
+  <b><code>get(string, Y.[TypeClass]):[Type]</code></b>
+  <dd>Define a shared type.</dd>
+  <b><code>getArray(string):Y.Array</code></b>
+  <dd>Define a shared Y.Array type. Is equivalent to <code>y.get(string, Y.Array)</code>.</dd>
+  <b><code>getMap(string):Y.Map</code></b>
+  <dd>Define a shared Y.Map type. Is equivalent to <code>y.get(string, Y.Map)</code>.</dd>
+  <b><code>getText(string):Y.Text</code></b>
+  <dd>Define a shared Y.Text type. Is equivalent to <code>y.get(string, Y.Text)</code>.</dd>
+  <b><code>getXmlElement(string, string):Y.XmlElement</code></b>
+  <dd>Define a shared Y.XmlElement type. Is equivalent to <code>y.get(string, Y.XmlElement)</code>.</dd>
+  <b><code>getXmlFragment(string):Y.XmlFragment</code></b>
+  <dd>Define a shared Y.XmlFragment type. Is equivalent to <code>y.get(string, Y.XmlFragment)</code>.</dd>
+  <b><code>on(string, function)</code></b>
+  <dd>Register an event listener on the shared type</dd>
+  <b><code>off(string, function)</code></b>
+  <dd>Unregister an event listener from the shared type</dd>
+</dl>
+<h4 id="ydoc-events">Y.Doc Events</h4><dl>
+  <b><code>on('update', function(updateMessage:Uint8Array, origin:any, Y.Doc):void)</code></b>
+  <dd>
+Listen to document updates. Document updates must be transmitted to all other
+peers. You can apply document updates in any order and multiple times. Use `updateV2`
+to receive V2 events.
+  </dd>
+  <b><code>on('beforeTransaction', function(Y.Transaction, Y.Doc):void)</code></b>
+  <dd>Emitted before each transaction.</dd>
+  <b><code>on('afterTransaction', function(Y.Transaction, Y.Doc):void)</code></b>
+  <dd>Emitted after each transaction.</dd>
+  <b><code>on('beforeAllTransactions', function(Y.Doc):void)</code></b>
+  <dd>
+Transactions can be nested (e.g. when an event within a transaction calls another
+transaction). Emitted before the first transaction.
+  </dd>
+  <b><code>on('afterAllTransactions', function(Y.Doc, Array&lt;Y.Transaction&gt;):void)</code></b>
+  <dd>Emitted after the last transaction is cleaned up.</dd>
+</dl>
+<h3 id="document-updates">Document Updates</h3><p>Changes on the shared document are encoded into <em>document updates</em>. Document updates are <em>commutative</em> and <em>idempotent</em>. This means that they can be applied in any order and multiple times.</p><h4 id="example-listen-to-update-events-and-apply-them-on-remote-client">Example: Listen to update events and apply them on remote client</h4><div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">const</span> doc1 <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="kw">const</span> doc2 <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>doc1<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;update&#39;</span><span class="op">,</span> update <span class="kw">=&gt;</span> {</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  Y<span class="op">.</span><span class="fu">applyUpdate</span>(doc2<span class="op">,</span> update)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>})</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>doc2<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;update&#39;</span><span class="op">,</span> update <span class="kw">=&gt;</span> {</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>  Y<span class="op">.</span><span class="fu">applyUpdate</span>(doc1<span class="op">,</span> update)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>})</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true"></a><span class="co">// All changes are also applied to the other document</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true"></a>doc1<span class="op">.</span><span class="fu">getArray</span>(<span class="st">&#39;myarray&#39;</span>)<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> [<span class="st">&#39;Hello doc2, you got this?&#39;</span>])</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true"></a>doc2<span class="op">.</span><span class="fu">getArray</span>(<span class="st">&#39;myarray&#39;</span>)<span class="op">.</span><span class="fu">get</span>(<span class="dv">0</span>) <span class="co">// =&gt; &#39;Hello doc2, you got this?&#39;</span></span></code></pre></div><p>Yjs internally maintains a <a href="#state-vector">state vector</a> that denotes the next expected clock from each client. In a different interpretation it holds the number of structs created by each client. When two clients sync, you can either exchange the complete document structure or only the differences by sending the state vector to compute the differences.</p><h4 id="example-sync-two-clients-by-exchanging-the-complete-document-structure">Example: Sync two clients by exchanging the complete document structure</h4><div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">const</span> state1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc1)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="kw">const</span> state2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc2)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>Y<span class="op">.</span><span class="fu">applyUpdate</span>(ydoc1<span class="op">,</span> state2)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>Y<span class="op">.</span><span class="fu">applyUpdate</span>(ydoc2<span class="op">,</span> state1)</span></code></pre></div><h4 id="example-sync-two-clients-by-computing-the-differences">Example: Sync two clients by computing the differences</h4><p>This example shows how to sync two clients with the minimal amount of exchanged data by computing only the differences using the state vector of the remote client. Syncing clients using the state vector requires another roundtrip, but can save a lot of bandwidth.</p><div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">const</span> stateVector1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateVector</span>(ydoc1)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="kw">const</span> stateVector2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateVector</span>(ydoc2)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a><span class="kw">const</span> diff1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc1<span class="op">,</span> stateVector2)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a><span class="kw">const</span> diff2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc2<span class="op">,</span> stateVector1)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>Y<span class="op">.</span><span class="fu">applyUpdate</span>(ydoc1<span class="op">,</span> diff2)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>Y<span class="op">.</span><span class="fu">applyUpdate</span>(ydoc2<span class="op">,</span> diff1)</span></code></pre></div><h4 id="example-syncing-clients-without-loading-the-ydoc">Example: Syncing clients without loading the Y.Doc</h4><p>It is possible to sync clients and compute delta updates without loading the Yjs document to memory. Yjs exposes an API to compute the differences directly on the binary document updates.</p><div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="co">// encode the current state as a binary buffer</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a><span class="kw">let</span> currentState1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc1)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a><span class="kw">let</span> currentState2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc2)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a><span class="co">// now we can continue syncing clients using state vectors without using the Y.Doc</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>ydoc1<span class="op">.</span><span class="fu">destroy</span>()</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>ydoc2<span class="op">.</span><span class="fu">destroy</span>()</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a><span class="kw">const</span> stateVector1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateVectorFromUpdate</span>(currentState1)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a><span class="kw">const</span> stateVector2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateVectorFromUpdate</span>(currentState2)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true"></a><span class="kw">const</span> diff1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">diffUpdate</span>(currentState1<span class="op">,</span> stateVector2)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true"></a><span class="kw">const</span> diff2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">diffUpdate</span>(currentState2<span class="op">,</span> stateVector1)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true"></a><span class="co">// sync clients</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true"></a>currentState1 <span class="op">=</span> Y<span class="op">.</span><span class="fu">mergeUpdates</span>([currentState1<span class="op">,</span> diff2])</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true"></a>currentState2 <span class="op">=</span> Y<span class="op">.</span><span class="fu">mergeUpdates</span>([currentState2<span class="op">,</span> diff1])</span></code></pre></div><h4 id="obfuscating-updates">Obfuscating Updates</h4><p>If one of your users runs into a weird bug (e.g. the rich-text editor throws error messages), then you don't have to request the full document from your user. Instead, they can obfuscate the document (i.e. replace the content with meaningless generated content) before sending it to you. Note that someone might still deduce the type of content by looking at the general structure of the document. But this is much better than requesting the original document.</p><p>Obfuscated updates contain all the CRDT-related data that is required for merging. So it is safe to merge obfuscated updates.</p><div class="sourceCode" id="cb12"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">const</span> ydoc <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="co">// perform some changes..</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>ydoc<span class="op">.</span><span class="fu">getText</span>()<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;hello world&#39;</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a><span class="kw">const</span> update <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeStateAsUpdate</span>(ydoc)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a><span class="co">// the below update contains scrambled data</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a><span class="kw">const</span> obfuscatedUpdate <span class="op">=</span> Y<span class="op">.</span><span class="fu">obfuscateUpdate</span>(update)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true"></a><span class="kw">const</span> ydoc2 <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">Doc</span>()</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true"></a>Y<span class="op">.</span><span class="fu">applyUpdate</span>(ydoc2<span class="op">,</span> obfuscatedUpdate)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true"></a>ydoc2<span class="op">.</span><span class="fu">getText</span>()<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &quot;00000000000&quot;</span></span></code></pre></div><h4 id="using-v2-update-format">Using V2 update format</h4><p>Yjs implements two update formats. By default you are using the V1 update format. You can opt-in into the V2 update format which provides much better compression. It is not yet used by all providers. However, you can already use it if you are building your own provider. All below functions are available with the suffix "V2". E.g. <code>Y.applyUpdate</code> ⇒ <code>Y.applyUpdateV2</code>. Also when listening to updates you need to specifically need listen for V2 events e.g. <code>yDoc.on('updateV2', …)</code>. We also support conversion functions between both formats: <code>Y.convertUpdateFormatV1ToV2</code> &amp; <code>Y.convertUpdateFormatV2ToV1</code>.</p><h4 id="update-api">Update API</h4><dl>
+  <b><code>Y.applyUpdate(Y.Doc, update:Uint8Array, [transactionOrigin:any])</code></b>
+  <dd>
+Apply a document update on the shared document. Optionally you can specify
+<code>transactionOrigin</code> that will be stored on
+<code>transaction.origin</code>
+and <code>ydoc.on('update', (update, origin) => ..)</code>.
+  </dd>
+  <b><code>Y.encodeStateAsUpdate(Y.Doc, [encodedTargetStateVector:Uint8Array]):Uint8Array</code></b>
+  <dd>
+Encode the document state as a single update message that can be applied on the
+remote document. Optionally specify the target state vector to only write the
+differences to the update message.
+  </dd>
+  <b><code>Y.encodeStateVector(Y.Doc):Uint8Array</code></b>
+  <dd>Computes the state vector and encodes it into an Uint8Array.</dd>
+  <b><code>Y.mergeUpdates(Array&lt;Uint8Array&gt;)</code></b>
+  <dd>
+Merge several document updates into a single document update while removing
+duplicate information. The merged document update is always smaller than
+the separate updates because of the compressed encoding. If several updates
+contain the same content, the merged update retains the encoding of the update
+that comes first (e.g. if only one of them is garbage-collected). This is
+also how <code>Y.applyUpdate</code> behaves.
+  </dd>
+  <b><code>Y.encodeStateVectorFromUpdate(Uint8Array): Uint8Array</code></b>
+  <dd>
+Computes the state vector from a document update and encodes it into an Uint8Array.
+  </dd>
+  <b><code>Y.diffUpdate(update: Uint8Array, stateVector: Uint8Array): Uint8Array</code></b>
+  <dd>
+Encode the missing differences to another update message. This function works
+similarly to <code>Y.encodeStateAsUpdate(ydoc, stateVector)</code> but works
+on updates instead.
+  </dd>
+  <b><code>convertUpdateFormatV1ToV2</code></b>
+  <dd>
+Convert V1 update format to the V2 update format.
+  </dd>
+  <b><code>convertUpdateFormatV2ToV1</code></b>
+  <dd>
+Convert V2 update format to the V1 update format.
+  </dd>
+</dl>
+<h3 id="relative-positions">Relative Positions</h3><p>When working with collaborative documents, we often need to work with positions. Positions may represent cursor locations, selection ranges, or even assign a comment to a range of text. Normal index-positions (expressed as integers) are not convenient to use because the index-range is invalidated as soon as a remote change manipulates the document. Relative positions give you a powerful API to express positions.</p><p>A relative position is fixated to an element in the shared document and is not affected by remote changes. I.e. given the document <code>"a|c"</code>, the relative position is attached to <code>c</code>. When a remote user modifies the document by inserting a character before the cursor, the cursor will stay attached to the character <code>c</code>. <code>insert(1, 'x')("a|c") = "ax|c"</code>. When the relative position is set to the end of the document, it will stay attached to the end of the document.</p><h4 id="example-transform-to-relativeposition-and-back">Example: Transform to RelativePosition and back</h4><div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="kw">const</span> relPos <span class="op">=</span> Y<span class="op">.</span><span class="fu">createRelativePositionFromTypeIndex</span>(ytext<span class="op">,</span> <span class="dv">2</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a><span class="kw">const</span> pos <span class="op">=</span> Y<span class="op">.</span><span class="fu">createAbsolutePositionFromRelativePosition</span>(relPos<span class="op">,</span> doc)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>pos<span class="op">.</span><span class="at">type</span> <span class="op">===</span> ytext <span class="co">// =&gt; true</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>pos<span class="op">.</span><span class="at">index</span> <span class="op">===</span> <span class="dv">2</span> <span class="co">// =&gt; true</span></span></code></pre></div><h4 id="example-send-relative-position-to-remote-client-json">Example: Send relative position to remote client (json)</h4><div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="kw">const</span> relPos <span class="op">=</span> Y<span class="op">.</span><span class="fu">createRelativePositionFromTypeIndex</span>(ytext<span class="op">,</span> <span class="dv">2</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a><span class="kw">const</span> encodedRelPos <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(relPos)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a><span class="co">// send encodedRelPos to remote client..</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a><span class="kw">const</span> parsedRelPos <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(encodedRelPos)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a><span class="kw">const</span> pos <span class="op">=</span> Y<span class="op">.</span><span class="fu">createAbsolutePositionFromRelativePosition</span>(parsedRelPos<span class="op">,</span> remoteDoc)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>pos<span class="op">.</span><span class="at">type</span> <span class="op">===</span> remoteytext <span class="co">// =&gt; true</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true"></a>pos<span class="op">.</span><span class="at">index</span> <span class="op">===</span> <span class="dv">2</span> <span class="co">// =&gt; true</span></span></code></pre></div><h4 id="example-send-relative-position-to-remote-client-uint8array">Example: Send relative position to remote client (Uint8Array)</h4><div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="kw">const</span> relPos <span class="op">=</span> Y<span class="op">.</span><span class="fu">createRelativePositionFromTypeIndex</span>(ytext<span class="op">,</span> <span class="dv">2</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a><span class="kw">const</span> encodedRelPos <span class="op">=</span> Y<span class="op">.</span><span class="fu">encodeRelativePosition</span>(relPos)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a><span class="co">// send encodedRelPos to remote client..</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a><span class="kw">const</span> parsedRelPos <span class="op">=</span> Y<span class="op">.</span><span class="fu">decodeRelativePosition</span>(encodedRelPos)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a><span class="kw">const</span> pos <span class="op">=</span> Y<span class="op">.</span><span class="fu">createAbsolutePositionFromRelativePosition</span>(parsedRelPos<span class="op">,</span> remoteDoc)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>pos<span class="op">.</span><span class="at">type</span> <span class="op">===</span> remoteytext <span class="co">// =&gt; true</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>pos<span class="op">.</span><span class="at">index</span> <span class="op">===</span> <span class="dv">2</span> <span class="co">// =&gt; true</span></span></code></pre></div><dl>
+  <b><code>
+Y.createRelativePositionFromTypeIndex(type:Uint8Array|Y.Type, index: number
+[, assoc=0])
+  </code></b>
+  <dd>
+Create a relative position fixated to the i-th element in any sequence-like
+shared type (if <code>assoc >= 0</code>). By default, the position associates
+with the character that comes after the specified index position. If
+<code>assoc < 0</code>, then the relative position associates with the character
+before the specified index position.
+  </dd>
+  <b><code>
+Y.createAbsolutePositionFromRelativePosition(RelativePosition, Y.Doc):
+{ type: Y.AbstractType, index: number, assoc: number } | null
+  </code></b>
+  <dd>
+Create an absolute position from a relative position. If the relative position
+cannot be referenced, or the type is deleted, then the result is null.
+  </dd>
+  <b><code>
+Y.encodeRelativePosition(RelativePosition):Uint8Array
+  </code></b>
+  <dd>
+Encode a relative position to an Uint8Array. Binary data is the preferred
+encoding format for document updates. If you prefer JSON encoding, you can
+simply JSON.stringify / JSON.parse the relative position instead.
+  </dd>
+  <b><code>Y.decodeRelativePosition(Uint8Array):RelativePosition</code></b>
+  <dd>Decode a binary-encoded relative position to a RelativePosition object.</dd>
+</dl>
+<h3 id="yundomanager">Y.UndoManager</h3><p>Yjs ships with an Undo/Redo manager for selective undo/redo of changes on a Yjs type. The changes can be optionally scoped to transaction origins.</p><div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="kw">const</span> ytext <span class="op">=</span> doc<span class="op">.</span><span class="fu">getText</span>(<span class="st">&#39;text&#39;</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a><span class="kw">const</span> undoManager <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">UndoManager</span>(ytext)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;abc&#39;</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;&#39;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">redo</span>()</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;abc&#39;</span></span></code></pre></div><dl>
+  <b><code>constructor(scope:Y.AbstractType|Array&lt;Y.AbstractType&gt;
+  [, {captureTimeout:number,trackedOrigins:Set&lt;any&gt;,deleteFilter:function(item):boolean,ignoreRemoteAttributeChanges:boolean}])</code></b>
+  <dd>Accepts either single type as scope or an array of types.</dd>
+  <b><code>ignoreRemoteAttributeChanges:boolean</code></b>
+  <dd>
+By default, the UndoManager will never overwrite remote changes. In some cases
+this is not the expected behavior. When set to <code>true</code>, undo/redo may
+overwrite remote attribute changes (e.g. on <code>Y.Map</code> keys or
+<code>Y.XmlElement</code> / <code>Y.XmlText</code> attributes). Defaults to
+<code>false</code>. <em>(previously named <code>ignoreRemoteMapChanges</code>)</em>
+  </dd>
+  <b><code>undo()</code></b>
+  <dd></dd>
+  <b><code>redo()</code></b>
+  <dd></dd>
+  <b><code>stopCapturing()</code></b>
+  <dd></dd>
+  <b>
+    <code>
+on('stack-item-added', { stackItem: { meta: Map&lt;any,any&gt; }, type: 'undo'
+| 'redo' })
+    </code>
+  </b>
+  <dd>
+Register an event that is called when a <code>StackItem</code> is added to the
+undo- or the redo-stack.
+  </dd>
+  <b>
+    <code>
+on('stack-item-updated', { stackItem: { meta: Map&lt;any,any&gt; }, type: 'undo'
+| 'redo' })
+    </code>
+  </b>
+  <dd>
+Register an event that is called when an existing <code>StackItem</code> is updated.
+This happens when two changes happen within a "captureInterval".
+  </dd>
+  <b>
+    <code>
+on('stack-item-popped', { stackItem: { meta: Map&lt;any,any&gt; }, type: 'undo'
+| 'redo' })
+    </code>
+  </b>
+  <dd>
+Register an event that is called when a <code>StackItem</code> is popped from
+the undo- or the redo-stack.
+  </dd>
+  <b>
+    <code>
+on('stack-cleared', { undoStackCleared: boolean, redoStackCleared: boolean })
+    </code>
+  </b>
+  <dd>
+Register an event that is called when the undo- and/or the redo-stack is cleared.
+  </dd>
+</dl>
+<h4 id="example-stop-capturing">Example: Stop Capturing</h4><p>UndoManager merges Undo-StackItems if they are created within time-gap smaller than <code>options.captureTimeout</code>. Call <code>um.stopCapturing()</code> so that the next StackItem won't be merged.</p><div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="co">// without stopCapturing</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;a&#39;</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">1</span><span class="op">,</span> <span class="st">&#39;b&#39;</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;&#39; (note that &#39;ab&#39; was removed)</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a><span class="co">// with stopCapturing</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;a&#39;</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">stopCapturing</span>()</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;b&#39;</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;a&#39; (note that only &#39;b&#39; was removed)</span></span></code></pre></div><h4 id="example-specify-tracked-origins">Example: Specify tracked origins</h4><p>Every change on the shared document has an origin. If no origin was specified, it defaults to <code>null</code>. By specifying <code>trackedOrigins</code> you can selectively specify which changes should be tracked by <code>UndoManager</code>. The UndoManager instance is always added to <code>trackedOrigins</code>.</p><div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="kw">class</span> CustomBinding {}</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a><span class="kw">const</span> ytext <span class="op">=</span> doc<span class="op">.</span><span class="fu">getText</span>(<span class="st">&#39;text&#39;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a><span class="kw">const</span> undoManager <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">UndoManager</span>(ytext<span class="op">,</span> {</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>  <span class="dt">trackedOrigins</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Set</span>([<span class="dv">42</span><span class="op">,</span> CustomBinding])</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a>})</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;abc&#39;</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;abc&#39; (does not track because origin `null` and not part</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true"></a>                 <span class="co">//           of `trackedTransactionOrigins`)</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">delete</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">3</span>) <span class="co">// revert change</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true"></a>doc<span class="op">.</span><span class="fu">transact</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true"></a>  ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;abc&#39;</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true"></a>}<span class="op">,</span> <span class="dv">42</span>)</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;&#39; (tracked because origin is an instance of `trackedTransactionorigins`)</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true"></a>doc<span class="op">.</span><span class="fu">transact</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true"></a>  ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;abc&#39;</span>)</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true"></a>}<span class="op">,</span> <span class="dv">41</span>)</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;abc&#39; (not tracked because 41 is not an instance of</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true"></a>                 <span class="co">//        `trackedTransactionorigins`)</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">delete</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">3</span>) <span class="co">// revert change</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true"></a></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true"></a>doc<span class="op">.</span><span class="fu">transact</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true"></a>  ytext<span class="op">.</span><span class="fu">insert</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;abc&#39;</span>)</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true"></a>}<span class="op">,</span> <span class="kw">new</span> <span class="fu">CustomBinding</span>())</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">undo</span>()</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true"></a>ytext<span class="op">.</span><span class="fu">toString</span>() <span class="co">// =&gt; &#39;&#39; (tracked because origin is a `CustomBinding` and</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true"></a>                 <span class="co">//        `CustomBinding` is in `trackedTransactionorigins`)</span></span></code></pre></div><h4 id="example-add-additional-information-to-the-stackitems">Example: Add additional information to the StackItems</h4><p>When undoing or redoing a previous action, it is often expected to restore additional meta information like the cursor location or the view on the document. You can assign meta-information to Undo-/Redo-StackItems.</p><div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="kw">const</span> ytext <span class="op">=</span> doc<span class="op">.</span><span class="fu">getText</span>(<span class="st">&#39;text&#39;</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="kw">const</span> undoManager <span class="op">=</span> <span class="kw">new</span> Y<span class="op">.</span><span class="fu">UndoManager</span>(ytext<span class="op">,</span> {</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a>  <span class="dt">trackedOrigins</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Set</span>([<span class="dv">42</span><span class="op">,</span> CustomBinding])</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>})</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;stack-item-added&#39;</span><span class="op">,</span> <span class="bu">event</span> <span class="kw">=&gt;</span> {</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true"></a>  <span class="co">// save the current cursor location on the stack-item</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true"></a>  <span class="bu">event</span><span class="op">.</span><span class="at">stackItem</span><span class="op">.</span><span class="at">meta</span><span class="op">.</span><span class="fu">set</span>(<span class="st">&#39;cursor-location&#39;</span><span class="op">,</span> <span class="fu">getRelativeCursorLocation</span>())</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true"></a>})</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true"></a>undoManager<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;stack-item-popped&#39;</span><span class="op">,</span> <span class="bu">event</span> <span class="kw">=&gt;</span> {</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true"></a>  <span class="co">// restore the current cursor location on the stack-item</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true"></a>  <span class="fu">restoreCursorLocation</span>(<span class="bu">event</span><span class="op">.</span><span class="at">stackItem</span><span class="op">.</span><span class="at">meta</span><span class="op">.</span><span class="fu">get</span>(<span class="st">&#39;cursor-location&#39;</span>))</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true"></a>})</span></code></pre></div><h2 id="yjs-crdt-algorithm">Yjs CRDT Algorithm</h2><p><em>Conflict-free replicated data types</em> (CRDT) for collaborative editing are an alternative approach to <em>operational transformation</em> (OT). A very simple differentiation between the two approaches is that OT attempts to transform index positions to ensure convergence (all clients end up with the same content), while CRDTs use mathematical models that usually do not involve index transformations, like linked lists. OT is currently the de-facto standard for shared editing on text. OT approaches that support shared editing without a central source of truth (a central server) require too much bookkeeping to be viable in practice. CRDTs are better suited for distributed systems, provide additional guarantees that the document can be synced with remote clients, and do not require a central source of truth.</p><p>Yjs implements a modified version of the algorithm described in <a href="https://www.researchgate.net/publication/310212186_Near_Real-Time_Peer-to-Peer_Shared_Editing_on_Extensible_Data_Types">this paper</a>. This <a href="https://blog.kevinjahns.de/are-crdts-suitable-for-shared-editing/">article</a> explains a simple optimization on the CRDT model and gives more insight about the performance characteristics in Yjs. More information about the specific implementation is available in <a href="./INTERNALS.md">INTERNALS.md</a> and in <a href="https://youtu.be/0l5XgnQ6rB4">this walkthrough of the Yjs codebase</a>.</p><p>CRDTs that are suitable for shared text editing suffer from the fact that they only grow in size. There are CRDTs that do not grow in size, but they do not have the characteristics that are beneficial for shared text editing (like intention preservation). Yjs implements many improvements to the original algorithm that diminish the trade-off that the document only grows in size. We can't garbage collect deleted structs (tombstones) while ensuring a unique order of the structs. But we can 1. merge preceding structs into a single struct to reduce the amount of meta information, 2. we can delete content from the struct if it is deleted, and 3. we can garbage collect tombstones if we don't care about the order of the structs anymore (e.g. if the parent was deleted).</p><p><strong>Examples:</strong></p><ol><li>If a user inserts elements in sequence, the struct will be merged into a single struct. E.g. <code>text.insert(0, 'a'), text.insert(1, 'b');</code> is first represented as two structs (<code>[{id: {client, clock: 0}, content: 'a'}, {id: {client, clock: 1}, content: 'b'}</code>) and then merged into a single struct: <code>[{id: {client, clock: 0}, content: 'ab'}]</code>.</li><li>When a struct that contains content (e.g. <code>ItemString</code>) is deleted, the struct will be replaced with an <code>ItemDeleted</code> that does not contain content anymore.</li><li>When a type is deleted, all child elements are transformed to <code>GC</code> structs. A <code>GC</code> struct only denotes the existence of a struct and that it is deleted. <code>GC</code> structs can always be merged with other <code>GC</code> structs if the id's are adjacent.</li></ol><p>Especially when working on structured content (e.g. shared editing on ProseMirror), these improvements yield very good results when <a href="https://github.com/dmonad/crdt-benchmarks">benchmarking</a> random document edits. In practice they show even better results, because users usually edit text in sequence, resulting in structs that can easily be merged. The benchmarks show that even in the worst case scenario that a user edits text from right to left, Yjs achieves good performance even for huge documents.</p><h3 id="state-vector">State Vector</h3><p>Yjs has the ability to exchange only the differences when syncing two clients. We use lamport timestamps to identify structs and to track in which order a client created them. Each struct has an <code>struct.id = { client: number, clock: number}</code> that uniquely identifies a struct. We define the next expected <code>clock</code> by each client as the <em>state vector</em>. This data structure is similar to the <a href="https://en.wikipedia.org/wiki/Version_vector">version vectors</a> data structure. But we use state vectors only to describe the state of the local document, so we can compute the missing struct of the remote client. We do not use it to track causality.</p><h3 id="formal-proof">Formal Proof</h3><p><a href="https://github.com/iasakura/lean-yjs">lean-yjs</a> provides a formal verification of the YATA CRDT algorithm that Yjs implements, using the Lean theorem prover to mathematically prove correctness properties. While the CRDT algorithm itself is correct (currently proven for preservation and commutativity), the project reveals that <a href="https://discuss.yjs.dev/t/lean-yjs-formally-proving-the-yjs-conflict-resolution-algorithms/3875/2">the pseudocode in the original YATA paper contains errors</a>.</p><h2 id="license-and-author">License and Author</h2><p>Yjs and all related projects are <a href="./LICENSE"><strong>MIT licensed</strong></a>.</p><p>Yjs is based on my research as a student at the <a href="http://dbis.rwth-aachen.de/">RWTH i5</a>. Now I am working on Yjs in my spare time.</p><p>Fund this project by donating on <a href="https://github.com/sponsors/dmonad">GitHub Sponsors</a> or hiring <a href="https://github.com/dmonad">me</a> as a contractor for your collaborative app.</p>
+</body>
+</html>

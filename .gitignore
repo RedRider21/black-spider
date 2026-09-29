@@ -1,0 +1,23 @@
+# Roba che si rigenera o che è di questa macchina, non del progetto.
+
+__pycache__/
+*.pyc
+*.pyo
+
+# I banchi di prova scrivono qui: sono esiti di una sessione, non materiale da
+# conservare. Gli esiti che contano si copiano a mano in spikes/esiti/.
+/esiti-locali/
+*.log
+
+# Impostazioni di sessione dell'editor, se mai ce ne finiscono.
+.claude/settings.local.json
+.vscode/
+.idea/
+
+# Sistemistica dei sistemi operativi.
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.bak
+*.orig

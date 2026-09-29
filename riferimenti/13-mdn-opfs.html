@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>MDN — Origin Private File System (OPFS)</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">MDN — Origin Private File System (OPFS)</h1>
+</header>
+<p>The <strong>origin private file system</strong> (OPFS) is a storage endpoint provided as part of the <a href="/en-US/docs/Web/API/File_System_API">File System API</a>, which is private to the origin of the page and not visible to the user like the regular file system. It provides access to a special kind of file that is highly optimized for performance and offers in-place write access to its content.</p><h2 id="working-with-files-using-the-file-system-access-api">Working with files using the File System Access API</h2><p>The <a href="https://wicg.github.io/file-system-access/">File System Access API</a>, which extends the <a href="/en-US/docs/Web/API/File_System_API">File System API</a>, provides access to files using picker methods. For example:</p><ol><li>allows the user to choose a file to access, which results in a object being returned.</li><li>is called to get access to the file's contents, the content is modified using / .</li><li>{{domxref("FileSystemHandle.requestPermission()", "FileSystemHandle.requestPermission({mode: 'readwrite'})")}} is used to request the user's permission to save the changes.</li><li>If the user accepts the permission request, the changes are saved back to the original file.</li></ol><p>This works, but it has some restrictions. These changes are being made to the user-visible file system, so there are a lot of security checks in place (for example, <a href="https://developers.google.com/safe-browsing">safe browsing</a> in Chrome) to guard against malicious content being written to that file system. These writes are not in-place, and instead use a temporary file. The original is not modified unless it passes all the security checks.</p><p>As a result, these operations are fairly slow. It is not so noticeable when you are making small text updates, but the performance suffers when making more significant, large-scale file updates such as <a href="https://sqlite.org/wasm">SQLite</a> database modifications.</p><h2 id="how-does-the-opfs-solve-such-problems">How does the OPFS solve such problems?</h2><p>The OPFS offers low-level, byte-by-byte file access, which is private to the origin of the page and not visible to the user. As a result, it doesn't require the same series of security checks and permission grants and is therefore faster than File System Access API calls. It also has a set of synchronous calls available (other File System API calls are asynchronous) that can be run inside web workers only so as not to block the main thread.</p><p>To summarize how the OPFS differs from the user-visible file system:</p><ul><li>The OPFS is subject to <a href="/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria">browser storage quota restrictions</a>, just like any other origin-partitioned storage mechanism (for example ). You can access the amount of storage space the OPFS is using via .</li><li>Clearing storage data for the site deletes the OPFS.</li><li>Permission prompts and security checks are not required to access files in the OPFS.</li><li>Browsers persist the contents of the OPFS to disk somewhere, but you cannot expect to find the created files matched one-to-one. The OPFS is not intended to be visible to the user.</li></ul><h2 id="how-do-you-access-the-opfs">How do you access the OPFS?</h2><p>To access the OPFS in the first place, you call the method. This returns a reference to a object that represents the root of the OPFS.</p><h2 id="manipulating-the-opfs-from-the-main-thread">Manipulating the OPFS from the main thread</h2><p>When accessing the OPFS from the main thread, you will use asynchronous, -based APIs. You can access file () and directory () handles by calling and respectively on the object representing the OPFS root (and child directories, as they are created).</p><blockquote><p>[!NOTE] Passing <code>{ create: true }</code> into the above methods causes the file or folder to be created if it doesn't exist.</p></blockquote><div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co">// Create a hierarchy of files and folders</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">const</span> fileHandle <span class="op">=</span> <span class="cf">await</span> opfsRoot<span class="op">.</span><span class="fu">getFileHandle</span>(<span class="st">&quot;my first file&quot;</span><span class="op">,</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="dt">create</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>})<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">const</span> directoryHandle <span class="op">=</span> <span class="cf">await</span> opfsRoot<span class="op">.</span><span class="fu">getDirectoryHandle</span>(<span class="st">&quot;my first folder&quot;</span><span class="op">,</span> {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  <span class="dt">create</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>})<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="kw">const</span> nestedFileHandle <span class="op">=</span> <span class="cf">await</span> directoryHandle<span class="op">.</span><span class="fu">getFileHandle</span>(</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>  <span class="st">&quot;my first nested file&quot;</span><span class="op">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>  { <span class="dt">create</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>)<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="kw">const</span> nestedDirectoryHandle <span class="op">=</span> <span class="cf">await</span> directoryHandle<span class="op">.</span><span class="fu">getDirectoryHandle</span>(</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>  <span class="st">&quot;my first nested folder&quot;</span><span class="op">,</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>  { <span class="dt">create</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>)<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a><span class="co">// Access existing files and folders via their names</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a><span class="kw">const</span> existingFileHandle <span class="op">=</span> <span class="cf">await</span> opfsRoot<span class="op">.</span><span class="fu">getFileHandle</span>(<span class="st">&quot;my first file&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a><span class="kw">const</span> existingDirectoryHandle <span class="op">=</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>  <span class="cf">await</span> opfsRoot<span class="op">.</span><span class="fu">getDirectoryHandle</span>(<span class="st">&quot;my first folder&quot;</span>)<span class="op">;</span></span></code></pre></div><h3 id="reading-a-file">Reading a file</h3><ol><li>Make a call to return a object.</li><li>Call the object to return a object. This is a specialized type of , and as such can be manipulated just like any other <code>Blob</code>. For example, you could access the text content directly via .</li></ol><h3 id="writing-a-file">Writing a file</h3><ol><li>Make a call to return a object.</li><li>Call to return a object, which is a specialized type of .</li><li>Write contents to it using a call.</li><li>Close the stream using .</li></ol><h3 id="deleting-a-file-or-folder">Deleting a file or folder</h3><p>You can call on the parent directory, passing it the name of the item you want to remove:</p><div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>directoryHandle<span class="op">.</span><span class="fu">removeEntry</span>(<span class="st">&quot;my first nested file&quot;</span>)<span class="op">;</span></span></code></pre></div><p>You can also call on the or representing the item you want to remove. To delete a folder including all subfolders, pass the <code>{ recursive: true }</code> option.</p><div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="cf">await</span> fileHandle<span class="op">.</span><span class="fu">remove</span>()<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="cf">await</span> directoryHandle<span class="op">.</span><span class="fu">remove</span>({ <span class="dt">recursive</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span></code></pre></div><p>The following provides a quick way to clear the entire OPFS:</p><div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="cf">await</span> (<span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="fu">getDirectory</span>())<span class="op">.</span><span class="fu">remove</span>({ <span class="dt">recursive</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span></code></pre></div><h3 id="listing-the-contents-of-a-folder">Listing the contents of a folder</h3><p>is an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols">asynchronous iterator</a>. As such, you can iterate over it with a <a href="/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of"><code>for await...of</code></a> loop and standard methods such as <a href="/en-US/docs/Web/API/FileSystemDirectoryHandle/entries"><code>entries()</code></a>, <a href="/en-US/docs/Web/API/FileSystemDirectoryHandle/entries"><code>values()</code></a>, and <a href="/en-US/docs/Web/API/FileSystemDirectoryHandle/entries"><code>keys()</code></a>.</p><p>For example:</p><div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="cf">for</span> <span class="cf">await</span> (<span class="kw">let</span> [name<span class="op">,</span> handle] <span class="kw">of</span> directoryHandle) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>}</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="cf">for</span> <span class="cf">await</span> (<span class="kw">let</span> [name<span class="op">,</span> handle] <span class="kw">of</span> directoryHandle<span class="op">.</span><span class="fu">entries</span>()) {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>}</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="cf">for</span> <span class="cf">await</span> (<span class="kw">let</span> handle <span class="kw">of</span> directoryHandle<span class="op">.</span><span class="fu">values</span>()) {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>}</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a><span class="cf">for</span> <span class="cf">await</span> (<span class="kw">let</span> name <span class="kw">of</span> directoryHandle<span class="op">.</span><span class="fu">keys</span>()) {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>}</span></code></pre></div><h2 id="manipulating-the-opfs-from-a-web-worker">Manipulating the OPFS from a web worker</h2><p>Web Workers don't block the main thread, which means you can use the synchronous file access APIs in this context. Synchronous APIs are faster as they avoid having to deal with promises.</p><p>You can synchronously access a file by calling on a regular :</p><blockquote><p>[!NOTE] Despite having "Sync" in its name, the <code>createSyncAccessHandle()</code> method itself is asynchronous.</p></blockquote><div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">const</span> opfsRoot <span class="op">=</span> <span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="fu">getDirectory</span>()<span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="kw">const</span> fileHandle <span class="op">=</span> <span class="cf">await</span> opfsRoot<span class="op">.</span><span class="fu">getFileHandle</span>(<span class="st">&quot;my-high-speed-file.txt&quot;</span><span class="op">,</span> {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  <span class="dt">create</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>})<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="kw">const</span> syncAccessHandle <span class="op">=</span> <span class="cf">await</span> fileHandle<span class="op">.</span><span class="fu">createSyncAccessHandle</span>()<span class="op">;</span></span></code></pre></div><p>There are a number of <em>synchronous</em> methods available on the returned :</p><ul><li>: Returns the size of the file in bytes.</li><li>: Writes the content of a buffer into the file, optionally at a given offset, and returns the number of written bytes. Checking the returned number of written bytes allows callers to detect and handle errors and partial writes.</li><li>: Reads the contents of the file into a buffer, optionally at a given offset.</li><li>: Resizes the file to the given size.</li><li>: Ensures that the file contents contain all the modifications done through <code>write()</code>.</li><li>: Closes the access handle.</li></ul><p>Here is an example that uses all the methods mentioned above:</p><div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">const</span> opfsRoot <span class="op">=</span> <span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="fu">getDirectory</span>()<span class="op">;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="kw">const</span> fileHandle <span class="op">=</span> <span class="cf">await</span> opfsRoot<span class="op">.</span><span class="fu">getFileHandle</span>(<span class="st">&quot;fast&quot;</span><span class="op">,</span> { <span class="dt">create</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a><span class="kw">const</span> accessHandle <span class="op">=</span> <span class="cf">await</span> fileHandle<span class="op">.</span><span class="fu">createSyncAccessHandle</span>()<span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="kw">const</span> textEncoder <span class="op">=</span> <span class="kw">new</span> <span class="fu">TextEncoder</span>()<span class="op">;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a><span class="kw">const</span> textDecoder <span class="op">=</span> <span class="kw">new</span> <span class="fu">TextDecoder</span>()<span class="op">;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a><span class="co">// Initialize this variable for the size of the file.</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a><span class="kw">let</span> size<span class="op">;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a><span class="co">// The current size of the file, initially `0`.</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>size <span class="op">=</span> accessHandle<span class="op">.</span><span class="fu">getSize</span>()<span class="op">;</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a><span class="co">// Encode content to write to the file.</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a><span class="kw">const</span> content <span class="op">=</span> textEncoder<span class="op">.</span><span class="fu">encode</span>(<span class="st">&quot;Some text&quot;</span>)<span class="op">;</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a><span class="co">// Write the content at the beginning of the file.</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">write</span>(content<span class="op">,</span> { <span class="dt">at</span><span class="op">:</span> size })<span class="op">;</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a><span class="co">// Flush the changes.</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">flush</span>()<span class="op">;</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a><span class="co">// The current size of the file, now `9` (the length of &quot;Some text&quot;).</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a>size <span class="op">=</span> accessHandle<span class="op">.</span><span class="fu">getSize</span>()<span class="op">;</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true"></a><span class="co">// Encode more content to write to the file.</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true"></a><span class="kw">const</span> moreContent <span class="op">=</span> textEncoder<span class="op">.</span><span class="fu">encode</span>(<span class="st">&quot;More content&quot;</span>)<span class="op">;</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true"></a><span class="co">// Write the content at the end of the file.</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">write</span>(moreContent<span class="op">,</span> { <span class="dt">at</span><span class="op">:</span> size })<span class="op">;</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true"></a><span class="co">// Flush the changes.</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">flush</span>()<span class="op">;</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true"></a><span class="co">// The current size of the file, now `21` (the length of</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true"></a><span class="co">// &quot;Some textMore content&quot;).</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true"></a>size <span class="op">=</span> accessHandle<span class="op">.</span><span class="fu">getSize</span>()<span class="op">;</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true"></a></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true"></a><span class="co">// Prepare a data view of the length of the file.</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true"></a><span class="kw">const</span> dataView <span class="op">=</span> <span class="kw">new</span> <span class="bu">DataView</span>(<span class="kw">new</span> <span class="bu">ArrayBuffer</span>(size))<span class="op">;</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true"></a></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true"></a><span class="co">// Read the entire file into the data view.</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">read</span>(dataView<span class="op">,</span> { <span class="dt">at</span><span class="op">:</span> <span class="dv">0</span> })<span class="op">;</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true"></a><span class="co">// Logs `&quot;Some textMore content&quot;`.</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(textDecoder<span class="op">.</span><span class="fu">decode</span>(dataView))<span class="op">;</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true"></a></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true"></a><span class="co">// Read starting at offset 9 into the data view.</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">read</span>(dataView<span class="op">,</span> { <span class="dt">at</span><span class="op">:</span> <span class="dv">9</span> })<span class="op">;</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true"></a><span class="co">// Logs `&quot;More content&quot;`.</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(textDecoder<span class="op">.</span><span class="fu">decode</span>(dataView))<span class="op">;</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true"></a></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true"></a><span class="co">// Truncate the file after 4 bytes.</span></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true"></a>accessHandle<span class="op">.</span><span class="fu">truncate</span>(<span class="dv">4</span>)<span class="op">;</span></span></code></pre></div><h2 id="browser-compatibility">Browser compatibility</h2><h2 id="see-also">See also</h2><ul><li><a href="https://web.dev/articles/origin-private-file-system">The origin private file system</a> on web.dev</li></ul>
+</body>
+</html>

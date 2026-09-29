@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ThinAir — file transfer con handshake fuori banda</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">ThinAir — file transfer con handshake fuori banda</h1>
+</header>
+<h1 id="thinair">ThinAir</h1><p>Static, browser-only file transfer. WebRTC for the file. QR codes, text, and audio chirps for the handshake.</p><pre><code>The file moves over WebRTC.
+The handshake moves through QR codes, text, and audio chirps.
+No storage backend.
+No uploaded files on a server.
+No account.
+No paid service.
+</code></pre><h2 id="live">Live</h2><p>GitHub Pages: <a href="https://mbarlow.github.io/thinair/">https://mbarlow.github.io/thinair/</a></p><p>Open the page on two devices, pick a file on one, pair the devices, transfer.</p><h2 id="modes">Modes</h2><ul><li><strong>Send / Receive</strong> — pick file (sender), pair via QR code, audio chirp, or pasted text, then transfer.</li><li><strong>Manual Pair</strong> — copy/paste only. No camera or microphone needed.</li><li><strong>Diagnostics</strong> — check WebRTC, microphone, camera, and STUN reachability.</li></ul><h2 id="constraints-v1">Constraints (v1)</h2><ul><li>Both devices must be online during the transfer (no relay, no storage).</li><li>Audio chirp signaling carries small payloads only — full WebRTC offers usually need QR or text.</li><li>No TURN server. Some restrictive networks will fail.</li><li>Google STUN is the only external network helper.</li></ul><h2 id="layout">Layout</h2><pre><code>index.html
+styles.css
+src/
+  app.js, router.js
+  webrtc/   peer.js, file-transfer.js, signaling.js
+  qr/       qr-generate.js, qr-scan.js
+  audio/    profiles.js, framing.js, chirp-encode.js, chirp-decode.js
+  codec/    base.js, checksum.js, compress.js
+  ui/       home-view.js, send-view.js, receive-view.js, manual-view.js,
+            diagnostics-view.js, signaling-widgets.js, util.js
+</code></pre><p>No build step. Vanilla ES modules. CDN-loaded <code>qrcode</code>, <code>jsQR</code>, and <code>pako</code>.</p><h2 id="spec">Spec</h2><p>See <a href="./PROJECT.md">PROJECT.md</a>.</p>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Willow / Earthstar — log firmato e capability</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">Willow / Earthstar — log firmato e capability</h1>
+</header>
+<p>Repository moved to <a href="https://codeberg.org/worm-blossom/willow_rs">https://codeberg.org/worm-blossom/willow_rs</a></p><h1 id="willow-rs">willow-rs</h1><blockquote><p>Protocols for synchronisable data stores. The best parts? Fine-grained permissions, a keen approach to privacy, destructive edits, and a dainty bandwidth and memory footprint.</p></blockquote><p><em>Currently</em>, this repo provides Rust implementations of:</p><ul><li>Everything in the <a href="https://willowprotocol.org/specs/data-model/index.html#data_model">Willow Data Model</a> (parameters, paths, entries, groupings, encodings, store trait).</li><li><a href="https://willowprotocol.org/specs/meadowcap/index.html#meadowcap">Meadowcap</a>, a capability system adaptable to local needs,</li><li><code>SimpleStoreSled</code>, a <a href="https://docs.rs/sled/latest/sled/">sled</a>-powered Willow <a href="https://willowprotocol.org/specs/data-model/index.html#store">store</a> implementing the <code>Store</code> trait, enabling persistent storage of Willow data!</li></ul><p><em>Eventually</em>, this repo will also house Rust implementations of:</p><ul><li><a href="https://willowprotocol.org/specs/sideloading/index.html#sideloading">Willow Sideloading protocol</a>, eventually consistent data delivered by any means possible,</li><li>and <a href="https://willowprotocol.org/specs/sync/index.html#sync">Willow General Purpose Sync Protocol</a>, private and efficient synchronisation of Willow stores.</li></ul><p>We welcome contributions! If you're looking for contribution ideas, please see the repo's issues, milestones, and projects.</p><h2 id="see-also">See also</h2><ul><li><a href="https://willowprotocol.org">Willow website</a></li><li><a href="https://github.com/earthstar-project/willow-js">willow-js</a> - TypeScript implementation of Willow Data Model, Sideloading, and General Purpose Sync protocol.</li><li><a href="https://github.com/earthstar-project/meadowcap-js">meadowcap-js</a> - TypeScript implementation of Meadowcap</li></ul><h2 id="fuzz-tests">Fuzz tests</h2><p>This repository has many fuzz tests. To use <code>cargo fuzz</code> commands, you must first make <code>fuzz</code> the working directory so that the nightly compiler (on which cargo-fuzz relies) is used for compiling the tests.</p><pre><code>cd fuzz
+cargo fuzz run &lt;test_name_here&gt;
+</code></pre><p>There is also a command for running all the fuzz tests sequentially:</p><pre><code>cd fuzz
+./run_all.sh -- -max_total_time=&lt;number_of_seconds&gt;
+</code></pre><hr /><p>This project was funded through the <a href="https://nlnet.nl/core">NGI0 Core</a> Fund, a fund established by <a href="https://nlnet.nl/">NLnet</a> with financial support from the European Commission's <a href="https://ngi.eu/">Next Generation Internet</a> programme, under the aegis of <a href="https://commission.europa.eu/about-european-commission/departments-and-executive-agencies/communications-networks-content-and-technology_en">DG Communications Networks, Content and Technology</a> under grant agreement No <a href="https://cordis.europa.eu/project/id/101092990">101092990</a>.</p>
+</body>
+</html>

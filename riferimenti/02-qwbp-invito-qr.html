@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>QWBP — handshake WebRTC dentro un QR</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">QWBP — handshake WebRTC dentro un QR</h1>
+</header>
+<h1 id="qwbp---qr-webrtc-bootstrap-protocol">QWBP - QR-WebRTC Bootstrap Protocol</h1><blockquote><p><strong>Beta Software</strong>: This library is in active development. The API may change between minor versions until v1.0.0.</p></blockquote><p><a href="https://www.npmjs.com/package/qwbp"><img src="https://badge.fury.io/js/qwbp.svg" alt="npm version" /></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/Code-MIT-yellow.svg" alt="Code License: MIT" /></a> <a href="https://creativecommons.org/licenses/by/4.0/"><img src="https://img.shields.io/badge/Spec-CC%20BY%204.0-lightgrey.svg" alt="Spec License: CC BY 4.0" /></a></p><p><strong>QWBP</strong> (pronounced "cue-web-pee") is a binary protocol for establishing WebRTC DataChannel connections using QR codes as the signaling channel. It achieves a <strong>97.79% reduction</strong> in signaling payload size compared to standard SDP, enabling serverless peer-to-peer connections.</p><h2 id="features">Features</h2><ul><li><strong>Serverless signaling</strong> - No WebSocket servers, no backend infrastructure</li><li><strong>Tiny payload</strong> - 55-100 bytes fits in QR Version 4-5 (vs 2,487+ bytes for standard SDP)</li><li><strong>Sub-second scanning</strong> - Small QR codes scan reliably in under 500ms</li><li><strong>Cryptographically secure</strong> - HKDF-derived credentials, DTLS encryption</li><li><strong>Universal browser support</strong> - Works with Chrome, Safari, Firefox (including iOS)</li><li><strong>Two-stage architecture</strong> - Bootstrap enables full video/audio negotiation</li></ul><h2 id="installation">Installation</h2><div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ex">npm</span> install qwbp</span></code></pre></div><h2 id="quick-start">Quick Start</h2><div class="sourceCode" id="cb2"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="im">import</span> { QWBPConnection } from <span class="st">&quot;qwbp&quot;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="co">// Device A: Create connection and generate QR</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>const connectionA <span class="op">=</span> <span class="kw">new</span> <span class="fu">QWBPConnection</span>()<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>await connectionA<span class="op">.</span><span class="fu">initialize</span>()<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>const qrData <span class="op">=</span> connectionA<span class="op">.</span><span class="fu">getQRPayload</span>()<span class="op">;</span> <span class="co">// Uint8Array for QR code</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="co">// Device B: Scan QR and create connection</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>const connectionB <span class="op">=</span> <span class="kw">new</span> <span class="fu">QWBPConnection</span>()<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>await connectionB<span class="op">.</span><span class="fu">initialize</span>()<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>connectionB<span class="op">.</span><span class="fu">processScannedPayload</span>(scannedQrData)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>const responseQrData <span class="op">=</span> connectionB<span class="op">.</span><span class="fu">getQRPayload</span>()<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="co">// Device A: Process response and connect</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>connectionA<span class="op">.</span><span class="fu">processScannedPayload</span>(responseQrData)<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="co">// Both devices now have an encrypted DataChannel</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>connectionA<span class="op">.</span><span class="fu">onDataChannel</span>((channel) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>  channel<span class="op">.</span><span class="fu">send</span>(<span class="st">&quot;Hello from A!&quot;</span>)<span class="op">;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>})<span class="op">;</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>connectionB<span class="op">.</span><span class="fu">onDataChannel</span>((channel) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a>  channel<span class="op">.</span><span class="at">onmessage</span> <span class="op">=</span> (e) <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&quot;Received:&quot;</span><span class="op">,</span> e<span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a>})<span class="op">;</span></span></code></pre></div><h2 id="how-it-works">How It Works</h2><h3 id="the-problem">The Problem</h3><p>Standard WebRTC signaling requires exchanging Session Description Protocol (SDP) messages—typically 2,500+ bytes. This data must travel through a signaling server (WebSocket, HTTP, etc.).</p><p>A full video call SDP is even larger: <strong>6,255 bytes</strong>—more than double the maximum QR code capacity (2,953 bytes for Version 40).</p><h3 id="the-solution">The Solution</h3><p>QWBP compresses WebRTC signaling to <strong>55-100 bytes</strong> by:</p><ol><li><strong>Eliminating redundancy</strong> - Only transmit what varies between sessions</li><li><strong>Binary encoding</strong> - Raw bytes instead of text/JSON</li><li><strong>Deriving credentials</strong> - ICE credentials derived via HKDF from DTLS fingerprint</li><li><strong>Symmetric exchange</strong> - Both peers send identical "identity card" format</li></ol><h3 id="two-stage-architecture">Two-Stage Architecture</h3><pre><code>┌─────────────────────────────────────────────────────────────────┐
+│  Layer 0: QR Bootstrap (QWBP)                                   │
+│  • 55-100 bytes binary payload                                  │
+│  • Fits in QR Version 4-5 (33-37 modules)                       │
+│  • Establishes encrypted DataChannel                            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Layer 1: Application Protocol                                  │
+│  • No size constraints                                          │
+│  • Exchange full video/audio SDPs (6KB+)                        │
+│  • Stream files of any size                                     │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre><h3 id="symmetric-identity-exchange-flow">Symmetric Identity Exchange Flow</h3><pre class="mermaid"><code>sequenceDiagram
+    participant A as Device A
+    participant B as Device B
+
+    Note over A,B: 1. Initialization
+    A-&gt;&gt;A: Generate Cert &amp; Gather ICE
+    B-&gt;&gt;B: Generate Cert &amp; Gather ICE
+
+    Note over A,B: 2. Exchange (Order Independent)
+    A-&gt;&gt;B: Scan QR (Fingerprint A + Candidates A)
+    B-&gt;&gt;A: Scan QR (Fingerprint B + Candidates B)
+
+    Note over A,B: 3. Role Assignment
+    A-&gt;&gt;A: Compare FP(A) vs FP(B)
+    B-&gt;&gt;B: Compare FP(B) vs FP(A)
+
+    alt A &gt; B
+        Note over A: Role: OFFERER
+        Note over B: Role: ANSWERER
+    else B &gt; A
+        Note over A: Role: ANSWERER
+        Note over B: Role: OFFERER
+    end
+
+    Note over A,B: 4. Connection
+    A-&gt;&gt;A: Reconstruct SDPs
+    B-&gt;&gt;B: Reconstruct SDPs
+    A-&gt;&gt;B: P2P Handshake (DTLS/ICE)
+    B-&gt;&gt;A: DataChannel Open
+</code></pre><h2 id="protocol-specification">Protocol Specification</h2><p>See <a href="./SPECIFICATION.md">SPECIFICATION.md</a> for the complete RFC-level protocol specification, including:</p><ul><li>Binary packet format</li><li>HKDF key derivation parameters</li><li>SDP reconstruction templates</li><li>Test vectors</li><li>Security considerations</li></ul><h2 id="api-reference">API Reference</h2><h3 id="qwbpconnection"><code>QWBPConnection</code></h3><p>Main class for establishing QWBP connections.</p><div class="sourceCode" id="cb5"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>const connection <span class="op">=</span> <span class="kw">new</span> <span class="fu">QWBPConnection</span>(options<span class="op">?:</span> QWBPOptions)<span class="op">;</span></span></code></pre></div><h4 id="options">Options</h4><table><thead><tr class="header"><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr class="odd"><td><code>iceServers</code></td><td><code>RTCIceServer[]</code></td><td>Google STUN</td><td>ICE servers for NAT traversal</td></tr><tr class="even"><td><code>maxCandidates</code></td><td><code>number</code></td><td><code>4</code></td><td>Maximum ICE candidates to include</td></tr><tr class="odd"><td><code>timeout</code></td><td><code>number</code></td><td><code>30000</code></td><td>Session timeout in milliseconds</td></tr></tbody></table><h4 id="methods">Methods</h4><table><thead><tr class="header"><th>Method</th><th>Returns</th><th>Description</th></tr></thead><tbody><tr class="odd"><td><code>initialize()</code></td><td><code>Promise&lt;void&gt;</code></td><td>Initialize connection and gather ICE candidates</td></tr><tr class="even"><td><code>getQRPayload()</code></td><td><code>Uint8Array</code></td><td>Get binary payload for QR code</td></tr><tr class="odd"><td><code>processScannedPayload(data)</code></td><td><code>Promise&lt;void&gt;</code></td><td>Process scanned QR payload from peer</td></tr><tr class="even"><td><code>getDataChannel()</code></td><td><code>RTCDataChannel | null</code></td><td>Get established DataChannel</td></tr><tr class="odd"><td><code>getSAS()</code></td><td><code>Promise&lt;string | null&gt;</code></td><td>Get 4-digit verification code for MITM protection</td></tr><tr class="even"><td><code>onDataChannel(callback)</code></td><td><code>void</code></td><td>Register callback for DataChannel ready</td></tr><tr class="odd"><td><code>close()</code></td><td><code>void</code></td><td>Close connection and cleanup</td></tr></tbody></table><h3 id="qwbpencoder"><code>QWBPEncoder</code></h3><p>Low-level encoder for QWBP packets.</p><div class="sourceCode" id="cb6"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="im">import</span> { QWBPEncoder } from <span class="st">&#39;qwbp&#39;</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>const payload <span class="op">=</span> QWBPEncoder<span class="op">.</span><span class="fu">encode</span>({</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>  fingerprint<span class="op">:</span> Uint8Array<span class="op">,</span> <span class="co">// 32-byte SHA-256 DTLS fingerprint</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>  candidates<span class="op">:</span> QWBPCandidate[]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>})<span class="op">;</span></span></code></pre></div><h3 id="qwbpdecoder"><code>QWBPDecoder</code></h3><p>Low-level decoder for QWBP packets.</p><div class="sourceCode" id="cb7"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="im">import</span> { QWBPDecoder } from <span class="st">&quot;qwbp&quot;</span><span class="op">;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>const { fingerprint<span class="op">,</span> candidates } <span class="op">=</span> QWBPDecoder<span class="op">.</span><span class="fu">decode</span>(payload)<span class="op">;</span></span></code></pre></div><h2 id="demo">Demo</h2><p>A working demo is included in the <code>demo/</code> directory:</p><div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="co"># Install dependencies</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="ex">npm</span> install</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="co"># Build demo</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a><span class="ex">npm</span> run build:demo</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a><span class="co"># Serve demo (use any static server)</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a><span class="ex">npx</span> serve demo</span></code></pre></div><p>Open <code>demo/index.html</code> in two browser windows/devices to test QR-based signaling.</p><h2 id="use-cases">Use Cases</h2><ul><li><strong>File sharing</strong> - Serverless AirDrop-like transfers</li><li><strong>Game sync</strong> - Transfer save data between devices</li><li><strong>Device pairing</strong> - IoT provisioning, smart home setup</li><li><strong>Video calls</strong> - Bootstrap channel for full SDP negotiation</li><li><strong>Local multiplayer</strong> - Mesh networking without game servers</li></ul><h2 id="browser-compatibility">Browser Compatibility</h2><table><thead><tr class="header"><th>Browser</th><th>Min Version</th><th>Status</th><th>Notes</th></tr></thead><tbody><tr class="odd"><td>Chrome Desktop</td><td>80+</td><td>✅ Full</td><td>Reference implementation</td></tr><tr class="even"><td>Chrome Android</td><td>80+</td><td>✅ Full</td><td>Camera permission reveals raw IP</td></tr><tr class="odd"><td>Safari Desktop</td><td>14.1+</td><td>✅ Full</td><td>Privacy settings may affect candidates</td></tr><tr class="even"><td>Safari iOS</td><td>14.5+</td><td>✅ Full</td><td>Local Network prompt required</td></tr><tr class="odd"><td>Firefox</td><td>75+</td><td>✅ Full</td><td>Platform-dependent mDNS behavior</td></tr><tr class="even"><td>Edge</td><td>80+</td><td>✅ Full</td><td>Chromium-based</td></tr></tbody></table><p>For detailed compatibility information, known issues, and workarounds, see <a href="./COMPATIBILITY.md">COMPATIBILITY.md</a>.</p><h2 id="security">Security</h2><p>QWBP's security model relies on:</p><ol><li><strong>Physical proximity</strong> - QR scanning requires visual access</li><li><strong>DTLS encryption</strong> - All data encrypted with ephemeral keys</li><li><strong>Fingerprint verification</strong> - MITM prevention via certificate pinning</li><li><strong>Forward secrecy</strong> - Session keys cannot decrypt past sessions</li></ol><p>See <a href="./SPECIFICATION.md#security-considerations">SPECIFICATION.md</a> for detailed threat analysis.</p><h2 id="known-limitations">Known Limitations</h2><h3 id="no-turn-support-in-qr">No TURN Support in QR</h3><p>QWBP is designed for <strong>serverless</strong> operation. TURN relay credentials cannot be transmitted in the QR code—they would exceed size limits and expose long-lived secrets.</p><p><strong>Impact:</strong> If both peers are behind symmetric NATs (corporate firewalls, some cellular networks), STUN hole-punching will fail. Connection requires at least one peer with a reachable address.</p><p><strong>Workaround:</strong> Applications requiring TURN support must pre-configure the same TURN server on both clients:</p><div class="sourceCode" id="cb9"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>const connection <span class="op">=</span> <span class="kw">new</span> <span class="fu">QWBPConnection</span>({</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>  iceServers<span class="op">:</span> [</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>    { urls<span class="op">:</span> <span class="st">&quot;stun:stun.l.google.com:19302&quot;</span> }<span class="op">,</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>    {</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>      urls<span class="op">:</span> <span class="st">&quot;turn:your-turn-server.example.com:3478&quot;</span><span class="op">,</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>      username<span class="op">:</span> <span class="st">&quot;app-configured-user&quot;</span><span class="op">,</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>      credential<span class="op">:</span> <span class="st">&quot;app-configured-credential&quot;</span><span class="op">,</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>    }<span class="op">,</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>  ]<span class="op">,</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>})<span class="op">;</span></span></code></pre></div><h3 id="network-requirements">Network Requirements</h3><ul><li><strong>Same Wi-Fi/LAN:</strong> Works reliably with host candidates</li><li><strong>Different networks:</strong> Requires STUN-accessible srflx candidate (automatically included)</li><li><strong>Both behind symmetric NAT:</strong> Requires pre-configured TURN (see above)</li><li><strong>iOS Local Network prompt:</strong> Users may need to allow local network access</li></ul><h2 id="contributing">Contributing</h2><p>Contributions are welcome! Please read the specification before implementing changes.</p><div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="co"># Run tests</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="ex">npm</span> test</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a><span class="co"># Run linter</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a><span class="ex">npm</span> run lint</span></code></pre></div><h2 id="license">License</h2><p>This project uses a dual-license structure:</p><ul><li><strong>Code (Library):</strong> <a href="./LICENSE">MIT License</a> — Use freely in any project, including commercial applications</li><li><strong>Specification:</strong> <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> — Share, adapt, and build upon the protocol design with attribution</li></ul><h2 id="acknowledgments">Acknowledgments</h2><ul><li>Inspired by <a href="https://www.wi-fi.org/discover-wi-fi/wi-fi-easy-connect">Wi-Fi Easy Connect (DPP)</a></li><li>Built on WebRTC standards from IETF and W3C</li><li>Protocol design assisted by Claude (Anthropic)</li></ul>
+</body>
+</html>

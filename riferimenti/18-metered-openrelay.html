@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Metered Open Relay — TURN gratuito</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">Metered Open Relay — TURN gratuito</h1>
+</header>
+<div id="__docusaurus">
+<div id="docusaurus-base-url-issue-banner-container">
+</div>
+<div role="region">
+<p><a href="#">Skip to main content</a></p></div>
+<div class="navbar__inner">
+<div class="navbar__items">
+<p><a href="/tools/openrelay/"></a></p><div class="navbar__logo">
+<p><img src="/tools/openrelay/img/logo.png" alt="Metered Video" /><img src="/tools/openrelay/img/logo.png" alt="Metered Video" /></p></div>
+<p><strong>Open Relay: Free WebRTC TURN Server</strong></p></div>
+<div class="navbar__items navbar__items--right">
+<p><a href="/tools/openrelay/webrtc-signaling-server">Signalling Server</a></p><div class="navbar__item dropdown dropdown--hoverable dropdown--right">
+<p><a href="#">WebRTC SDKs</a></p><ul><li><a href="/tools/openrelay/webrtc-library">JavaScript SDK</a></li><li><a href="/tools/openrelay/webrtc-library-flutter">Flutter SDK</a></li><li><a href="/tools/openrelay/webrtc-library-python">Python SDK</a></li></ul></div>
+<p>Login</p><div class="toggle_Pssr toggle_TdHA toggleDisabled_jDku">
+<div class="toggleTrack_SSoT" role="button" tabindex="-1">
+<div class="toggleTrackCheck_XobZ">
+<p><span class="toggleIcon_eZtF">🌜</span></p></div>
+<div class="toggleTrackX_YkSC">
+<p><span class="toggleIcon_eZtF">🌞</span></p></div>
+<div class="toggleTrackThumb_uRm4">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="navbar-sidebar__backdrop" role="presentation">
+</div>
+<div class="main-wrapper docs-wrapper docs-doc-page">
+<div class="docPage_P2Lg">
+<div class="sidebar_CW9Y">
+<ul><li><div class="menu__list-item-collapsible">
+<p><a href="/tools/openrelay/">Open Relay Project</a></p></div>
+<ul><li><a href="/tools/openrelay/">Getting Started</a></li><li><a href="/tools/openrelay/stun-servers-and-friends">Stun Server</a></li></ul></li><li><div class="menu__list-item-collapsible">
+<p><a href="/tools/openrelay/webrtc-signaling-server">WebRTC SDK &amp; Signalling</a></p></div>
+<ul><li><p><a href="/tools/openrelay/webrtc-signaling-server">WebRTC Signalling Server</a></p></li><li><div class="menu__list-item-collapsible">
+<p><a href="/tools/openrelay/webrtc-library">Client SDKs</a></p></div>
+<ul><li><a href="/tools/openrelay/webrtc-library">JavaScript WebRTC Library (SDK)</a></li><li><a href="/tools/openrelay/webrtc-library-flutter">Flutter WebRTC Library (SDK)</a></li><li><a href="/tools/openrelay/webrtc-library-python">Python WebRTC Library (SDK)</a></li></ul></li></ul></li><li><div class="menu__list-item-collapsible">
+<p><a href="/tools/openrelay/tutorials/datachannel">Tutorials</a></p></div>
+<ul><li><a href="/tools/openrelay/tutorials/datachannel">WebRTC DataChannel Tutorial</a></li><li><a href="/tools/openrelay/webrtc-with-python">Python AI Voice Agent</a></li></ul></li></ul></div>
+<div class="docMainContainer_TCnq" role="main">
+<div class="container padding-top--md padding-bottom--lg">
+<div class="row">
+<div class="col docItemCol_DM6M">
+<div class="docItemContainer_vinB">
+<div class="tocCollapsible_jdIR theme-doc-toc-mobile tocMobile_TmEX">
+<p>On this page</p></div>
+<div class="theme-doc-markdown markdown">
+<h1 id="open-relay-free-webrtc-turn-server">Open Relay: Free WebRTC TURN Server</h1><hr /><h2 id="need-a-premium-turn-server">Need a Premium TURN Server<a href="#need-a-premium-turn-server" title="Direct link to heading">​</a></h2><p>Metered also offers a premium TURN server service that automatically routes users to nearest server offering lowest possible latency. Plus also offer powerful REST API that allows creation, automatic expiry of credentials and ability to fetch detailed usage stats.</p><p>Learn more about it here.</p><p><a href="https://metered.ca/stun-turn">Premium TURN server by Metered</a></p><h2 id="what-is-a-turn-server">What is a TURN Server?<a href="#what-is-a-turn-server" title="Direct link to heading">​</a></h2><hr /><p>WebRTC TURN Server is required to relay the traffic between the peers when direct connection cannot be established among them.</p><p>WebRTC protocol establishes a direct connection between the peers, but the sometimes a direct connection cannot be established for this a TURN Server is required to relay the traffic between the peers.</p><p>As peers cannot directly connect to each other the TURN Server acts as an intermediary among the peers and forwards the traffic from one peer to another.</p><p>All the traffic (video/audio + data) that passes through the TURN server is already end-to-end encrypted by the peers and the TURN Server cannot decode/read the encrypted packet, it just relays the packet to other peers.</p><p><img src="/tools/openrelay/assets/images/turn-server-21d0a088ff33ba667aa62b5101226d57.png" alt="turn server" /></p><h2 id="overview">Overview<a href="#overview" title="Direct link to heading">​</a></h2><hr /><p>Open Relay is a free TURN server provided by <a href="https://www.metered.ca/docs/">Metered Video</a> that you can use in your WebRTC applications. The Open Relay TURN server is highly available, reliable and offers both STUN and TURN Capabilities.</p><p>The Open Relay runs on port 80 and 443 to bypass corporate firewalls, many corporate/enterprise firewall only allow port 80 or 443, it also supports <code>turns</code> + SSL for maximum compatibility.</p><p>The TURN Server provides <strong>20 GB</strong> of free TURN Usage every month.</p><ul><li>✅ Runs on port 80 and 443</li><li>✅ Tested to bypass most firewall rules</li><li>✅ Support TURNS + SSL to allow connections through deep packet inspection firewalls.</li><li>✅ Support STUN</li><li>✅ Supports both TCP and UDP</li><li>✅ Dynamic routing to the nearest server</li><li>✅ 20GB of free TURN Usage Every Month</li></ul><p><a href="https://dashboard.metered.ca/signup?tool=turnserver">Signup for free account</a></p><h2 id="global-turn-server-cloud-infrastructure">Global TURN server Cloud Infrastructure<a href="#global-turn-server-cloud-infrastructure" title="Direct link to heading">​</a></h2><p><img src="/tools/openrelay/assets/images/turn-servers1-c45c18cc859fb7ad9b6b442e3759f7da.png" alt="Nextcloud Talk TURN Server Setting" /></p><h2 id="-how-to-use">✨ How to use<a href="#-how-to-use" title="Direct link to heading">​</a></h2><hr /><p>You can use the Open Relay TURN Server in your Javascript Code.</p><p>To use the TURN Server you will have to call the TURN Server REST API, the TURN Server REST API will return the <code>iceServers</code> array that you can use in the front-end.</p><p>The REST API automatically returns <code>iceServers</code> that are nearest to the geo-location of the user for the lowest latency.</p><div class="admonition admonition-info alert alert--info">
+<div class="admonition-heading">
+<h5 id="info"><span class="admonition-icon"></span>info</h5></div>
+<div class="admonition-content">
+<p>To obtain your <strong><code>API_KEY</code></strong> sign-up for a free account.</p></div>
+</div>
+<h3 id="using-the-javascript-fetch-api">Using the JavaScript Fetch() API<a href="#using-the-javascript-fetch-api" title="Direct link to heading">​</a></h3><div class="codeBlockContainer_I0IT language-js theme-code-block">
+<div class="codeBlockContent_wNvx js">
+<pre class="prism-code"><code>const peerConfiguration = {};
+
+(async () =&gt; {
+  const response = await fetch(&quot;https://yourappname.metered.live/api/v1/turn/credentials?apiKey=API_KEY&quot;);
+  const iceServers = await response.json();
+  peerConfiguration.iceServers = iceServers;
+})();
+
+const myPeerConnection = new RTCPeerConnection(peerConfiguration);
+</code></pre><p>Copy</p></div>
+</div>
+<h3 id="using-axios">Using Axios<a href="#using-axios" title="Direct link to heading">​</a></h3><div class="codeBlockContainer_I0IT language-js theme-code-block">
+<div class="codeBlockContent_wNvx js">
+<pre class="prism-code"><code>const peerConfiguration = {};
+
+(async () =&gt; {
+  const response = await axios.get(&quot;https://yourappname.metered.live/api/v1/turn/credentials?apiKey=API_KEY&quot;);
+  const iceServers = response.data;
+  peerConfiguration.iceServers = iceServers;
+})();
+
+const myPeerConnection = new RTCPeerConnection(peerConfiguration);
+</code></pre><p>Copy</p></div>
+</div>
+<h3 id="using-a-metered-realtime-sdk">Using a Metered realtime SDK<a href="#using-a-metered-realtime-sdk" title="Direct link to heading">​</a></h3><p>The examples above fetch <code>iceServers</code> for a raw <code>RTCPeerConnection</code> — you still have to build signalling, reconnect, and negotiation yourself. Metered's free, open-source realtime SDKs bundle all of it and <strong>auto-inject your Open Relay TURN credentials</strong> at connect time. Pick your language:</p><div class="tabs-container">
+<ul><li>JavaScript</li><li>Flutter</li><li>Python</li></ul><div class="margin-vert--md">
+<div role="tabpanel">
+<div class="codeBlockContainer_I0IT language-js theme-code-block">
+<div class="codeBlockContent_wNvx js">
+<pre class="prism-code"><code>import { MeteredPeer } from &quot;@metered-ca/realtime&quot;;
+
+const peer = new MeteredPeer({ apiKey: &quot;pk_live_...&quot; }); // free key in your dashboard
+await peer.join(&quot;my-room&quot;);                              // discovers peers; TURN auto-applied
+
+peer.on(&quot;peer-joined&quot;, ({ peer: remote }) =&gt; {
+  remote.on(&quot;stream-added&quot;, ({ stream }) =&gt; {
+    remoteVideo.srcObject = stream;
+  });
+});
+
+const cam = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+peer.addStream(cam);
+</code></pre><p>Copy</p></div>
+</div>
+</div>
+<div role="tabpanel" hidden="">
+<div class="codeBlockContainer_I0IT language-dart theme-code-block">
+<div class="codeBlockContent_wNvx dart">
+<pre class="prism-code"><code>import &#39;package:flutter_webrtc/flutter_webrtc.dart&#39;;
+import &#39;package:metered_realtime/metered_realtime.dart&#39;;
+
+final peer = MeteredPeer(MeteredPeerOptions(apiKey: &#39;pk_live_...&#39;));
+await peer.join(&#39;my-room&#39;);                       // discovers peers; TURN auto-applied
+
+peer.onPeerJoined.listen((remote) {
+  remote.onStreamAdded.listen((ev) {
+    renderer.srcObject = (ev.stream as FlutterWebrtcMediaStream).native;
+  });
+});
+
+final cam = await navigator.mediaDevices
+    .getUserMedia({&#39;audio&#39;: true, &#39;video&#39;: true});
+await peer.addStream(wrapMediaStream(cam), metadata: {&#39;role&#39;: &#39;camera&#39;});
+</code></pre><p>Copy</p></div>
+</div>
+</div>
+<div role="tabpanel" hidden="">
+<div class="codeBlockContainer_I0IT language-python theme-code-block">
+<div class="codeBlockContent_wNvx python">
+<pre class="prism-code"><code>import asyncio
+from metered_realtime import MeteredPeer, PeerJoined, Track, iter_frames
+
+async def main():
+    async with MeteredPeer(api_key=&quot;pk_live_...&quot;) as peer:
+
+        @peer.on(PeerJoined)
+        def on_peer(ev):
+            @ev.peer.on(Track)
+            async def on_track(t):
+                async for frame in iter_frames(t.track):
+                    process(frame)        # render, record, transcode…
+
+        await peer.join(&quot;my-room&quot;)        # discovers peers; TURN auto-applied
+        await asyncio.Future()
+
+asyncio.run(main())
+</code></pre><p>Copy</p></div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonition admonition-note alert alert--secondary">
+<div class="admonition-heading">
+<h5 id="note"><span class="admonition-icon"></span>note</h5></div>
+<div class="admonition-content">
+<p>The SDK's <code>apiKey</code> here is your <strong>signalling publishable key</strong> (<code>pk_live_...</code>), separate from the TURN REST <code>API_KEY</code> used above — both are free in your dashboard. Create it from <strong><a href="https://dashboard.metered.ca/signup?tool=turnserver">Dashboard</a> → Realtime Messaging → Keys → Create key → Publishable</strong>, and <strong>make sure <code>Send</code> is enabled</strong> — it's off by default, and without it WebRTC connects but the video never negotiates.</p></div>
+</div>
+<p>Free signalling + 20 GB/mo free Open Relay TURN, no backend to run:</p><ul><li><strong><a href="/tools/openrelay/webrtc-library">JavaScript SDK</a></strong> — <code>@metered-ca/realtime</code>, the open-source browser WebRTC library</li><li><strong><a href="/tools/openrelay/webrtc-library-flutter">Flutter SDK</a></strong> — <code>metered_realtime</code>, native mobile, web &amp; desktop on flutter_webrtc</li><li><strong><a href="/tools/openrelay/webrtc-library-python">Python SDK</a></strong> — <code>metered-realtime</code>, server-side &amp; headless on aiortc</li><li><strong><a href="/tools/openrelay/webrtc-signaling-server">Free WebRTC signalling server</a></strong> — the managed signalling layer</li></ul><h3 id="-credentials">🔓 Credentials<a href="#-credentials" title="Direct link to heading">​</a></h3><p>To Connect to the Open Relay TURN Server, you need to sign-up for a free account and obtain your API Key.</p><p>Using the API you can call the end-point to fetch the <code>iceServers</code> array that you can use in the <code>RTCPeerConnection</code>.</p><p><a href="https://dashboard.metered.ca/signup?tool=turnserver">Signup for free account</a></p><h3 id="-static-auth">🔐 Static Auth<a href="#-static-auth" title="Direct link to heading">​</a></h3><p>Services like Nextcloud Talk or Matrix+Synapse+Riot uses static auth instead of username and password authentication for the TURN Server. To use the TURN Server with those services use the static auth url which is <code>staticauth.openrelay.metered.ca</code></p><div class="codeBlockContainer_I0IT theme-code-block">
+<div class="codeBlockContent_wNvx">
+<pre class="prism-code"><code>secret: openrelayprojectsecret
+</code></pre><p>Copy</p></div>
+</div>
+<h2 id="turn-server-for-nextcloud-talk">TURN Server for Nextcloud Talk<a href="#turn-server-for-nextcloud-talk" title="Direct link to heading">​</a></h2><hr /><p>Open Relay Project also works with Nextcloud talk, follow the instructions below to learn how to configure Nextcloud talk to work with Open Relay.</p><p>Nextcloud talk require the <code>auth-secret-authentication</code> so we have to use the Open Relay Project's TURN Server with auth-secret-authentication. Use the turn server url <code>staticauth.openrelay.metered.ca</code> with Nextcloud talk and turn secret: <code>openrelayprojectsecret</code>.</p><ul><li>Go to <code>Nextcloud-&gt; Settings -&gt; Talk</code> and under TURN Servers press the + button</li><li>Then select <code>turn:only</code></li><li>Under turnserver:port enter <code>staticauth.openrelay.metered.ca:80</code></li><li>Under secret enter <code>openrelayprojectsecret</code></li></ul><p>Add another entry for port 443</p><ul><li>Select <code>turn:only</code></li><li>Under turnserver:port enter <code>staticauth.openrelay.metered.ca:443</code></li><li>Under secret enter <code>openrelayprojectsecret</code></li></ul><p><img src="/tools/openrelay/assets/images/nextcloud-talk-turn-server-setting-updated-daaa4171259031d1e226b440229d9640.png" alt="Nextcloud Talk TURN Server Setting" /></p><h2 id="-testing-the-turn-and-stun-server">🧰 Testing the TURN and STUN Server<a href="#-testing-the-turn-and-stun-server" title="Direct link to heading">​</a></h2><hr /><p>You can test the TURN Server using our TURN Server Testing tool</p><h3 id="trickle-ice">Trickle ICE<a href="#trickle-ice" title="Direct link to heading">​</a></h3><hr /><p>Go to the <a href="https://www.metered.ca/turn-server-testing"><strong>TURN Server Testing tool</strong></a> website at: <a href="https://www.metered.ca/turn-server-testing">https://www.metered.ca/turn-server-testing</a> and enter the TURN Server credentials.</p><p><strong>1. Add TURN Server Info</strong> Add the TURN Server Credential. If you do not have the TURN Server credentials you can obtain them by signup for a free account.</p><p><img src="/tools/openrelay/assets/images/add-ice-server-5d4638b0e2664e7b98c6739bb77d2de6.png" /></p><p><strong>2. Add STUN Server Info</strong></p><p>Click the Launch Button to Launch the test. If you don't specify the STUN Server address it will not display your PUBLIC IP address.</p><p><img src="/tools/openrelay/assets/images/test-server-3cb875292aeadbb99c27273bd36c10e3.jpg" /></p><h2 id="-complete-your-free-webrtc-stack">🧰 Complete your free WebRTC stack<a href="#-complete-your-free-webrtc-stack" title="Direct link to heading">​</a></h2><hr /><p>A TURN server is just one piece of WebRTC. To actually connect two peers you also need <strong>signalling</strong> (to exchange connection info) and a <strong>client library</strong> (to manage the connection and reconnects). Metered gives you all three — free to start:</p><table><thead><tr class="header"><th>Piece</th><th>What it does</th><th>Free tier</th></tr></thead><tbody><tr class="odd"><td>🟢 <strong>Open Relay TURN</strong></td><td>Relays media when peers can't connect directly</td><td>20 GB / month</td></tr><tr class="even"><td>🔵 <strong>Metered Realtime</strong> (signalling)</td><td>Coordinates connections over WebSocket</td><td>100 connections · 100k msgs / month</td></tr><tr class="odd"><td>🟣 <strong>@metered-ca/realtime</strong> (JS)</td><td>Open-source JS library — auto-reconnect, TURN built in</td><td>MIT · free</td></tr><tr class="even"><td>📱 <strong>metered_realtime</strong> (Flutter)</td><td>Open-source Flutter/Dart library on flutter_webrtc — same auto-reconnect, TURN built in</td><td>MIT · free</td></tr><tr class="odd"><td>🐍 <strong>metered-realtime</strong> (Python)</td><td>Open-source Python library on aiortc — async, same auto-reconnect, TURN built in</td><td>MIT · free</td></tr></tbody></table><p>→ <a href="/tools/openrelay/webrtc-signaling-server">Free WebRTC signalling server</a> · <a href="/tools/openrelay/webrtc-library">The open-source PeerJS &amp; simple-peer alternative</a> · <a href="/tools/openrelay/webrtc-library-flutter">Flutter WebRTC SDK (on flutter_webrtc)</a> · <a href="/tools/openrelay/webrtc-library-python">Python WebRTC SDK (on aiortc)</a></p><h2 id="-free-webrtc-signalling-server">📡 Free WebRTC Signalling Server<a href="#-free-webrtc-signalling-server" title="Direct link to heading">​</a></h2><hr /><p>A TURN server only relays media once a connection exists — to <em>establish</em> the connection, peers must first exchange SDP offers/answers and ICE candidates over a <strong>signalling</strong> channel. Metered's <strong>Realtime Messaging</strong> is a free, managed signalling server that pairs with Open Relay, so you don't have to build or host your own.</p><ul><li>✅ Pub/sub over a single WebSocket (<code>wss://rms.metered.ca/v1</code>)</li><li>✅ Channels, presence (join/leave + per-peer metadata), and direct peer-to-peer messages</li><li>✅ JWT-minted credentials — your backend decides who can do what</li><li>✅ REST API to mint tokens, list peers, and publish server-side</li><li>✅ Auto-injects your Open Relay TURN credentials at connect time — no manual fetch</li></ul><p><a href="/tools/openrelay/webrtc-signaling-server">Explore the signalling server →</a></p><h2 id="-metered-carealtime--webrtc-peer-library">🧩 @metered-ca/realtime — WebRTC Peer Library<a href="#-metered-carealtime--webrtc-peer-library" title="Direct link to heading">​</a></h2><hr /><p>The fastest way to use Open Relay and Realtime Messaging together. A free, open-source (MIT) browser SDK (~12.5 KB) that bundles signalling, WebRTC negotiation, and TURN injection into a few lines of code — a modern, batteries-included alternative to PeerJS and simple-peer.</p><ul><li>✅ Auto-reconnect that survives Wi-Fi drops (WebSocket reconnect + ICE-restart + identity-preserving reconcile)</li><li>✅ Perfect-negotiation — no glare or initiator-role bugs</li><li>✅ Multi-stream with per-stream metadata (route camera + screen through one peer)</li><li>✅ ~12.5 KB gzipped, zero dependencies, TypeScript-native</li></ul><div class="codeBlockContainer_I0IT language-bash theme-code-block">
+<div class="codeBlockContent_wNvx bash">
+<pre class="prism-code"><code>npm install @metered-ca/realtime
+</code></pre><p>Copy</p></div>
+</div>
+<ul><li>Replacing <strong>PeerJS</strong>? → <a href="https://www.metered.ca/docs/realtime-messaging/sdk-javascript/migration/from-peerjs">PeerJS migration guide</a></li><li>Replacing <strong>simple-peer</strong>? → <a href="https://www.metered.ca/docs/realtime-messaging/sdk-javascript/migration/from-simple-peer">simple-peer migration guide</a></li></ul><p><a href="/tools/openrelay/webrtc-library">Explore the @metered-ca/realtime SDK →</a></p><h2 id="-metered_realtime--flutter-webrtc-sdk">📱 metered_realtime — Flutter WebRTC SDK<a href="#-metered_realtime--flutter-webrtc-sdk" title="Direct link to heading">​</a></h2><hr /><p>The same model for <strong>native mobile, web, and desktop</strong>. A free, open-source (MIT) Flutter/Dart library built on <strong>flutter_webrtc</strong> that adds signalling, multi-peer rooms, auto-reconnect, and TURN injection — so a Flutter app joins the same room as your browser users, from one Dart codebase.</p><ul><li>✅ One Dart codebase — Android, iOS, web, macOS, Windows, Linux</li><li>✅ Built on flutter_webrtc — keep full access to the underlying connection + renderers</li><li>✅ Auto-reconnect across Wi-Fi → cellular handoffs + auto-injected free TURN</li><li>✅ Shares rooms with the JavaScript/browser SDK</li></ul><div class="codeBlockContainer_I0IT language-bash theme-code-block">
+<div class="codeBlockContent_wNvx bash">
+<pre class="prism-code"><code>flutter pub add metered_realtime
+</code></pre><p>Copy</p></div>
+</div>
+<p><a href="/tools/openrelay/webrtc-library-flutter">Explore the Flutter WebRTC SDK →</a></p><h2 id="-metered-realtime--python-webrtc-sdk">🐍 metered-realtime — Python WebRTC SDK<a href="#-metered-realtime--python-webrtc-sdk" title="Direct link to heading">​</a></h2><hr /><p>The same model for <strong>server-side and headless</strong> WebRTC. A free, open-source (MIT) Python library built on <strong>aiortc</strong> that adds signalling, multi-peer rooms, auto-reconnect, and TURN injection — so a Python process can join the same room as your browser users. Built for <strong>AI voice agents, recording bots, IoT bridges, and server-side media</strong>.</p><ul><li>✅ Async/asyncio-native, production-stable (1.0.0)</li><li>✅ Built on aiortc — keep full access to the underlying peer connection</li><li>✅ Auto-reconnect + auto-injected free TURN</li><li>✅ Shares rooms with the JavaScript/browser SDK</li></ul><div class="codeBlockContainer_I0IT language-bash theme-code-block">
+<div class="codeBlockContent_wNvx bash">
+<pre class="prism-code"><code>pip install metered-realtime
+</code></pre><p>Copy</p></div>
+</div>
+<p><a href="/tools/openrelay/webrtc-library-python">Explore the Python WebRTC SDK →</a></p><h2 id="️security">🛡️Security<a href="#️security" title="Direct link to heading">​</a></h2><hr /><p>All the WebRTC traffic is end-to-end encrypted using DTLS-SRTP and the TURN server just relays the traffic. The TURN server only parse the UDP layer of WebRTC packet for routing purposes, and do not (and cannot) touch the DTLS encryption.</p><p>All the application layer data, include video and datachannel is encrypted using DTLS+SRTP and the TURN server cannot decrypt that data and it only relays the encrypted data among the peers.</p><p>You can read more about it here: <a href="https://webrtc-security.github.io/">https://webrtc-security.github.io/</a></p><p>To read more about the TURN proposed standard refer to <a href="https://www.rfc-editor.org/rfc/rfc5766">RFC 5766</a></p><h2 id="ℹ️-contact">ℹ️ Contact<a href="#ℹ️-contact" title="Direct link to heading">​</a></h2><hr /><p>If you have any questions, comments or suggestions you can email us at <code>contact[at]openrelayproject.org</code></p><h2 id="-powered-by-metered-video">🚀 Powered by <a href="https://www.metered.ca">Metered Video</a><a href="#-powered-by-metered-video" title="Direct link to heading">​</a></h2><hr /><p><strong><a href="https://www.metered.ca">Metered Video</a></strong> provides enterprise grade WebRTC video calling apis that you can use to create video conferencing applications that can scale upto thousands of simultaneous online users, with live streaming and recording capabilities.</p><p>Building peer-to-peer WebRTC? Metered's free <a href="/tools/openrelay/webrtc-library"><code>@metered-ca/realtime</code></a> (JavaScript), <a href="/tools/openrelay/webrtc-library-flutter"><code>metered_realtime</code></a> (Flutter), and <a href="/tools/openrelay/webrtc-library-python"><code>metered-realtime</code></a> (Python) SDKs and <a href="/tools/openrelay/webrtc-signaling-server">Realtime Messaging</a> signalling service pair with Open Relay for signalling, presence, and auto-reconnect.</p><hr /><h2 id="terms-and-conditions">Terms and Conditions<a href="#terms-and-conditions" title="Direct link to heading">​</a></h2><p>By using Open Relay Project Website or TURN server, you agree to our <a href="/tools/openrelay/terms-and-conditions">terms and conditions.</a></p></div>
+<div class="pagination-nav__item">
+</div>
+<div class="pagination-nav__item pagination-nav__item--next">
+<p><a href="/tools/openrelay/stun-servers-and-friends"></a></p><div class="pagination-nav__sublabel">
+<p>Next</p></div>
+<div class="pagination-nav__label">
+<p>Stun Server</p></div>
+</div>
+</div>
+</div>
+<div class="col col--3">
+<div class="tableOfContents_cNA8 thin-scrollbar theme-doc-toc-desktop">
+<ul><li><a href="#need-a-premium-turn-server">Need a Premium TURN Server</a></li><li><a href="#what-is-a-turn-server">What is a TURN Server?</a></li><li><a href="#overview">Overview</a></li><li><a href="#global-turn-server-cloud-infrastructure">Global TURN server Cloud Infrastructure</a></li><li><a href="#-how-to-use">✨ How to use</a><ul><li><a href="#using-the-javascript-fetch-api">Using the JavaScript Fetch() API</a></li><li><a href="#using-axios">Using Axios</a></li><li><a href="#using-a-metered-realtime-sdk">Using a Metered realtime SDK</a></li><li><a href="#-credentials">🔓 Credentials</a></li><li><a href="#-static-auth">🔐 Static Auth</a></li></ul></li><li><a href="#turn-server-for-nextcloud-talk">TURN Server for Nextcloud Talk</a></li><li><a href="#-testing-the-turn-and-stun-server">🧰 Testing the TURN and STUN Server</a><ul><li><a href="#trickle-ice">Trickle ICE</a></li></ul></li><li><a href="#-complete-your-free-webrtc-stack">🧰 Complete your free WebRTC stack</a></li><li><a href="#-free-webrtc-signalling-server">📡 Free WebRTC Signalling Server</a></li><li><a href="#-metered-carealtime--webrtc-peer-library">🧩 @metered-ca/realtime — WebRTC Peer Library</a></li><li><a href="#-metered_realtime--flutter-webrtc-sdk">📱 metered_realtime — Flutter WebRTC SDK</a></li><li><a href="#-metered-realtime--python-webrtc-sdk">🐍 metered-realtime — Python WebRTC SDK</a></li><li><a href="#️security">🛡️Security</a></li><li><a href="#ℹ️-contact">ℹ️ Contact</a></li><li><a href="#-powered-by-metered-video">🚀 Powered by Metered Video</a></li><li><a href="#terms-and-conditions">Terms and Conditions</a></li></ul></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container container-fluid">
+<div class="footer__bottom text--center">
+<div class="footer__copyright">
+<p>Copyright © 2026 Next Path Software Consulting Inc.</p></div>
+</div>
+</div>
+</div>
+</body>
+</html>

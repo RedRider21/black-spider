@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>MDN — Web Locks API</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="stile.css" />
+</head>
+<body>
+<p class="nav"><a href="indice.html">&larr; Indice dei riferimenti &mdash; Black Spider</a></p>
+<header id="title-block-header">
+<h1 class="title">MDN — Web Locks API</h1>
+</header>
+<p>The <strong>Web Locks API</strong> allows scripts running in one tab or worker to asynchronously acquire a lock, hold it while work is performed, then release it. While held, no other script executing in the same origin can acquire the same lock, which allows a web app running in multiple tabs or workers to coordinate work and the use of resources.</p><h2 id="concepts-and-usage">Concepts and Usage</h2><p>A lock is an abstract concept representing some potentially shared resource, identified by a name chosen by the web app. For example, if a web app running in multiple tabs wants to ensure that only one tab is syncing data between the network and Indexed DB, each tab could try to acquire a "my_net_db_sync" lock, but only one tab will succeed (the <a href="https://en.wikipedia.org/wiki/Leader_election">leader election pattern</a>.)</p><p>The API is used as follows:</p><ol><li>The lock is requested.</li><li>Work is done while holding the lock in an asynchronous task.</li><li>The lock is automatically released when the task completes.</li></ol><div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(<span class="st">&quot;my_resource&quot;</span><span class="op">,</span> <span class="kw">async</span> (lock) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="co">// The lock has been acquired.</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="cf">await</span> <span class="fu">do_something</span>()<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="cf">await</span> <span class="fu">do_something_else</span>()<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="co">// Now the lock will be released.</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>})<span class="op">;</span></span></code></pre></div><p>While a lock is held, requests for the same lock from this execution context, or from other tabs/workers, will be queued. The first queued request will be granted only when the lock is released.</p><p>The API provides optional functionality that may be used as needed, including:</p><ul><li>returning values from the asynchronous task</li><li>shared and exclusive lock modes</li><li>conditional acquisition</li><li>diagnostics to query the state of locks in an origin</li><li>an escape hatch to protect against deadlocks</li></ul><p>Locks are scoped to origins; the locks acquired by a tab from <code>https://example.com</code> have no effect on the locks acquired by a tab from <code>https://example.org:8080</code> as they are separate origins.</p><p>The main entry point is which requests a lock. It takes a lock name, an optional set of options, and a callback. The callback is invoked when the lock is granted. The lock is automatically released when the callback returns, so usually the callback is an <em>async function</em>, which causes the lock to be released only when the async function has completely finished.</p><p>The <code>request()</code> method itself returns a promise which resolves once the lock has been released; within an async function, a script can <code>await</code> the call to make the asynchronous code flow linearly. For example:</p><div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="cf">await</span> <span class="fu">do_something_without_lock</span>()<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="co">// Request the lock.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(<span class="st">&quot;my_resource&quot;</span><span class="op">,</span> <span class="kw">async</span> (lock) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  <span class="co">// The lock has been acquired.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>  <span class="cf">await</span> <span class="fu">do_something_with_lock</span>()<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  <span class="cf">await</span> <span class="fu">do_something_else_with_lock</span>()<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>  <span class="co">// Now the lock will be released.</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>})<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="co">// The lock has been released.</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="cf">await</span> <span class="fu">do_something_else_without_lock</span>()<span class="op">;</span></span></code></pre></div><h3 id="options">Options</h3><p>Several options can be passed when requesting a lock:</p><ul><li><code>mode</code>: The default mode is "exclusive", but "shared" can be specified. There can be only one "exclusive" holder of a lock, but multiple "shared" requests can be granted at the same time. This can be used to implement the <a href="https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock">readers-writer pattern</a>.</li><li><code>ifAvailable</code>: If specified, the lock request will fail if the lock cannot be granted immediately without waiting. The callback is invoked with <code>null</code>.</li><li><code>steal</code>: If specified, then any held locks with the same name will be released, and the request will be granted, preempting any queued requests for it.</li><li><code>signal</code>: An can be passed in, allowing a lock request to be aborted. This can be used to implement a timeout on requests.</li></ul><h3 id="monitoring">Monitoring</h3><p>The method can be used by scripts to introspect the state of the lock manager for the origin. This can be useful when debugging, for example, identifying why a lock could not be acquired. The results are a snapshot of the lock manager state, which identifies held and requested locks and some additional data (e.g., mode) about each, at the time the snapshot was taken.</p><h3 id="advanced-use">Advanced use</h3><p>For more complicated cases, such as holding the lock for an arbitrary amount of time, the callback can return a promise explicitly resolved by the script:</p><div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="co">// Capture promise control functions:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="kw">const</span> { promise<span class="op">,</span> resolve<span class="op">,</span> reject } <span class="op">=</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">withResolvers</span>()<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="co">// Request the lock:</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a><span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  <span class="st">&quot;my_resource&quot;</span><span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>  <span class="co">// Lock is acquired.</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>  (lock) <span class="kw">=&gt;</span> promise<span class="op">,</span> <span class="co">// Now lock will be held until either resolve() or reject() is called.</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>)<span class="op">;</span></span></code></pre></div><h3 id="deadlocks">Deadlocks</h3><p>A deadlock occurs when a process can no longer make progress because each part is waiting on a request that cannot be satisfied. This can occur with this API in complex use-cases, for example, if multiple locks are requested out-of-order. If tab 1 holds lock A and tab 2 holds lock B, then tab 1 attempts to also acquire lock B and tab 2 attempts to also acquire lock A, neither request can be granted. Web applications can avoid this through several strategies, such as ensuring lock requests are not nested, or are always well ordered, or have timeouts. Note that such deadlocks only affect the locks themselves and code depending on them; the browser, other tabs, and other script in the page is not affected.</p><h2 id="interfaces">Interfaces</h2><ul><li><ul><li>: Provides the name and mode of a previously requested lock, which is received in the callback to .</li></ul></li><li><ul><li>: Provides methods for requesting a new object and querying for an existing object. To get an instance of , call .</li></ul></li></ul><h3 id="extensions-to-other-interfaces">Extensions to other interfaces</h3><ul><li><ul><li>: Returns a object that provides methods for requesting a new object and querying for an existing object.</li></ul></li><li><ul><li>: Returns a object which provides methods for requesting a new object and querying for an existing object.</li></ul></li></ul><h2 id="specifications">Specifications</h2><h2 id="browser-compatibility">Browser compatibility</h2>
+</body>
+</html>
