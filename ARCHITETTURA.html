@@ -151,7 +151,13 @@
 </ul></li>
 <li><a href="#videocall">12. Videocall</a>
 <ul>
-<li><a href="#solo-voce-come-modalità-di-prima-classe">12.1 Solo voce, come modalità di prima classe</a></li>
+<li><a href="#solo-voce-come-modalità-di-prima-classe">12.1 Solo voce, come modalità di prima classe</a>
+<ul>
+<li><a href="#dove-vive-la-chiamata">Dove vive la chiamata</a></li>
+<li><a href="#le-quattro-scelte-che-sembrano-dettagli">Le quattro scelte che sembrano dettagli</a></li>
+<li><a href="#verificato-il-29-settembre-2026">Verificato il 29 settembre 2026</a></li>
+<li><a href="#riusare-linvito-no-e-vale-la-pena-dire-perché">Riusare l’invito? No, e vale la pena dire perché</a></li>
+</ul></li>
 </ul></li>
 <li><a href="#api-interna-e-moduli">13. API interna e moduli</a>
 <ul>
@@ -178,7 +184,7 @@
 </nav>
 <h1 id="black-spider-architettura">Black Spider — Architettura</h1>
 <blockquote>
-<p>Documento di progetto. Versione 0.2 — 29 settembre 2026. Stato: l’<strong>applicazione v0 è costruita e verificata</strong> — chat fra due browser, guscio PWA, due temi, due lingue; <code>./prove.sh</code> la mette alla prova in un comando (esiti in <code>CLAUDE.md</code> §6). Il resto di questo documento — gruppi, file, chiamate, bacheca, blocchi — è <strong>progetto da costruire</strong>: qui sta il perché delle scelte, non la descrizione di ciò che esiste. Le sezioni che dipendono da misure non ancora fatte sono §7, §11 e §14. La v0.2 integra una ricerca sul panorama P2P web al 2026 (§7, §11, §12 e Appendice B).</p>
+<p>Documento di progetto. Versione 0.2 — 29 settembre 2026. Stato: l’<strong>applicazione v0 è costruita e verificata</strong> — chat fra due browser, <strong>chiamata a sola voce dentro l’app</strong> (con la telecamera che si accende e si spegne a chiamata avviata), guscio PWA, due temi, due lingue; <code>./prove.sh</code> la mette alla prova in un comando (esiti in <code>CLAUDE.md</code> §6). Il resto di questo documento — gruppi, indirizzario, file, bacheca, blocchi — è <strong>progetto da costruire</strong>: qui sta il perché delle scelte, non la descrizione di ciò che esiste. Le sezioni che dipendono da misure non ancora fatte sono §7, §11 e §14. La v0.2 integra una ricerca sul panorama P2P web al 2026 (§7, §11, §12 e Appendice B).</p>
 </blockquote>
 <hr />
 <h2 id="in-una-frase">0. In una frase</h2>
@@ -422,7 +428,14 @@ stateₙ = reduce(stateₙ₋₁, eventoₙ)      // deterministico, nessun I/O,
 <li>il link <em>contiene</em> la chiave della stanza: possederlo significa poter entrare — e questo è anche il suo modello di sicurezza (§10.3);</li>
 <li>costo: due passaggi manuali. È l’attrito che si paga per non avere padroni.</li>
 </ul>
-<p><strong>Trappola nota</strong>: i timeout ICE di Firefox sono stretti (~5 s). Lo scambio non-trickle con un link da incollare può superarli. Va gestito raccogliendo <em>tutti</em> i candidati prima di generare il link (ICE gathering completo) e non affidandosi alla raccolta progressiva.</p>
+<p><strong>Trappola nota</strong>: i timeout ICE di Firefox sono stretti (~5 s). Lo scambio non-trickle con un link da incollare può superarli.</p>
+<p><strong>Misurato il 2026-09-29, e la prima stesura di questa sezione sbagliava.</strong> Diceva di aspettare la raccolta ICE <em>completa</em> prima di generare il link. Su una rete che blocca la STUN in uscita (una rete aziendale normale: bastano un firewall che filtra l’UDP o una VPN solo-TCP) la raccolta <strong>non arriva mai a <code>complete</code></strong>: il browser continua a ritentare finché non scade il timeout. Risultato osservato: un solo candidato <code>host</code>, zero <code>srflx</code>, e <strong>12,5 secondi di attesa a ogni singolo invito</strong> — con l’invito che poi funzionava comunque.</p>
+<p>La regola giusta non è “aspetta che abbia finito” ma <strong>“aspetta che smetta di arrivarne”</strong>: si chiude la raccolta dopo ~700 ms senza nuovi candidati. Stesso esito, <strong>1,2 s</strong> invece di 12,5. Il valore di default di <code>aspettaGathering</code> in <code>spikes/lib/invito.js</code> è stato corretto di conseguenza, e il timeout lungo resta solo come rete di sicurezza.</p>
+<p>Due conseguenze da tenere presenti:</p>
+<ul>
+<li>la modalità <code>quiete</code> va preferita anche perché <strong>regge sui timeout stretti di Firefox</strong>: è la risposta al problema che questa sezione segnalava;</li>
+<li>su una rete senza STUN raggiungibile i candidati sono <strong>solo <code>host</code></strong>, quindi si resta dentro la stessa rete locale. Non è un guasto della LAN (§2.2), è l’assenza di una via riflessa: per uscire serve o una STUN che risponda, o un TURN.</li>
+</ul>
 <p>Per la LAN si aggiunge una scorciatoia: con i candidati host e mDNS i due browser si connettono direttamente, e l’utente può incollare un <strong>codice stanza corto</strong> invece del link completo quando i peer sono già sulla stessa rete.</p>
 <h3 id="livello-b-broker-pubblico-trystero-su-nostr">7.2 Livello B — Broker pubblico: Trystero su Nostr</h3>
 <p>Quando c’è internet e la comodità conta, un modulo di signaling si appoggia a servizi pubblici che non gestiamo. La scelta, allo stato attuale delle informazioni:</p>
@@ -804,8 +817,88 @@ attraverso B (o C), che fa da relay.</code></pre>
 <li>Spegnere la telecamera <strong>ferma la traccia</strong> (<code>track.stop()</code>), non la mette in pausa: una traccia muta continua a consumare uplink, che è esattamente quello che una chiamata solo voce vuole evitare.</li>
 <li>Il degrado descritto sopra scende di conseguenza: prima si rinuncia al video, poi, se nemmeno l’audio passa, la chiamata si dichiara caduta invece di restare muta.</li>
 </ul>
-<p><strong>Verificato il 29 settembre 2026</strong> in <code>app/prove/chiamata.html</code>: due browser veri, due microfoni finti, niente STUN. Audio Opus ricevuto da entrambe le parti — 7248 e 7565 byte in tre secondi — percorso <code>host → host</code>, andata e ritorno 1 ms, e <strong>nessuna traccia video in nessun punto della connessione, né nell’offerta né in arrivo</strong>. La prova usa <code>js/invito.js</code>, lo stesso invito della chat: la chiamata non ha un secondo signaling.</p>
-<p>Onestà necessaria: <strong>la videocall di gruppo in mesh non è una promessa che si può fare a cuor leggero</strong>. Va progettata con un limite dichiarato e una via d’uscita (relay peer).</p>
+<h4 id="dove-vive-la-chiamata">Dove vive la chiamata</h4>
+<p>La chiamata non è un secondo collegamento: è <strong>la stessa <code>RTCPeerConnection</code></strong> che porta i messaggi, con una traccia audio aggiunta sopra. Chi è già collegato non rifà l’invito — l’invito è la parte che si scambia a mano — quindi il segnale della chiamata (<code>chiamata/chiedo</code>, <code>chiamata/accetto</code>, <code>chiamata/negozia</code>, <code>chiamata/chiudo</code>) passa dentro il canale dati già aperto. Il modulo è <code>js/chiamate.js</code>, e non ha un signaling suo.</p>
+<p>Il microfono si chiede <strong>quando si chiama</strong>, non all’avvio dell’app: chi apre Black Spider per leggere l’archivio non deve vedersi chiedere il permesso di ascoltare.</p>
+<h4 id="le-quattro-scelte-che-sembrano-dettagli">Le quattro scelte che sembrano dettagli</h4>
+<ul>
+<li><strong>Il video è l’aggiunta, la voce è il caso base</strong>, per la ragione di banda detta sopra.</li>
+<li><strong>Muto e spento sono due cose diverse.</strong> Muto mette <code>enabled = false</code> sulla traccia: la traccia resta, la riga nella SDP resta, si riparla all’istante e non si rinegozia niente. Spegnere la telecamera <strong>ferma</strong> la traccia e la toglie dalla connessione, perché una telecamera accesa consuma uplink anche se l’immagine è ferma.</li>
+<li><strong>Chi risponde all’invito è il «polite» della negoziazione.</strong> Una rinegoziazione può partire da entrambi i lati insieme — due che accendono la telecamera nello stesso istante — e in quel caso uno dei due deve ritirarsi. Cede chi ha <em>ricevuto</em> l’invito: è la stessa asimmetria che esiste già fra chi invita e chi risponde, riusata invece che inventata.</li>
+<li><strong>Niente trickle ICE.</strong> I candidati si aspettano e l’SDP si manda intero, come fa già l’invito. Costa qualche decimo di secondo e toglie di mezzo una classe di guasti — il candidato che arriva prima della descrizione remota, la coda da tenere, l’ordine da rispettare — che altrimenti si paga in produzione.</li>
+</ul>
+<h4 id="verificato-il-29-settembre-2026">Verificato il 29 settembre 2026</h4>
+<p>In <code>app/prove/chiamata.html</code>, che <strong>non chiama funzioni</strong>: apre due esemplari dell’applicazione vera in un riquadro e ne clicca i pulsanti — «Chiama», «Accetta», «Muto», «Video», «Riattacca». Fra il pulsante e la funzione sta quasi tutto lo spazio in cui vivono i guasti veri.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>misurato</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>la voce arriva</td>
+<td><strong>8 763 byte in tre secondi</strong> ≈ 23 kbps in Opus</td>
+</tr>
+<tr class="even">
+<td>il video, dopo aver acceso la telecamera</td>
+<td><strong>70 977 byte</strong> in tre secondi, <strong>solo video</strong></td>
+</tr>
+<tr class="odd">
+<td>dopo aver spento la telecamera</td>
+<td><strong>0 byte</strong> di video in tre secondi</td>
+</tr>
+<tr class="even">
+<td>a chi non manda video</td>
+<td>non arriva nessuna traccia video</td>
+</tr>
+<tr class="odd">
+<td>percorso</td>
+<td><code>host → host</code>, due browser, niente STUN, tutto dentro <code>127.0.0.1</code></td>
+</tr>
+</tbody>
+</table>
+<p>62 controlli su 62. La differenza fra i due numeri — 23 kbps contro quasi dieci volte tanto — è la ragione per cui la sola voce è il caso base e non il caso ridotto.</p>
+<h4 id="riusare-linvito-no-e-vale-la-pena-dire-perché">Riusare l’invito? No, e vale la pena dire perché</h4>
+<p>Domanda che torna: si potrebbe salvare l’invito e la risposta e riusarli, invece di riscambiarli? <strong>No — e la ragione non è che le connessioni cambiano</strong>, quella si capisce subito. La ragione è che <strong>l’invito non è un indirizzo: è il verbale di uno scambio già avvenuto.</strong> Contiene quattro cose che nascono nuove a ogni collegamento:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>nell’invito</th>
+<th>perché non si può riusare</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>a=ice-ufrag</code> / <code>a=ice-pwd</code></td>
+<td>credenziale dei controlli di connettività ICE: i due lati devono averla <strong>uguale</strong>. Uno parte con le nuove, l’altro tiene le vecchie → ICE non connette</td>
+</tr>
+<tr class="even">
+<td><code>a=fingerprint</code> (DTLS)</td>
+<td>una <code>RTCPeerConnection</code> nuova genera un <strong>certificato nuovo</strong>: l’impronta salvata non corrisponde più a quella presentata → handshake DTLS fallito</td>
+</tr>
+<tr class="odd">
+<td>i candidati</td>
+<td>i nomi <code>.local</code> ruotano, e la mappatura IP:porta che il router ha dato per quel flusso la riprende dopo poco</td>
+</tr>
+<tr class="even">
+<td>la versione della sessione (<code>o=</code>)</td>
+<td>deve crescere a ogni offerta: riusata, è vecchia e viene scartata</td>
+</tr>
+</tbody>
+</table>
+<p>Riusare l’invito di ieri è riusare la <strong>fotografia di una porta</strong>, non la porta. L’unica cosa che WebRTC sa rinegoziare è una connessione <strong>ancora viva</strong> — è così che funziona il pulsante «Video» — ma vive quanto la pagina.</p>
+<p><strong>Cosa si riusa davvero:</strong> <em>chi</em> è l’altro e <em>per dove</em> vi siete trovati, non <em>come</em>. Serve un <strong>indirizzario</strong> in IndexedDB, che a sua volta serve a far viaggiare la <strong>nuova</strong> offerta attraverso i peer già collegati invece che a mano. Il primo invito resta manuale, quelli dopo no. <strong>I candidati non si salvano</strong>: sono indizi, non verità.</p>
+<p>Onestà necessaria: <strong>la videocall di gruppo in mesh non è una promessa che si può fare a cuor leggero</strong>. Va progettata con un limite dichiarato e una via d’uscita (relay peer). Vale però la distinzione: il video non è un problema per i gruppi <em>di sola voce</em> — 24 kbps a testa reggono una maglia molto più larga di 1,5 Mbps a testa.</p>
 <hr />
 <h2 id="api-interna-e-moduli">13. API interna e moduli</h2>
 <h3 id="api">13.1 API</h3>
@@ -871,14 +964,14 @@ attraverso B (o C), che fa da relay.</code></pre>
 <td>testo, risposte, reazioni, presenza, “sta scrivendo”</td>
 </tr>
 <tr class="even">
+<td>Call</td>
+<td>v1</td>
+<td><strong>fatto, dentro l’app</strong>: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, sulla stessa connessione della chat. Restano i gruppi piccoli e Encoded Transform. Provato: <code>app/prove/chiamata.html</code></td>
+</tr>
+<tr class="odd">
 <td>File</td>
 <td>v1</td>
 <td>invio, ricezione, ripresa, quota, OPFS</td>
-</tr>
-<tr class="odd">
-<td>Call</td>
-<td>v1</td>
-<td><strong>solo voce prima</strong> (§12.1), poi il video e i gruppi piccoli, Encoded Transform. Il motore della sola voce è già provato: <code>app/prove/chiamata.html</code></td>
 </tr>
 <tr class="even">
 <td>Bacheca</td>

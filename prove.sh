@@ -100,7 +100,12 @@ apri() {   # apri <ruolo> <indirizzo> [altre opzioni di Chrome...]
 # `--use-fake-ui-for-media-stream` concede il permesso senza chiedere (non c'è
 # nessuno a rispondere) e `--autoplay-policy` lascia suonare senza un gesto.
 # Non sono opzioni dell'applicazione: sono di questa prova.
-FINTI="--use-fake-device-for-media-stream --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required"
+#
+# `--mute-audio` non è un dettaglio: senza, il browser senza testa riproduce
+# davvero il tono finto attraverso le casse della macchina. È già successo, in un
+# ufficio, con una persona che si è chiesta da dove venisse quel beep. La prova
+# non deve farsi sentire.
+FINTI="--use-fake-device-for-media-stream --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required --mute-audio"
 
 # Aspetta che uno dei due browser abbia depositato un codice sul banco.
 # Si guarda il *codice*, non l'esito: chi invita deposita l'invito e poi aspetta,
@@ -169,8 +174,11 @@ if fare collegamento; then
   echo "── collegamento: due browser veri che si parlano ─────────"
   rm -f "$STATO/esito-A.json" "$STATO/esito-B.json"
   echo "  Si scambiano i codici attraverso $BASE, che qui fa la parte di WhatsApp."
+  # Il banco si svuota prima: un codice lasciato lì da un giro precedente
+  # verrebbe creduto buono, e la prova passerebbe senza che nessuno si sia parlato.
+  curl -s "$BASE/api/azzera" > /dev/null
   apri A "$BASE/prove/collegamento.html?ruolo=A"
-  if attendi_codice invito 40; then
+  if attendi_codice invito 60; then
     apri B "$BASE/prove/collegamento.html?ruolo=B"
     attendi "$STATO/esito-A.json" 120
     attendi "$STATO/esito-B.json" 120
@@ -184,14 +192,20 @@ fi
 
 if fare chiamata; then
   echo
-  echo "── chiamata: solo voce fra due browser ───────────────────"
+  echo "── chiamata: solo voce dentro l'app, fra due browser ─────"
+  echo "  Si aprono due esemplari dell'app vera e si cliccano i suoi pulsanti."
   echo "  Microfono finto, niente STUN: la voce non esce da questa macchina."
   rm -f "$STATO/esito-chiamata-A.json" "$STATO/esito-chiamata-B.json"
+  curl -s "$BASE/api/azzera" > /dev/null
   apri chiamataA "$BASE/prove/chiamata.html?ruolo=A" $FINTI
-  if attendi_codice chiamata-invito 40; then
+  # Si aspetta il *codice dell'invito*, non l'esito: chi invita deposita l'invito
+  # e poi aspetta — aspettarne l'esito sarebbe aspettare un file che senza l'altro
+  # non arriva mai. Il codice lo deposita la prova, che a sua volta lo ha preso dal
+  # campo dell'app: è lo stesso invito che si vedrebbe a schermo.
+  if attendi_codice invito 60; then
     apri chiamataB "$BASE/prove/chiamata.html?ruolo=B" $FINTI
-    attendi "$STATO/esito-chiamata-A.json" 120
-    attendi "$STATO/esito-chiamata-B.json" 120
+    attendi "$STATO/esito-chiamata-A.json" 180
+    attendi "$STATO/esito-chiamata-B.json" 180
     riporta "$STATO/esito-chiamata-A.json" "A" || fallito chiamata-A
     riporta "$STATO/esito-chiamata-B.json" "B" || fallito chiamata-B
   else

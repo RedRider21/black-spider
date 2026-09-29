@@ -1,11 +1,12 @@
 # Black Spider — Architettura
 
 > Documento di progetto. Versione 0.2 — 29 settembre 2026.
-> Stato: l'**applicazione v0 è costruita e verificata** — chat fra due browser, guscio PWA,
-> due temi, due lingue; `./prove.sh` la mette alla prova in un comando (esiti in `CLAUDE.md`
-> §6). Il resto di questo documento — gruppi, file, chiamate, bacheca, blocchi — è **progetto
-> da costruire**: qui sta il perché delle scelte, non la descrizione di ciò che esiste. Le
-> sezioni che dipendono da misure non ancora fatte sono §7, §11 e §14.
+> Stato: l'**applicazione v0 è costruita e verificata** — chat fra due browser, **chiamata a
+> sola voce dentro l'app** (con la telecamera che si accende e si spegne a chiamata avviata),
+> guscio PWA, due temi, due lingue; `./prove.sh` la mette alla prova in un comando (esiti in
+> `CLAUDE.md` §6). Il resto di questo documento — gruppi, indirizzario, file, bacheca,
+> blocchi — è **progetto da costruire**: qui sta il perché delle scelte, non la descrizione di
+> ciò che esiste. Le sezioni che dipendono da misure non ancora fatte sono §7, §11 e §14.
 > La v0.2 integra una ricerca sul panorama P2P web al 2026 (§7, §11, §12 e Appendice B).
 
 ---
@@ -730,14 +731,77 @@ predefinita, e il video è l'aggiunta.
 - Il degrado descritto sopra scende di conseguenza: prima si rinuncia al video, poi, se
   nemmeno l'audio passa, la chiamata si dichiara caduta invece di restare muta.
 
-**Verificato il 29 settembre 2026** in `app/prove/chiamata.html`: due browser veri, due
-microfoni finti, niente STUN. Audio Opus ricevuto da entrambe le parti — 7248 e 7565 byte in
-tre secondi — percorso `host → host`, andata e ritorno 1 ms, e **nessuna traccia video in
-nessun punto della connessione, né nell'offerta né in arrivo**. La prova usa `js/invito.js`,
-lo stesso invito della chat: la chiamata non ha un secondo signaling.
+#### Dove vive la chiamata
+
+La chiamata non è un secondo collegamento: è **la stessa `RTCPeerConnection`** che porta i
+messaggi, con una traccia audio aggiunta sopra. Chi è già collegato non rifà l'invito —
+l'invito è la parte che si scambia a mano — quindi il segnale della chiamata (`chiamata/chiedo`,
+`chiamata/accetto`, `chiamata/negozia`, `chiamata/chiudo`) passa dentro il canale dati già
+aperto. Il modulo è `js/chiamate.js`, e non ha un signaling suo.
+
+Il microfono si chiede **quando si chiama**, non all'avvio dell'app: chi apre Black Spider per
+leggere l'archivio non deve vedersi chiedere il permesso di ascoltare.
+
+#### Le quattro scelte che sembrano dettagli
+
+- **Il video è l'aggiunta, la voce è il caso base**, per la ragione di banda detta sopra.
+- **Muto e spento sono due cose diverse.** Muto mette `enabled = false` sulla traccia: la
+  traccia resta, la riga nella SDP resta, si riparla all'istante e non si rinegozia niente.
+  Spegnere la telecamera **ferma** la traccia e la toglie dalla connessione, perché una
+  telecamera accesa consuma uplink anche se l'immagine è ferma.
+- **Chi risponde all'invito è il «polite» della negoziazione.** Una rinegoziazione può partire
+  da entrambi i lati insieme — due che accendono la telecamera nello stesso istante — e in quel
+  caso uno dei due deve ritirarsi. Cede chi ha *ricevuto* l'invito: è la stessa asimmetria che
+  esiste già fra chi invita e chi risponde, riusata invece che inventata.
+- **Niente trickle ICE.** I candidati si aspettano e l'SDP si manda intero, come fa già
+  l'invito. Costa qualche decimo di secondo e toglie di mezzo una classe di guasti — il
+  candidato che arriva prima della descrizione remota, la coda da tenere, l'ordine da
+  rispettare — che altrimenti si paga in produzione.
+
+#### Verificato il 29 settembre 2026
+
+In `app/prove/chiamata.html`, che **non chiama funzioni**: apre due esemplari dell'applicazione
+vera in un riquadro e ne clicca i pulsanti — «Chiama», «Accetta», «Muto», «Video», «Riattacca».
+Fra il pulsante e la funzione sta quasi tutto lo spazio in cui vivono i guasti veri.
+
+| | misurato |
+|---|---|
+| la voce arriva | **8 763 byte in tre secondi** ≈ 23 kbps in Opus |
+| il video, dopo aver acceso la telecamera | **70 977 byte** in tre secondi, **solo video** |
+| dopo aver spento la telecamera | **0 byte** di video in tre secondi |
+| a chi non manda video | non arriva nessuna traccia video |
+| percorso | `host → host`, due browser, niente STUN, tutto dentro `127.0.0.1` |
+
+62 controlli su 62. La differenza fra i due numeri — 23 kbps contro quasi dieci volte tanto —
+è la ragione per cui la sola voce è il caso base e non il caso ridotto.
+
+#### Riusare l'invito? No, e vale la pena dire perché
+
+Domanda che torna: si potrebbe salvare l'invito e la risposta e riusarli, invece di
+riscambiarli? **No — e la ragione non è che le connessioni cambiano**, quella si capisce
+subito. La ragione è che **l'invito non è un indirizzo: è il verbale di uno scambio già
+avvenuto.** Contiene quattro cose che nascono nuove a ogni collegamento:
+
+| nell'invito | perché non si può riusare |
+|---|---|
+| `a=ice-ufrag` / `a=ice-pwd` | credenziale dei controlli di connettività ICE: i due lati devono averla **uguale**. Uno parte con le nuove, l'altro tiene le vecchie → ICE non connette |
+| `a=fingerprint` (DTLS) | una `RTCPeerConnection` nuova genera un **certificato nuovo**: l'impronta salvata non corrisponde più a quella presentata → handshake DTLS fallito |
+| i candidati | i nomi `.local` ruotano, e la mappatura IP:porta che il router ha dato per quel flusso la riprende dopo poco |
+| la versione della sessione (`o=`) | deve crescere a ogni offerta: riusata, è vecchia e viene scartata |
+
+Riusare l'invito di ieri è riusare la **fotografia di una porta**, non la porta. L'unica cosa
+che WebRTC sa rinegoziare è una connessione **ancora viva** — è così che funziona il pulsante
+«Video» — ma vive quanto la pagina.
+
+**Cosa si riusa davvero:** *chi* è l'altro e *per dove* vi siete trovati, non *come*. Serve un
+**indirizzario** in IndexedDB, che a sua volta serve a far viaggiare la **nuova** offerta
+attraverso i peer già collegati invece che a mano. Il primo invito resta manuale, quelli dopo
+no. **I candidati non si salvano**: sono indizi, non verità.
 
 Onestà necessaria: **la videocall di gruppo in mesh non è una promessa che si può fare a
 cuor leggero**. Va progettata con un limite dichiarato e una via d'uscita (relay peer).
+Vale però la distinzione: il video non è un problema per i gruppi *di sola voce* — 24 kbps a
+testa reggono una maglia molto più larga di 1,5 Mbps a testa.
 
 ---
 
@@ -809,8 +873,8 @@ giusta:
 | Modulo | Priorità | Note |
 |---|---|---|
 | Chat | v0 | testo, risposte, reazioni, presenza, "sta scrivendo" |
+| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, sulla stessa connessione della chat. Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
 | File | v1 | invio, ricezione, ripresa, quota, OPFS |
-| Call | v1 | **solo voce prima** (§12.1), poi il video e i gruppi piccoli, Encoded Transform. Il motore della sola voce è già provato: `app/prove/chiamata.html` |
 | Bacheca | v1 | stato condiviso modificabile (editor collaborativo semplice) |
 | Blocchi | v2 | note/liste condivise, buon caso di test per lo stato mutabile e per Yjs |
 | Moduli di terzi | v2 | sandbox + bridge |

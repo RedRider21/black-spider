@@ -2,42 +2,39 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>Chiamata solo voce — Black Spider</title>
+<title>Chiamata dentro l'app — Black Spider</title>
 <style>
   body { font: 14px/1.5 system-ui, sans-serif; margin: 0; background: #0c0d14; color: #e8eaf2; }
   #riporto { padding: 14px 18px; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
-  #onde { margin: 0 18px 18px; height: 64px; width: calc(100% - 36px);
-          background: #12141f; border: 1px solid #272b3c; border-radius: 6px; }
   .ok { color: #3ecf8e; } .no { color: #e86b73; } .tenue { color: #6c7492; }
+  iframe { width: 100%; height: 820px; border: 0; border-top: 1px solid #272b3c; }
 </style>
 </head>
 <body>
 <div id="riporto">chiamata in corso…</div>
-<canvas id="onde" width="1200" height="64"></canvas>
-<script type="module">
-/* Prova della chiamata **a sola voce** fra due browser.
+<iframe id="app" src="../index.html"></iframe>
+<script>
+/* Prova della chiamata **dentro l'applicazione**, non accanto.
  *
- * Cosa dimostra, e perché vale la pena dimostrarlo: che una chiamata vocale
- * passa dallo **stesso invito** che l'app usa già per la chat. Non c'è un
- * secondo protocollo, un secondo signaling o una seconda libreria: si prende
- * `js/invito.js`, quello vero, si aggiunge una traccia audio alla connessione
- * prima di creare l'offerta, e il resto è identico al collegamento testuale.
+ * È la differenza che conta rispetto a una prova di laboratorio: qui nessuno
+ * chiama una funzione. Si apre l'app vera in un riquadro e le si clicca il
+ * pulsante «Chiama», si accetta dall'altro lato cliccando «Accetta», si preme
+ * «Muto» e «Video» come farebbe una persona. Fra il pulsante e la funzione c'è
+ * tutto lo spazio in cui vivono i guasti veri, ed è quello spazio che si vuole
+ * attraversare.
  *
- * Le due cose che si misurano e che nessuna lettura del codice può sostituire:
+ * Le due cose che nessuna lettura del codice può dire:
  *
- *  - la traccia audio **arriva davvero** dall'altra parte (`ontrack`), e
- *  - ci passano davvero dei byte (`inbound-rtp.bytesReceived` che cresce).
+ *  - la traccia audio **arriva** dall'altra parte, e
+ *  - ci passano davvero dei byte (`chiamataByte` cresce).
  *
- * Una traccia «collegata» con zero byte ricevuti è il guasto classico delle
- * chiamate WebRTC: si vede il nome dell'altro, si sente silenzio, e nessuno sa
- * dire perché. Qui il silenzio è un numero, e il numero si controlla.
+ * E una terza che vale per la promessa «solo voce»: `chiamataTipi` dice che
+ * tracce sono arrivate. Se lì comparisse `video` senza che nessuno abbia
+ * premuto il pulsante, la promessa sarebbe falsa.
  *
- * Niente STUN, come le altre prove: i due browser sono sulla stessa macchina e
- * si trovano con i candidati locali. Niente esce da qui.
+ * Niente STUN: i due browser sono sulla stessa macchina e si trovano con i
+ * candidati locali. Niente esce da qui.
  */
-
-import { creaPeer, creaInvito, creaRisposta, completa, decodifica, statistiche }
-  from '../js/invito.js';
 
 const RUOLO = new URLSearchParams(location.search).get('ruolo') || 'A';
 const ATTESA_MAX = 45000;
@@ -92,6 +89,11 @@ async function finche(fn, descrizione, ms = ATTESA_MAX) {
   }
 }
 
+const riquadro = document.getElementById('app');
+const d = () => riquadro.contentDocument;
+const $ = (sel) => d().querySelector(sel);
+const testo = (sel) => ($(sel) || {}).textContent || '';
+
 async function leggi(chiave) {
   const r = await fetch('/api/' + chiave);
   if (!r.ok) return null;
@@ -105,166 +107,225 @@ const scrivi = (chiave, valore) => fetch('/api/' + chiave, {
   body: JSON.stringify({ valore }),
 });
 
-/* ---------------------------------------------------------------- la voce */
+/** Lo stato della chiamata come lo racconta l'app: segni, non frasi tradotte. */
+const statoChiamata = () => (d() && d().body.dataset.chiamata) || '';
+const byteChiamata = () => Number((d() && d().body.dataset.chiamataByte) || 0);
+const byteVideo = () => Number((d() && d().body.dataset.chiamataVideoByte) || 0);
+const tipiChiamata = () => (d() && d().body.dataset.chiamataTipi) || '';
 
-/** Quanti byte di audio sono entrati finora, dalle statistiche di WebRTC. */
-async function byteAudio(pc) {
-  let byte = 0;
-  let codec = null;
-  let campioni = null;
-  let pacchettiPersi = null;
-  let jitter = null;
-  try {
-    const report = await pc.getStats();
-    report.forEach((s) => {
-      if (s.type !== 'inbound-rtp') return;
-      if (s.kind && s.kind !== 'audio') return;
-      if (s.mediaType && s.mediaType !== 'audio') return;
-      byte += s.bytesReceived || 0;
-      pacchettiPersi = (s.packetsLost || 0) + (pacchettiPersi || 0);
-      jitter = s.jitter != null ? s.jitter : jitter;
-      if (s.codecId) codec = s.codecId;
-    });
-    // Il nome vero del codificatore sta nella riga del codec, non in quella
-    // dell'ingresso: è lì che WebRTC scrive «opus».
-    if (codec) {
-      report.forEach((s) => {
-        if (s.type === 'codec' && s.id === codec) campioni = s.mimeType || null;
-      });
-    }
-  } catch { /* la connessione può non essere ancora pronta: zero va bene */ }
-  return { byte, codec: campioni, pacchettiPersi, jitter };
+async function attendiAvvio() {
+  await finche(() => {
+    const b = d() && d().body;
+    return b && (b.dataset.pronto === '1' || b.dataset.avvioFallito);
+  }, 'l\'app finisca di avviarsi');
+  if (d().body.dataset.avvioFallito) throw new Error('avvio fallito: ' + d().body.dataset.avvioFallito);
 }
-
-/** Un'onda disegnata dai byte che arrivano: se non arriva niente, è piatta. */
-const storia = [];
-function disegnaOnda() {
-  const c = document.getElementById('onde');
-  const g = c.getContext('2d');
-  g.clearRect(0, 0, c.width, c.height);
-  g.strokeStyle = '#3ecf8e';
-  g.lineWidth = 2;
-  g.beginPath();
-  const passo = c.width / Math.max(1, storia.length - 1);
-  storia.forEach((v, i) => {
-    const y = c.height - 6 - Math.min(1, v / 2000) * (c.height - 12);
-    i ? g.lineTo(i * passo, y) : g.moveTo(0, y);
-  });
-  g.stroke();
-}
-
-/* --------------------------------------------------------------- la prova */
 
 (async function () {
   try {
-    /* 1. La voce. In headless Chrome il microfono è un dispositivo finto che
-     *    emette un tono: quello che conta non è che suoni bene, ma che sia un
-     *    flusso vero, con una traccia vera di tipo audio. */
-    let flusso;
-    try {
-      flusso = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    } catch (e) {
-      verifica('il browser concede il microfono (' + (e && e.name) + ')', false);
-      throw e;
-    }
-    const traccia = flusso.getAudioTracks()[0];
-    verifica('il microfono è aperto', !!traccia);
-    verifica('la traccia è audio, non video', traccia && traccia.kind === 'audio');
-    verifica('non c\'è nessuna traccia video nel flusso locale',
-      flusso.getVideoTracks().length === 0);
+    await attendiAvvio();
+    verifica('l\'app si è avviata', true);
+    $('#usaStun').checked = false;
 
-    /* 2. La connessione. Vuota di server ICE: la prova resta in questa
-     *    macchina. La traccia si aggiunge **prima** dell'offerta, che è
-     *    l'unica differenza vera fra una chiamata e una chat. */
-    const pc = creaPeer([]);
-    pc.addTrack(traccia, flusso);
+    /* --- 1. prima bisogna essere collegati: la chiamata non ha un invito suo - */
 
-    const remoti = [];
-    pc.addEventListener('track', (e) => {
-      if (e.track) remoti.push(e.track);
-    });
-
-    let codice;
     if (RUOLO === 'A') {
-      const invito = await creaInvito(pc, 'A', 'prova-chiamata', [], 8000);
-      codice = invito.codice;
-      verifica('l\'invito è stato creato (' + codice.length + ' caratteri)', codice.length > 40);
+      $('#btnCrea').click();
+      const link = await finche(() => $('#invitoOut').value, 'l\'invito sia pronto');
+      await scrivi('invito', link);
+      const risposta = await finche(() => leggi('risposta'), 'arrivi la risposta di B');
+      $('#rispostaIn').value = risposta;
+      $('#btnCompleta').click();
+    } else {
+      const link = await finche(() => leggi('invito'), 'arrivi l\'invito di A');
+      $('#invitoIn').value = link;
+      $('#btnRispondi').click();
+      const risposta = await finche(() => $('#rispostaOut').value, 'la risposta sia pronta');
+      await scrivi('risposta', risposta);
+    }
 
-      const offerta = pc.localDescription.sdp;
-      verifica('l\'offerta chiede l\'audio', /m=audio/.test(offerta));
-      verifica('l\'offerta NON chiede il video: è una chiamata solo voce',
-        !/m=video/.test(offerta));
+    await finche(() => !$('#pannelloChat').hidden, 'il canale si apra');
+    // Quante righe ha il registro prima che si parli: alla fine si controlla che
+    // sia cresciuto. Si contano le righe invece di cercare una parola, perché le
+    // parole cambiano con la lingua e una prova che si rompe traducendo l'app
+    // segnala sé stessa, non un guasto.
+    const righePrima = $('#registro').children.length;
+    verifica('la connessione è aperta', true);
+    verifica('il pulsante per chiamare si è acceso', !$('#btnChiama').disabled);
+    verifica('il pulsante lo dice: ' + ($('#btnChiama').getAttribute('title') || '').slice(0, 40),
+      ($('#btnChiama').getAttribute('title') || '').length > 10);
 
-      await scrivi('chiamata-invito', codice);
-      riga('invito depositato, aspetto che B risponda…', null);
+    /* --- 2. la chiamata, dal pulsante ------------------------------------- */
 
-      const risposta = await finche(() => leggi('chiamata-risposta'), 'arrivi la risposta di B');
-      const oggetto = await decodifica(risposta);
-      await completa(pc, oggetto);
-      verifica('la risposta di B è stata accettata', true);
+    if (RUOLO === 'A') {
+      // Il microfono si chiede quando si chiama, non quando si apre l'app: chi
+      // apre Black Spider per leggere l'archivio non deve vedersi chiedere il
+      // permesso di ascoltare. Qui la chiamata non è ancora cominciata.
+      verifica('finora il microfono non è stato chiesto',
+        !d().querySelector('audio#audioChiamata'));
+
+      $('#btnChiama').click();
+      await finche(() => statoChiamata() === 'chiamando', 'l\'app dica che sta chiamando');
+      verifica('A ha chiamato e aspetta: ' + statoChiamata(), true);
+      verifica('la barra della chiamata è comparsa', !$('#barraChiamata').hidden);
+      verifica('c\'è il pulsante per riattaccare', !$('#btnRiattacca').hidden);
+      verifica('non ci sono ancora pulsanti di risposta da questa parte',
+        $('#btnAccetta').hidden && $('#btnRifiuta').hidden);
+      // Chi chiama deve sapere chi sta chiamando: la scheda arriva con la
+      // risposta, non si aspetta di sentirne la voce per scoprirlo.
+      verifica('la barra dice chi sta chiamando: ' + testo('#chiamataTesto').trim(),
+        /sp_[0-9a-z]/.test(testo('#chiamataTesto')));
+
+      await finche(() => statoChiamata() === 'in-corso', 'B accetti');
 
     } else {
-      const invito = await finche(() => leggi('chiamata-invito'), 'arrivi l\'invito di A');
-      const oggetto = await decodifica(invito);
-      verifica('l\'invito ricevuto è un invito di Black Spider', oggetto.t === 'offer');
-      verifica('l\'invito è per una chiamata solo voce', !/m=video/.test(oggetto.sdp || ''));
+      await finche(() => statoChiamata() === 'squilla', 'arrivi la chiamata di A');
+      verifica('a B squilla', true);
+      verifica('la barra dice chi sta chiamando: ' + testo('#chiamataTesto').trim(),
+        /sp_[0-9a-z]/.test(testo('#chiamataTesto')));
+      verifica('ci sono accetta e rifiuta', !$('#btnAccetta').hidden && !$('#btnRifiuta').hidden);
+      verifica('non c\'è ancora niente da mutare', $('#btnMuto').hidden);
 
-      const risposta = await creaRisposta(pc, oggetto, 'B', [], 8000);
-      verifica('la risposta è stata preparata (' + risposta.codice.length + ' caratteri)',
-        risposta.codice.length > 40);
-      await scrivi('chiamata-risposta', risposta.codice);
+      // Finché non si accetta non deve arrivare niente: la traccia di A esiste
+      // ma la connessione non è ancora stata risposta.
+      verifica('prima di accettare non è arrivata nessuna traccia', tipiChiamata() === '');
+
+      $('#btnAccetta').click();
+      await finche(() => statoChiamata() === 'in-corso', 'la chiamata parta');
     }
 
-    /* 3. Il canale. Non basta «connected»: si aspetta che i byte arrivino. */
-    await finche(() => pc.connectionState === 'connected' || pc.connectionState === 'failed',
-      'la connessione si apra', 25000);
-    verifica(`lo stato della connessione è: ${pc.connectionState}`,
-      pc.connectionState === 'connected');
-    if (pc.connectionState !== 'connected') throw new Error('la connessione non si è aperta');
+    /* --- 3. la voce passa? ------------------------------------------------- */
 
-    const prima = await byteAudio(pc);
-    for (let i = 0; i < 14; i++) {
-      const ora = await byteAudio(pc);
-      storia.push(Math.max(0, ora.byte - prima.byte));
-      disegnaOnda();
-      await attendi(200);
-    }
-    const dopo = await byteAudio(pc);
+    await attendi(800);
+    verifica('la chiamata è in corso', statoChiamata() === 'in-corso');
+    verifica('l\'app ha creato l\'elemento dove si sente l\'altro', !!d().querySelector('audio#audioChiamata'));
+    verifica('ci sono i pulsanti muto, video e riattacca',
+      !$('#btnMuto').hidden && !$('#btnVideo').hidden && !$('#btnRiattacca').hidden);
+    verifica('la barra mostra la durata: ' + testo('#chiamataDurata'),
+      /^\d+:\d{2}$/.test(testo('#chiamataDurata').trim()));
 
-    /* 4. Le cose che contano, misurate e non lette nel codice. */
-    verifica('è arrivata una traccia dall\'altra parte', remoti.length > 0);
-    verifica('la traccia ricevuta è audio', remoti[0] && remoti[0].kind === 'audio');
-    verifica('non è arrivata nessuna traccia video (solo voce)',
-      remoti.every((rt) => rt.kind === 'audio'));
-    verifica('la traccia ricevuta è viva e non muta', remoti[0] && remoti[0].enabled);
+    // Solo voce: nessuno ha premuto «Video», quindi di video non se ne parla.
+    await finche(() => tipiChiamata().includes('audio'), 'arrivi la traccia audio dell\'altro');
+    verifica('dall\'altra parte è arrivata la voce', tipiChiamata().includes('audio'));
+    verifica('e nient\'altro che voce: ' + tipiChiamata(), tipiChiamata() === 'audio');
 
-    const fluiti = dopo.byte - prima.byte;
-    verifica(`dall'altra parte sono arrivati ${fluiti} byte di audio in circa 3 secondi`,
-      fluiti > 3000);
-    verifica('il codificatore è Opus' + (dopo.codec ? ` (${dopo.codec})` : ''),
-      !dopo.codec || /opus/i.test(dopo.codec));
+    const primo = byteChiamata();
+    await attendi(3000);
+    const secondo = byteChiamata();
+    verifica(`in tre secondi sono arrivati ${secondo - primo} byte di voce`,
+      secondo - primo > 3000);
+    verifica('il conteggio cresce davvero', secondo > primo);
 
-    const s = await statistiche(pc);
-    verifica(`la strada è ${s.tipoLocale || '—'} → ${s.tipoRemoto || '—'}, andata e ritorno ${s.rtt} ms`,
-      !s.viaRelay);
-    verifica('c\'è una misura di andata e ritorno', s.rtt !== null && s.rtt >= 0);
+    /* --- 4. muto: la traccia resta, il suono no ---------------------------- */
 
-    riga('niente STUN: la prova non ha contattato nessun server esterno.', null);
-    for (const rt of remoti) {
-      // `getSettings()` su una traccia *ricevuta* spesso non dichiara né campioni
-      // né canali: WebRTC li conosce lato ricevitore, non lato traccia. Si dice
-      // solo quello che c'è, invece di stampare un trattino che sembra un guasto.
-      const imp = (rt.getSettings && rt.getSettings()) || {};
-      const dettagli = [];
-      if (imp.sampleRate) dettagli.push(`${imp.sampleRate} Hz`);
-      if (imp.channelCount) dettagli.push(`${imp.channelCount} canali`);
-      riga(`traccia ricevuta: ${rt.kind}${dettagli.length ? ', ' + dettagli.join(', ') : ''}`,
-        null);
+    if (RUOLO === 'A') {
+      $('#btnMuto').click();
+      await attendi(600);
+      verifica('A si è messo muto', $('#btnMuto').classList.contains('attivo'));
+      verifica('e il pulsante ora dice il contrario: ' + testo('#btnMuto'),
+        testo('#btnMuto').trim().length > 2);
+      verifica('la traccia non è stata fermata: la connessione resta su',
+        statoChiamata() === 'in-corso');
+      $('#btnMuto').click();
+      await attendi(600);
+      verifica('A è tornato a parlare', !$('#btnMuto').classList.contains('attivo'));
     }
 
-    // Il microfono si spegne: una prova non deve lasciare acceso niente.
-    flusso.getTracks().forEach((tr) => tr.stop());
-    pc.close();
+    /* --- 5. il video si aggiunge a chiamata avviata ------------------------ */
+
+    /* A accende la telecamera; il video che ne esce lo riceve **B**, non A. A non
+     * deve aspettarsi di ricevere niente: cercare qui una traccia video sarebbe
+     * aspettare una cosa che per costruzione non succede — e le due prove si
+     * scambiano i ruoli, ognuna guarda il pezzo che le spetta. */
+
+    const testoPrima = testo('#chiamataTesto');
+
+    if (RUOLO === 'A') {
+      $('#btnVideo').click();
+      await finche(() => $('#btnVideo').getAttribute('aria-pressed') === 'true',
+        'l\'app dica che la telecamera è accesa', 15000);
+      verifica('la telecamera risulta accesa', $('#btnVideo').classList.contains('attivo'));
+      verifica('e la barra lo dice, senza che cambi altro: ' +
+        testo('#chiamataTesto').trim().slice(-28),
+        testo('#chiamataTesto') !== testoPrima);
+
+      // La rinegoziazione è la strada più rischiosa di tutta la chiamata: mentre
+      // si scambiano le nuove descrizioni la voce deve continuare ad arrivare.
+      const primaDelVideo = byteChiamata();
+      await attendi(6000);
+      verifica('la chiamata è sopravvissuta alla rinegoziazione', statoChiamata() === 'in-corso');
+      verifica(`e la voce non si è fermata (${byteChiamata() - primaDelVideo} byte in sei secondi)`,
+        byteChiamata() > primaDelVideo);
+      verifica('ad A non arriva nessun video: B non ne manda', tipiChiamata() === 'audio');
+
+      $('#btnVideo').click();
+      await finche(() => $('#btnVideo').getAttribute('aria-pressed') === 'false',
+        'l\'app dica che la telecamera è spenta', 15000);
+      const primaDiSpegnere = byteChiamata();
+      await attendi(3000);
+      verifica('la telecamera è spenta', !$('#btnVideo').classList.contains('attivo'));
+      verifica('la barra è tornata com\'era: ' + testo('#chiamataTesto').trim().slice(-28),
+        testo('#chiamataTesto') === testoPrima);
+      verifica('e la chiamata è ancora in corso', statoChiamata() === 'in-corso');
+      verifica(`la voce continua (${byteChiamata() - primaDiSpegnere} byte)`,
+        byteChiamata() > primaDiSpegnere);
+
+      // Si aspetta prima di riattaccare: B sta ancora misurando dall'altra parte,
+      // e chiudere adesso vorrebbe dire misurare una linea che non c'è più.
+      await attendi(9000);
+
+    } else {
+      await finche(() => tipiChiamata().includes('video'), 'arrivi il video di A', 40000);
+      verifica('a B è arrivato il video di A: ' + tipiChiamata(),
+        tipiChiamata() === 'audio,video');
+
+      // Il video non è una riga nella SDP: è traffico, e va contato come traffico.
+      // Si guardano i byte **video** in ingresso, non il totale di quelli audio —
+      // confrontare l'audio con e senza video non misurerebbe niente, perché
+      // l'audio è lo stesso nei due casi.
+      const duranteIlVideo = byteVideo();
+      await attendi(3000);
+      const conVideo = byteVideo() - duranteIlVideo;
+      verifica(`col video acceso arrivano byte di video: ${conVideo} in tre secondi`,
+        conVideo > 0);
+
+      await finche(() => !tipiChiamata().includes('video'), 'A spenga la telecamera', 40000);
+      verifica('spenta la telecamera di A, a B resta la voce: ' + tipiChiamata(),
+        tipiChiamata() === 'audio');
+      // Prima di misurare, non dopo: A riattacca appena ha finito di misurare lei.
+      verifica('e la chiamata è ancora in corso', statoChiamata() === 'in-corso');
+
+      const dopoSenza = byteVideo();
+      await attendi(3000);
+      const senzaVideo = byteVideo() - dopoSenza;
+      verifica(`e spenta la telecamera il video smette di arrivare (${senzaVideo} byte in tre secondi)`,
+        senzaVideo === 0);
+    }
+
+    /* --- 6. riattaccare ---------------------------------------------------- */
+
+    const primaDiChiudere = byteChiamata();
+    if (RUOLO === 'A') {
+      $('#btnRiattacca').click();
+      await finche(() => statoChiamata() === 'chiusa', 'la chiamata si chiuda da questa parte');
+      verifica('A ha riattaccato', true);
+      verifica('la barra è sparita', $('#barraChiamata').hidden);
+      verifica('la connessione NON è caduta con la chiamata: resta aperta',
+        !$('#pannelloChat').hidden);
+      verifica('c\'è chi ha ricevuto voce: ' + primaDiChiudere + ' byte', primaDiChiudere > 0);
+    } else {
+      await finche(() => statoChiamata() === 'chiusa', 'A riattacchi');
+      verifica('B vede che A ha riattaccato', true);
+      await attendi(400);
+      verifica('e la barra è sparita anche da questa parte', $('#barraChiamata').hidden);
+      verifica('la chat resta: si può ancora scrivere', !$('#pannelloChat').hidden);
+    }
+
+    const righeDopo = $('#registro').children.length;
+    verifica(`il registro dell'app racconta la chiamata (${righePrima} righe → ${righeDopo})`,
+      righeDopo > righePrima);
+    riga('--- registro dell\'app ---', null);
+    for (const r of testo('#registro').split('\n')) if (r.trim()) riga(r.trim(), null);
 
   } catch (e) {
     riga(`interrotta: ${e && e.message}`, false);

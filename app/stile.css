@@ -494,7 +494,53 @@ button.piccola { padding: 5px 11px; font-size: 12.5px; }
 .pill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
 .pill.err { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, transparent); }
 
-.barra-chat button { margin-left: auto; }
+/* La spinta a destra la prende il *primo* pulsante, non tutti: con il margine
+ * automatico su ognuno, due pulsanti si spartiscono lo spazio e si allargano
+ * invece di restare attaccati. */
+.barra-chat button { margin-left: 0; }
+.barra-chat button:first-of-type { margin-left: auto; }
+
+/* --- la barra della chiamata ------------------------------------------- */
+
+.chiamata {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--bordo-tenue);
+  border-left: 3px solid transparent;
+  background: var(--superficie);
+}
+
+.chiamata[hidden] { display: none; }
+.chiamata-segno { flex: none; color: var(--testo-2); }
+.chiamata-testo { font-size: 13.5px; }
+.chiamata-durata {
+  font-size: 13px;
+  color: var(--testo-2);
+  /* I numeri non ballano mentre il tempo scorre. */
+  font-variant-numeric: tabular-nums;
+}
+.chiamata-pulsanti { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+.chiamata[data-stato="chiamando"] { border-left-color: var(--warn); }
+.chiamata[data-stato="chiamando"] .chiamata-segno { color: var(--warn); }
+.chiamata[data-stato="squilla"] { border-left-color: var(--accento); }
+.chiamata[data-stato="squilla"] .chiamata-segno { color: var(--accento); }
+.chiamata[data-stato="in-corso"] { border-left-color: var(--ok); }
+.chiamata[data-stato="in-corso"] .chiamata-segno { color: var(--ok); }
+
+button.pericolo {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--err) 45%, transparent);
+  color: var(--err);
+}
+button.pericolo:hover { border-color: var(--err); filter: none; }
+
+/* Il pulsante che sta facendo qualcosa — muto acceso, telecamera accesa. */
+button.attivo { background: var(--accento); color: var(--accento-testo); border-color: transparent; }
+button.attivo:hover { border-color: transparent; }
 
 .messaggi {
   display: flex;

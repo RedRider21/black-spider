@@ -80,6 +80,26 @@ try {
     <rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/>
     <path d="M12 4.5v15M3.5 9.5h8.5"/>
   </symbol>
+  <symbol id="i-microfono" viewBox="0 0 24 24">
+    <rect x="9" y="3.2" width="6" height="11" rx="3"/>
+    <path d="M5.8 11.5a6.2 6.2 0 0 0 12.4 0M12 17.7V21"/>
+  </symbol>
+  <symbol id="i-microfono-spento" viewBox="0 0 24 24">
+    <path d="M9 6.4A3 3 0 0 1 15 6.4v3.4l-6 6z"/>
+    <path d="M5.8 11.5a6.2 6.2 0 0 0 9.4 5.3M12 17.7V21"/>
+    <path d="M4 4l16 16"/>
+  </symbol>
+  <symbol id="i-telecamera" viewBox="0 0 24 24">
+    <rect x="3.2" y="6.5" width="12" height="11" rx="2"/>
+    <path d="M15.2 11l5.6-3.4v8.8L15.2 13z"/>
+  </symbol>
+  <symbol id="i-telecamera-spenta" viewBox="0 0 24 24">
+    <path d="M6.6 6.5h2.4l6.2 11H5.2a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM15.2 11l5.6-3.4v8.8l-3-1.8"/>
+    <path d="M4 4l16 16"/>
+  </symbol>
+  <symbol id="i-riattacca" viewBox="0 0 24 24">
+    <path d="M4.6 18.6c0 1 .8 1.9 1.9 1.9h2.2l1.3-3.6-2-1.4a12.2 12.2 0 0 0 5.7-5.7l1.4 2 3.6-1.3V8.3c0-1-.9-1.9-1.9-1.9A15.5 15.5 0 0 0 4.6 18.6Z"/>
+  </symbol>
 </svg>
 
 <div class="app">
@@ -195,9 +215,34 @@ try {
             <span id="pillStato" class="pill" data-i18n="stato.nonCollegato"></span>
             <span id="pillPercorso" class="pill"></span>
             <span id="pillRtt" class="pill"></span>
+            <!-- Chiamare non è un'altra stanza: è la stessa connessione con una
+                 traccia in più. Sta qui, accanto allo stato, perché è qui che si
+                 vede se c'è qualcuno con cui parlare. -->
+            <button id="btnChiama" class="piccola" type="button"
+                    data-i18n="chiamata.chiama"
+                    data-i18n-titolo="chiamata.spiega">Chiama</button>
             <button id="btnChiudi" class="secondaria piccola" type="button"
                     data-i18n="chat.chiudi">Chiudi la connessione</button>
           </div>
+
+          <div id="barraChiamata" class="chiamata" hidden>
+            <svg class="icona chiamata-segno"><use href="#i-microfono"></use></svg>
+            <span class="chiamata-testo" id="chiamataTesto"></span>
+            <span class="chiamata-durata" id="chiamataDurata"></span>
+            <div class="chiamata-pulsanti">
+              <button id="btnAccetta" class="piccola" type="button"
+                      data-i18n="chiamata.accetta">Accetta</button>
+              <button id="btnRifiuta" class="secondaria piccola" type="button"
+                      data-i18n="chiamata.rifiuta">Rifiuta</button>
+              <!-- Muto e video cambiano parola a seconda di cosa fanno adesso:
+                   l'etichetta la scrive `disegnaChiamata()`, non il dizionario. -->
+              <button id="btnMuto" class="secondaria piccola" type="button">Muto</button>
+              <button id="btnVideo" class="secondaria piccola" type="button">Video</button>
+              <button id="btnRiattacca" class="pericolo piccola" type="button"
+                      data-i18n="chiamata.riattacca">Riattacca</button>
+            </div>
+          </div>
+
           <div id="messaggi" class="messaggi"></div>
           <form id="moduloInvio" class="riga-invio">
             <input id="testo" type="text" autocomplete="off" maxlength="4000"

@@ -106,6 +106,24 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
   verifica('l\'elenco dei partecipanti è popolato', $('#datiArchivio').children.length > 0);
   verifica('la chat è nascosta finché non c\'è nessuno', $('#pannelloChat').hidden);
   verifica('il collegamento è in primo piano', !$('#pannelloCollegamento').hidden);
+
+  /* --- la chiamata -------------------------------------------------------- */
+
+  // Il pulsante per chiamare c'è ma è spento: senza nessuno collegato non c'è
+  // nessuno da chiamare, e un pulsante che si preme e non fa niente è peggio di
+  // un pulsante spento.
+  verifica('il pulsante per chiamare c\'è ed è spento', !!$('#btnChiama') && $('#btnChiama').disabled);
+  verifica('e dice perché è spento',
+    ($('#btnChiama').getAttribute('title') || '').length > 10);
+  verifica('la barra della chiamata è chiusa',
+    $('#barraChiamata').hidden && b.dataset.chiamata === 'nessuna');
+  verifica('la barra ha accetta, rifiuta, muto, video e riattacca',
+    ['#btnAccetta', '#btnRifiuta', '#btnMuto', '#btnVideo', '#btnRiattacca']
+      .every((s) => !!$(s)));
+  // Il microfono si chiede quando si chiama, non all'avvio: chi apre l'app per
+  // leggere l'archivio non deve vedersi chiedere il permesso di ascoltare.
+  verifica('all\'avvio non è stato chiesto il microfono',
+    !document.querySelector('audio#audioChiamata'));
   verifica('lo stile è stato applicato',
     riquadro.contentWindow.getComputedStyle($('.pannello')).borderRadius !== '0px');
   const marchio = $('.marchio img');
@@ -223,8 +241,13 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
   await attendi(250);
   const moduli = $$('#elencoModuli .modulo');
   verifica(`l'elenco delle app ha cinque voci (${moduli.length})`, moduli.length === 5);
-  verifica('una sola app è dichiarata pronta',
-    $$('#elencoModuli .modulo.pronto').length === 1);
+  // Due: la chat e le chiamate. La chiamata non è una seconda applicazione, è
+  // la stessa connessione con una traccia in più — per questo porta alla chat
+  // invece che a una schermata sua.
+  verifica('due app sono dichiarate pronte: chat e chiamate',
+    $$('#elencoModuli .modulo.pronto').length === 2);
+  verifica('le due app pronte riportano alla chat',
+    $$('#elencoModuli .modulo.pronto[data-apre="chat"]').length === 2);
   verifica('ogni app ha nome e descrizione',
     moduli.every((m) => m.querySelector('.modulo-nome').textContent.trim().length > 2
       && m.querySelector('.modulo-desc').textContent.trim().length > 20));

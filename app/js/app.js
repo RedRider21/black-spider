@@ -22,6 +22,7 @@ import { STORE, leggi, scrivi, conta, leggiTutti, chiediPersistenza } from './ar
 import { decodifica, creaPeer, creaInvito, creaRisposta, completa,
          statistiche, nomeTipo, spiegaTipo, ICE } from './invito.js';
 import { creaTrasporto, STATO } from './trasporto.js';
+import { creaChiamate, CHIAMATA } from './chiamate.js';
 import { sincronizza, eventiDellaStanza, chiavi } from './sincronizzazione.js';
 import { t, lingue, lingua, imposta as impostaLingua, applica as applicaLingua }
   from './lingua.js';
@@ -45,6 +46,10 @@ let pcCorrente = null;
 let attesaRisposta = null;    // { pc } mentre si aspetta il codice di ritorno
 let statoTrasporto = null;    // l'ultimo stato detto dal trasporto
 let persistenza = { concesso: false };
+let chiamate = null;          // il motore delle chiamate, o null se non c'è nessuno
+let polite = false;           // chi ha *risposto* all'invito cede nelle negoziazioni
+let schedaLontano = null;     // la scheda pubblica dell'altro, imparata dallo scambio
+let infoChiamata = {};        // l'ultimo stato della chiamata, per ridisegnarla
 
 /* ---------------------------------------------------------------- registro */
 
@@ -123,6 +128,10 @@ function cambiaLingua(codice) {
   aggiornaEtichettaBarra();
   aggiornaTitolo();
   aggiornaStatoPill();
+  aggiornaPulsanteChiama();
+  // La barra della chiamata non è una vista: si ridisegna a parte, con l'ultimo
+  // stato che il motore ha detto.
+  disegnaChiamata(document.body.dataset.chiamata, infoChiamata);
   ridisegna();
 }
 
@@ -161,8 +170,8 @@ const VISTE = ['chat', 'persone', 'archivio', 'app', 'impostazioni'];
  * sta mentendo. */
 const MODULI = [
   { id: 'chat', icona: 'i-chat', pronta: true, apre: 'chat' },
+  { id: 'chiamate', icona: 'i-chiamate', pronta: true, apre: 'chat' },
   { id: 'file', icona: 'i-file' },
-  { id: 'chiamate', icona: 'i-chiamate' },
   { id: 'bacheca', icona: 'i-bacheca' },
   { id: 'blocchi', icona: 'i-note' },
 ];
@@ -426,6 +435,19 @@ function collega(trasportoNuovo) {
     onNota: nota,
   });
 
+  /* La chiamata nasce con la connessione e muore con lei. Si crea qui, dove si
+   * sa già chi ha invitato e chi ha risposto — è quella la differenza che serve
+   * alla negoziazione. */
+  chiamate = creaChiamate({
+    trasporto,
+    polite,
+    scheda: schedaPubblica(identita),
+    chiIniziale: schedaLontano,
+    onStato: disegnaChiamata,
+    nota,
+  });
+  disegnaChiamata(CHIAMATA.NESSUNA, {});
+
   trasporto.onStato((stato, dettaglio) => {
     statoTrasporto = stato;
     aggiornaStatoPill();
@@ -436,6 +458,13 @@ function collega(trasportoNuovo) {
       misuraPercorso();
       sinc.avvia();
     }
+    // Una chiamata non sopravvive alla connessione che la porta: non c'è un
+    // secondo canale su cui continuarla, quindi si dichiara finita invece di
+    // restare lì a far finta.
+    if ((stato === STATO.CHIUSO || stato === STATO.FALLITO) && chiamate) {
+      chiamate.connessionePersa();
+    }
+    aggiornaPulsanteChiama();
   });
 }
 
@@ -454,11 +483,102 @@ async function misuraPercorso() {
 
 setInterval(() => { if (trasporto && trasporto.aperto) misuraPercorso(); }, 5000);
 
+/* ---------------------------------------------------------------- chiamata */
+
+/**
+ * La barra della chiamata, disegnata dallo stato che le passa il motore.
+ *
+ * Non tiene stato suo: se la chiamata finisce mentre la si sta disegnando, il
+ * disegno successivo lo dice. È la stessa regola dell'archivio — lo schermo è
+ * una proiezione, non una seconda verità.
+ *
+ * Le due tracce per le prove: `body.dataset.chiamata` (in che stato è) e
+ * `body.dataset.chiamataByte` (quanta voce è arrivata). Sono numeri e parole
+ * chiave, non frasi da leggere: le frasi cambiano con la lingua.
+ */
+function disegnaChiamata(stato, info = {}) {
+  infoChiamata = info;
+  const barra = $('#barraChiamata');
+  if (!barra) return;
+
+  document.body.dataset.chiamata = stato || CHIAMATA.NESSUNA;
+  document.body.dataset.chiamataByte = String(info.byte || 0);
+  document.body.dataset.chiamataVideoByte = String(info.byteVideo || 0);
+  document.body.dataset.chiamataTipi = info.tipi || '';
+
+  const viva = stato === CHIAMATA.CHIAMANDO || stato === CHIAMATA.SQUILLA
+    || stato === CHIAMATA.IN_CORSO;
+  barra.hidden = !viva;
+  if (!viva) return;
+
+  barra.dataset.stato = stato;
+  const chi = (info.chi && (info.chi.nome || info.chi.spiderId)) || t('chiamata.sconosciuto');
+  const modo = info.video ? t('chiamata.conVideo') : t('chiamata.soloVoce');
+  const mostra = (sel, si) => { $(sel).hidden = !si; };
+
+  $('#chiamataTesto').textContent = stato === CHIAMATA.SQUILLA
+    ? `${chi} ${t('chiamata.tiChiama')} · ${modo}`
+    : stato === CHIAMATA.CHIAMANDO
+      ? `${t('chiamata.stoChiamando', { chi })} · ${modo}`
+      : `${t('chiamata.inCorso')} ${chi} · ${modo} · ${t('chiamata.riattacca')}`;
+
+  const secondi = info.durata || 0;
+  $('#chiamataDurata').textContent = stato === CHIAMATA.IN_CORSO
+    ? `${Math.floor(secondi / 60)}:${String(secondi % 60).padStart(2, '0')}` : '';
+
+  // Il segno dice com'è messa la voce: accesa, muta, o in attesa di risposta.
+  const segno = barra.querySelector('.chiamata-segno use');
+  if (segno) segno.setAttribute('href', info.muto ? '#i-microfono-spento' : '#i-microfono');
+
+  mostra('#btnAccetta', stato === CHIAMATA.SQUILLA);
+  mostra('#btnRifiuta', stato === CHIAMATA.SQUILLA);
+  mostra('#btnMuto', stato === CHIAMATA.IN_CORSO);
+  mostra('#btnVideo', stato === CHIAMATA.IN_CORSO);
+  mostra('#btnRiattacca', stato !== CHIAMATA.SQUILLA);
+
+  const muto = $('#btnMuto');
+  muto.textContent = t(info.muto ? 'chiamata.riparla' : 'chiamata.muto');
+  muto.classList.toggle('attivo', !!info.muto);
+  muto.setAttribute('aria-pressed', String(!!info.muto));
+
+  const vid = $('#btnVideo');
+  vid.textContent = t(info.video ? 'chiamata.videoSpegni' : 'chiamata.videoAccendi');
+  vid.classList.toggle('attivo', !!info.video);
+  vid.setAttribute('aria-pressed', String(!!info.video));
+}
+
+/** Si può chiamare solo se c'è qualcuno dall'altra parte. */
+function aggiornaPulsanteChiama() {
+  const b = $('#btnChiama');
+  if (!b) return;
+  const possibile = !!trasporto && trasporto.aperto
+    && (!chiamate || chiamate.stato === CHIAMATA.NESSUNA || chiamate.stato === CHIAMATA.CHIUSA);
+  b.disabled = !possibile;
+  b.setAttribute('title', t(possibile ? 'chiamata.spiega' : 'chiamata.nonCollegato'));
+}
+
+async function conChiamata(azione) {
+  if (!chiamate) return N('chiamata.nonCollegato');
+  try { await azione(); }
+  catch (e) { nota((e && e.message) || String(e), true); }
+}
+
+$('#btnChiama').addEventListener('click', () => conChiamata(() => chiamate.chiama()));
+$('#btnAccetta').addEventListener('click', () => conChiamata(() => chiamate.accetta()));
+$('#btnRifiuta').addEventListener('click', () => conChiamata(() => chiamate.rifiuta()));
+$('#btnRiattacca').addEventListener('click', () => conChiamata(() => chiamate.riattacca()));
+$('#btnMuto').addEventListener('click', () => chiamate && chiamate.cambiaMuto());
+$('#btnVideo').addEventListener('click', () => conChiamata(() => chiamate.cambiaVideo()));
+
 /* ------------------------------------------------------------------ invito */
 
 $('#btnCrea').addEventListener('click', async () => {
   try {
     $('#btnCrea').disabled = true;
+    // Chi invita non cede: chi risponde cede. Serve alla negoziazione della
+    // chiamata, ed è la stessa asimmetria che c'è già fra i due ruoli.
+    polite = false;
+    schedaLontano = null;   // si imparerà dalla risposta
     const conStun = $('#usaStun').checked;
     N(conStun ? 'nota.creaStun' : 'nota.creaLocale');
 
@@ -489,6 +609,12 @@ $('#btnCompleta').addEventListener('click', async () => {
     if (!testo) return N('nota.incollaRisposta');
     const risposta = await decodifica(testo);
     await completa(attesaRisposta.pc, risposta);
+    // La risposta porta anche la scheda di chi ha risposto: da qui in poi si sa
+    // con chi si parla, e la barra della chiamata può dirlo per nome.
+    if (risposta.chi) {
+      schedaLontano = risposta.chi;
+      if (chiamate) chiamate.conosci(risposta.chi);
+    }
     N('nota.rispostaAccettata');
   } catch (e) {
     N('nota.rispostaNonValida', { errore: e.message });
@@ -499,10 +625,12 @@ $('#btnRispondi').addEventListener('click', async () => {
   try {
     const testo = $('#invitoIn').value.trim();
     if (!testo) return N('nota.incollaInvito');
+    polite = true;
 
     const codice = testo.includes('#invito=') ? testo.split('#invito=')[1] : testo;
     const invito = await decodifica(codice);
     const conStun = !!invito.stun;
+    schedaLontano = invito.chi || null;
     N('nota.invitoDi', {
       chi: invito.chi.nome || breve(invito.chi.spiderId),
       stun: t(conStun ? 'nota.conStun' : 'nota.soloLocale'),
@@ -573,11 +701,22 @@ $('#moduloInvio').addEventListener('submit', async (ev) => {
 });
 
 $('#btnChiudi').addEventListener('click', () => {
+  // Prima la chiamata, poi la connessione: chiusa quella, la chiamata non ha più
+  // nemmeno un canale per dire all'altro che è finita.
+  if (chiamate && chiamate.stato !== CHIAMATA.NESSUNA
+      && chiamate.stato !== CHIAMATA.CHIUSA) {
+    chiamate.riattacca();
+  }
   if (trasporto) trasporto.chiudi();
-  trasporto = null; sinc = null; statoTrasporto = null;
+  trasporto = null; sinc = null; chiamate = null; statoTrasporto = null;
+  // Chi era dall'altra parte non lo è più: tenerselo lo farebbe comparire nel
+  // prossimo collegamento, che è un'altra persona.
+  schedaLontano = null;
   $('#pannelloChat').hidden = true;
   $('#pannelloCollegamento').hidden = false;
   aggiornaStatoPill();
+  aggiornaPulsanteChiama();
+  disegnaChiamata(CHIAMATA.NESSUNA, {});
   $('#pillPercorso').textContent = '';
   $('#pillRtt').textContent = '';
   N('nota.chiuso');
@@ -676,6 +815,11 @@ try {
 
     await disegnaPersone();
     await disegnaMessaggi();
+
+    // Si parte senza nessuno con cui parlare: la barra della chiamata è chiusa e
+    // il pulsante per chiamare è spento, con scritto perché.
+    aggiornaPulsanteChiama();
+    disegnaChiamata(CHIAMATA.NESSUNA, {});
 
     const quanti = await conta(STORE.EVENTI);
     persistenza = await chiediPersistenza();

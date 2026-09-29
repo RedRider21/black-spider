@@ -44,8 +44,8 @@ black spider/
 ├── README.md            la porta d'ingresso, per una persona
 ├── CLAUDE.md            questo file
 ├── ARCHITETTURA.md      il documento di progetto — 929 righe, 17 sezioni + 2 appendici.
-│                        È la fonte della verità sul *perché*.
-├── ARCHITETTURA.html    la stessa cosa in versione da leggere
+│                        È la fonte della verità sul *perché*. **Si modifica solo
+│                        il .md, poi si rigenera l'HTML** (comando qui sotto)
 ├── presentazione.html   pagina di presentazione autonoma (nessun file esterno), IT/EN
 ├── prove.sh             esegue tutte le prove e dice l'esito
 ├── Black Spider.pdf     6 pagine, versione stampabile
@@ -74,6 +74,7 @@ Tutti i moduli sono ES nativi, senza build. Nessuna dipendenza esterna, nessuna 
 | `js/invito.js` | i due codici da scambiarsi fuori banda, e le statistiche del percorso |
 | `js/trasporto.js` | il canale dati, spezzato quando i messaggi sono lunghi |
 | `js/sincronizzazione.js` | lo scambio: chi manda cosa e la **verifica di ciò che arriva** |
+| `js/chiamate.js` | la chiamata: traccia audio, video come aggiunta, negoziazione, conto dei byte |
 | `js/lingua.js` | i dizionari it/en, `t()`, `data-i18n` |
 | `js/preferenze.js` | tema, lingua e larghezza della barra, in `localStorage` |
 | `js/app.js` | lega tutto: sezioni, temi, lingue, rendering delle schermate |
@@ -91,8 +92,8 @@ divergono, uno dei tre mente.
 | app | stato |
 |---|---|
 | Chat | **c'è.** Con tre o più persone è un gruppo: la sincronizzazione è già simmetrica |
+| Chiamate (voce e video) | **c'è, dentro l'app.** Solo voce fra due per difetto; la telecamera si accende e si spegne a chiamata avviata. Provata: §7 |
 | File | progettata |
-| Chiamate (voce e video) | **solo voce: provata** a livello di motore; il video e l'interfaccia no — vedi §7 |
 | Bacheca | progettata |
 | Blocchi | progettata |
 
@@ -122,6 +123,18 @@ risultato quando ha finito. `--virtual-time-budget` di Chrome headless **non** f
 IndexedDB e ICE vivono su altri thread e la pagina viene chiusa prima che il lavoro finisca.
 Questo è già stato pagato una volta; non ripagarlo.
 
+Per **rigenerare `ARCHITETTURA.html`** dal `.md` — l'unico modo, perché non diverga in
+silenzio (è già successo una volta: il `.md` aveva un paragrafo che l'HTML non aveva):
+
+```sh
+pandoc ARCHITETTURA.md -s --toc --toc-depth=4 -V lang=it \
+  --css riferimenti/stile.css --metadata title="Black Spider — Architettura" \
+  --include-before-body=nav-root.html -o ARCHITETTURA.html
+```
+
+I flag non sono decorativi: senza `-V lang=it` la pagina dichiara `lang=""`, senza `--css`
+perde il foglio di stile, e senza `--metadata title` perde il titolo e l'intestazione.
+
 Per **guardare** invece che provare:
 
 ```sh
@@ -138,7 +151,7 @@ python3 -m http.server 8766 --bind 127.0.0.1
 | `m0.html` | firme, catene, orologi, persistenza — **senza rete** | da sola |
 | `avvio.html` | che l'applicazione si accenda: identità, archivio, service worker, menu, temi, lingue, manifesto, icone | da sola |
 | `collegamento.html` | **il collegamento vero fra due browser**: invito, risposta, canale, messaggi, sopravvivenza al ricaricamento | in due esemplari, `?ruolo=A` e `?ruolo=B`, profili diversi |
-| `chiamata.html` | **la chiamata a sola voce**: microfono, traccia audio ricevuta, byte che passano davvero, nessuna traccia video | in due esemplari, con microfono finto (`prove.sh` lo passa da sé) |
+| `chiamata.html` | **la chiamata dentro l'app**: due esemplari dell'app vera che si chiamano cliccando i loro pulsanti — squillo, accetta, muto, telecamera accesa e spenta, riattacca | in due esemplari, con microfono finto (`prove.sh` lo passa da sé) |
 | `stile.html` | un campione del foglio di stile con tutti i pezzi in vista | da guardare, non da eseguire |
 
 `prove/server.py` serve `app/` **e** fa da messaggero per i due ruoli, con `/api/<chiave>`
@@ -156,50 +169,73 @@ la lingua, e una prova che si rompe traducendo l'app non segnala un guasto — s
 | | esito |
 |---|---|
 | `m0` — le fondamenta | **tutto ok** (26 controlli) |
-| `avvio` — l'applicazione si accende | **50 / 50** |
+| `avvio` — l'applicazione si accende | **56 / 56** |
 | `collegamento` — due browser veri | **21 / 21** (7 nel ruolo A + 14 nel ruolo B) |
-| `chiamata` — solo voce, due browser veri | **31 / 31** (16 + 15) |
+| `chiamata` — chiamata dentro l'app, due browser veri | **62 / 62** (36 + 26) |
 
 Il collegamento è stato misurato fra **due processi Chrome distinti, profili distinti,
 identità distinte**: invito → risposta → canale aperto in circa un secondo, **in diretto
 (`host`), 2 ms di andata e ritorno**. Poi un messaggio da A a B, la risposta, e la ricarica di
 B: i due messaggi erano ancora lì e nessun evento era duplicato.
 
-La chiamata a sola voce, misurata il 29 settembre 2026 fra due browser veri con microfono
-finto e **niente STUN**: audio Opus ricevuto da entrambe le parti — 7248 e 7565 byte in tre
-secondi — percorso `host → host`, andata e ritorno 1 ms, e nessuna traccia video né
-nell'offerta né in arrivo. La prova usa `js/invito.js`, lo stesso invito della chat: la
-chiamata **non ha un secondo signaling**.
+La chiamata, misurata il 29 settembre 2026 fra due esemplari dell'**app vera** con microfono
+finto e **niente STUN**. Non si chiamano funzioni: la prova apre l'app in un riquadro e le
+clicca i pulsanti. La voce arriva — **8 763 byte in tre secondi**, ≈23 kbps in Opus, lo stesso
+ordine dei 24-40 dichiarati. Accendendo la telecamera ne arrivano **70 977** solo di video
+negli stessi tre secondi, e **zero** dopo averla spenta. Nessun video in ingresso a chi non ne
+manda. La chiamata passa dalla **stessa connessione** della chat: non ha un secondo signaling.
 
-**Costruito e funzionante**: la chat fra due browser, installabile come PWA, apribile senza
-rete; il guscio con le cinque sezioni; tema chiaro/scuro; italiano e inglese; la chiamata a
-sola voce fra due browser (provata a livello di motore, non ancora con un'interfaccia dentro
-l'app).
+**Costruito e funzionante**: la chat fra due browser; la chiamata dentro l'app (solo voce per
+difetto, telecamera accesa e spenta a chiamata avviata); installabile come PWA, apribile senza
+rete; il guscio con le cinque sezioni; tema chiaro/scuro; italiano e inglese.
 
-**Progettato ma non costruito**: gruppi, file, video nelle chiamate, bacheca, blocchi.
+**Progettato ma non costruito**: gruppi, indirizzario, file, bacheca, blocchi.
 
 **Non fatto, e va detto**: le prove 1-4 di `spikes/` (invito fra browser su reti diverse, LAN
 senza internet, scheda in background per ore, quanti NAT richiedono un relay). Il banco è
 pronto e verificato, le quattro domande no. `ARCHITETTURA.md` §7, §11 e §14 **non sono
 definitive** finché non sono state misurate.
 
-## 7. La videocall, e perché la risposta è articolata
+## 7. La chiamata, e perché è fatta così
 
 L'utente l'ha chiesta esplicitamente, e ha chiesto anche la **sola voce**. La posizione
-onesta, che sta anche in `app/README.md` e in `ARCHITETTURA.md` §12 e §12.1:
+onesta, che sta anche in `app/README.md` e in `ARCHITETTURA.md` §12 e §12.1.
 
-**Solo voce è la modalità di prima classe, il video è l'aggiunta.** Una chiamata a sola voce
-sono 24-40 kbps in Opus, contro 1,5 Mbps di un video: sta su qualunque uplink. L'offerta
-contiene `m=audio` e nient'altro; il bottone «Video» aggiunge la traccia con una
-rinegoziazione sul canale dati già aperto, senza rifare l'invito; spegnere la telecamera
-**ferma** la traccia invece di metterla in pausa, perché una traccia muta consuma uplink lo
-stesso. **È già provata**: `app/prove/chiamata.html`.
+**La chiamata è dentro l'app**, non accanto: è la **stessa connessione** che porta i messaggi,
+con una traccia audio sopra. Chi è già collegato non rifà l'invito — l'invito è la parte che
+si scambia a mano — quindi il segnale della chiamata passa nel canale dati già aperto. Il
+pulsante «Chiama» è il primo momento in cui si chiede il microfono: chi apre l'app per leggere
+l'archivio non deve vedersi chiedere di ascoltare.
+
+**Solo voce per difetto, il video è l'aggiunta.** Una voce in Opus costa 24-40 kbps, un video
+quasi dieci volte tanto — misurato: **8 763 byte in tre secondi** di voce contro **70 977** di
+solo video. L'offerta contiene `m=audio` e nient'altro; il pulsante «Video» aggiunge la
+traccia con una rinegoziazione, senza rifare l'invito.
+
+**Muto e spento sono due cose diverse.** Muto mette `enabled = false`: la traccia resta, la
+riga resta, si ripara all'istante, non si rinegozia niente. Spegnere la telecamera **ferma**
+la traccia e la toglie dalla connessione, perché una telecamera accesa consuma uplink anche se
+l'immagine è ferma. Dopo averla spenta i byte di video in ingresso sono **zero**.
+
+**Chi risponde all'invito cede.** Due rinegoziazioni che partono insieme (due che accendono la
+telecamera nello stesso istante) non possono passare tutte e due: cede chi ha *ricevuto*
+l'invito. È la stessa asimmetria che c'è già fra chi invita e chi risponde, riusata invece che
+inventata.
+
+**Niente trickle ICE**: i candidati si aspettano e l'SDP si manda intero, come fa l'invito.
+
+**Una traccia che arriva non è una voce che si sente.** Serve un elemento `<audio>`, e il
+numero che conta è quanti byte sono arrivati davvero — una traccia «collegata» con zero byte è
+il guasto classico delle chiamate WebRTC.
+
+Per il resto la risposta è articolata, e vale per il futuro:
 
 - **in due** è quasi banale una volta che il canale dati esiste: è la stessa
   `RTCPeerConnection`, il flusso si aggiunge con `addTrack`;
 - **in tre o quattro** si può, disponendosi a maglia, ma ogni partecipante manda il proprio
   video a tutti gli altri: con quattro sono ~1,5 Mbps di uscita a testa. Regge su fibra, non
-  su molte connessioni mobili;
+  su molte connessioni mobili. Da notare che il video non è un problema per i gruppi *di
+  voce*: la sola voce in Opus è 24 kbps, e la maglia regge molto più a lungo;
 - **oltre 10-12** la maglia è problematica anche per soli dati;
 - **oltre**, servirebbe un SFU — che è un server. L'unica via coerente resta un **peer che fa
   da ponte**, scelto esplicitamente, non deciso dal codice;
@@ -213,15 +249,19 @@ In ordine di sensatezza, non di difficoltà:
 1. **Il gruppo** — tre o più persone nella stessa stanza. La sincronizzazione è già
    simmetrica, quindi non è un altro protocollo: è la chat con più di due. Va **provato**, non
    dichiarato. Da qui passa la differenza fra «una demo» e «una cosa che si usa».
-2. **Le chiavi si imparano solo dai peer connessi.** Se arriva un evento di un autore
+2. **L'indirizzario.** Chi si è incontrato, la sua chiave pubblica, il percorso che aveva
+   funzionato — in IndexedDB. Serve a smettere di rifare lo scambio a mano ogni volta: la
+   **nuova** offerta (l'invito vecchio non si può riusare, §11) viaggia attraverso i peer già
+   collegati. È il pezzo che rende il gruppo utilizzabile invece che dimostrabile.
+3. **Le chiavi si imparano solo dai peer connessi.** Se arriva un evento di un autore
    sconosciuto, resta in coda in `sincronizzazione.js` (`inAttesa`) invece di essere creduto.
    Funziona, ma il gossip dovrà chiedere le chiavi mancanti a chi le ha.
-3. **La cifratura dei contenuti.** Le firme dicono *chi* ha scritto, non *nascondono cosa*.
+4. **La cifratura dei contenuti.** Le firme dicono *chi* ha scritto, non *nascondono cosa*.
    In transito il canale è già cifrato, ma gli eventi restano in chiaro nell'archivio, e chi
    esporta il proprio archivio esporta tutto.
-4. **Le quattro prove di `spikes/`.** Costano poco e decidono il progetto: la 1 e la 3 in
+5. **Le quattro prove di `spikes/`.** Costano poco e decidono il progetto: la 1 e la 3 in
    particolare (l'invito regge su Firefox? la scheda in background tiene?).
-5. Poi: file, chiamate, bacheca, blocchi.
+6. Poi: file, bacheca, blocchi, e le chiamate di gruppo.
 
 ## 9. Le trappole già pagate
 
@@ -244,6 +284,21 @@ Non ripagarle.
   le voci. La prova controlla `isConnected`.
 - **`overflow: hidden` su `body`** rende illeggibile qualunque pagina che usi il foglio di
   stile senza essere il guscio (era il caso di `m0.html`). Lo blocca `.app`, non il documento.
+- **Il conto dei byte va all'indietro dopo una rinegoziazione.** Rifacendo il transceiver
+  dell'audio, `getStats()` riporta una voce nuova che parte da zero e la vecchia sparisce: il
+  totale **scende**, e la differenza fra due letture dà un numero negativo. È successo: la
+  prova ha misurato **−34 446 byte in tre secondi**. Si sommano i passi avanti per voce, non si
+  fa la differenza fra due totali.
+- **Un elenco che cresce non è una misura.** `tipi` diceva «video» anche dopo che la telecamera
+  era stata spenta, perché era un insieme a cui si aggiungeva e da cui non si toglieva mai.
+  Ora si guardano i transceiver vivi (`currentDirection` + traccia non `muted`).
+- **Confrontare l'audio con e senza video non misura niente**: è lo stesso audio due volte, e
+  il controllo passa per rumore (9 313 contro 9 284). Se si vuole misurare il video, si
+  contano i **byte di video**.
+- **Il browser senza testa suona davvero.** `--use-fake-device-for-media-stream` genera un
+  tono, e senza `--mute-audio` esce dalle casse della macchina. È successo in ufficio.
+- **`#registro` non ha a capo**: le note sono `<div>` accodate, e `textContent` le incolla in
+  una riga sola. Per contarle si usa `children.length`, non `split('\n')`.
 
 ## 10. Le scelte che non si vedono nel codice
 
@@ -266,7 +321,7 @@ Non ripagarle.
   `data-i18n`. Una scritta nuova in pagina e non nel dizionario resta in italiano anche in
   inglese: si vede subito.
 
-## 11. Le due domande che tornano sempre
+## 11. Le tre domande che tornano sempre
 
 ### Servono server STUN esterni?
 
@@ -310,6 +365,30 @@ browser*, non verso un server — e questo è più forte di HTTPS, non più debo
   relay.
 - La chiave privata **non è estraibile**: la prova di chi ha scritto non si può rubare
   leggendo l'archivio locale.
+
+### Possiamo salvare gli inviti e riusarli, invece di riscambiarli?
+
+**No, e la ragione non è che le connessioni cambiano.** Quella si capisce subito. La ragione
+è che **l'invito non è un indirizzo: è il verbale di uno scambio già avvenuto.** Dentro ci
+sono quattro cose che nascono nuove a ogni collegamento:
+
+| nell'invito | perché non si può riusare |
+|---|---|
+| `a=ice-ufrag` / `a=ice-pwd` | sono la credenziale dei controlli di connettività ICE, e i due lati devono averle **uguali**. Tu parti con le nuove, l'altro tiene le vecchie → ICE non connette |
+| `a=fingerprint` (DTLS) | un `RTCPeerConnection` nuovo genera un **certificato nuovo**: l'impronta salvata non corrisponde più a quella che l'altro presenta → handshake DTLS fallito |
+| i candidati | i nomi `.local` ruotano, e la mappatura IP:porta che il router ha dato per quel flusso la riprende dopo poco |
+| la versione della sessione (`o=`) | deve crescere a ogni offerta: riusata, è vecchia e viene scartata |
+
+Riusare l'invito di ieri è riusare la **fotografia di una porta**, non la porta. Non è una
+limitazione di questo progetto: è cosa è fatto lo scambio. L'unica cosa che WebRTC sa
+rinegoziare è una connessione **ancora viva** — è così che funziona il pulsante «Video» —
+ma vive quanto la pagina.
+
+**Cosa si riusa davvero:** *chi* è l'altro e *per dove* vi siete trovati — non *come*. Serve
+un **indirizzario** in IndexedDB (`spiderId`, chiave pubblica, nome, quando vi siete parlati,
+che percorso aveva funzionato), che a sua volta serve a far viaggiare la **nuova** offerta
+attraverso i peer già collegati invece che a mano. Il primo invito resta manuale, quelli dopo
+no: è il punto 1 di §8. **I candidati non si salvano**: sono indizi, non verità.
 
 ## 12. Sulla storia di git
 
