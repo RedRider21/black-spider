@@ -46,10 +46,6 @@ python3 -m http.server 8766 --bind 127.0.0.1
 
 # 2. eseguire tutte le prove e avere il verdetto
 ./prove.sh
-
-# 3. leggere i documenti in HTML, come si leggono sul sito
-./genera-documenti.sh        # serve pandoc: sudo apt install pandoc
-#      → http://127.0.0.1:8766/ARCHITETTURA.html   (e gli altri)
 ```
 
 Il server serve a **consegnare i file**, non a far funzionare l'applicazione: i moduli ES e
@@ -60,11 +56,15 @@ pubblicato su Pages**: in locale serve per lavorarci, non per usarlo.
 
 **I documenti sono scritti in markdown**, che GitHub mostra impaginato e un browser no: su
 Pages `ARCHITETTURA.md` si scarica come testo. Per questo il sito serve **HTML generati**, e
-li rigenera a ogni pubblicazione (`.github/workflows/pubblica.yml` → `genera-documenti.sh`):
-non stanno nel repo, quindi non possono restare indietro rispetto al markdown. In locale li
-si generano con lo stesso comando — è il passo 3 qui sopra — e i rimandi fra un documento e
-l'altro si aggiustano da soli (nel markdown puntano al `.md`, che è giusto per GitHub;
-nell'HTML al `.html`, che è giusto per il sito).
+li rigenera a ogni pubblicazione — `.github/workflows/pubblica.yml`, passo «Genera i
+documenti»: non stanno nel repo, quindi non possono restare indietro rispetto al markdown, e
+i rimandi fra un documento e l'altro si aggiustano da soli (nel markdown puntano al `.md`,
+che è giusto per GitHub; nell'HTML al `.html`, che è giusto per il sito).
+
+In locale i documenti si leggono dal **repo**, in markdown, o da
+**<https://redrider21.github.io/black-spider/>** già impaginati. Rigenerarli in locale serve
+solo a guardare come verranno, e il comando è quello del passo «Genera i documenti» in
+`.github/workflows/pubblica.yml` — che è l'unico posto dove sta (serve pandoc).
 
 ## Com'è disposta la cartella
 
@@ -76,8 +76,7 @@ black-spider/
 ├── .nojekyll            dice a Pages di servire i file come sono
 ├── ARCHITETTURA.md      il progetto, e il perché di ogni scelta
 ├── prove.sh             esegue tutte le prove e dice l'esito
-├── genera-documenti.sh  ricava gli .html dai .md (serve pandoc)
-├── .github/             il workflow di pubblicazione e la generazione
+├── .github/workflows/   la pubblicazione: genera i documenti e mette online
 ├── app/                 l'applicazione: il guscio PWA e la chat
 │   ├── js/              i moduli: identità, eventi, archivio, invito…
 │   └── prove/           aprono l'app vera e ne cliccano i pulsanti
@@ -86,8 +85,8 @@ black-spider/
 ```
 
 Il markdown è la **fonte**; gli HTML dei documenti sono un **derivato**, e non stanno nel
-repo. Li produce `genera-documenti.sh` — in locale quando servono, e nel workflow dentro la
-copia che finisce online. Un derivato che non si conserva non può divergere dalla sua fonte.
+repo: li produce il workflow di pubblicazione, dentro la copia che finisce online. Un
+derivato che non si conserva non può divergere dalla sua fonte.
 
 ## Le tre cose che non si rinegoziano
 

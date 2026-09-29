@@ -4,11 +4,18 @@
 # Pubblica il sito su GitHub Pages.
 #
 # Cosa fa, in due passi. Prima **costruisce**: rigenera i documenti .html dai
-# .md (genera-documenti.sh, pandoc) e poi copia tutto in `_site/`. Poi
-# **pubblica** quella cartella così com'è.
+# .md (pandoc) e poi copia tutto in `_site/`. Poi **pubblica** quella cartella
+# così com'è.
 #
-# L'ordine conta: si genera nel repo e si copia dopo, così la copia contiene sia
-# il markdown (la fonte) sia l'HTML che se ne ricava.
+# L'ordine conta: si genera dentro il repo e si copia dopo, così la copia
+# contiene sia il markdown (la fonte) sia l'HTML che se ne ricava.
+#
+# La generazione sta **qui dentro** e non in uno script a parte: la usa solo
+# questo workflow, a ogni pubblicazione, e uno script in più nel repo sarebbe un
+# file che non serve a chi legge il progetto — e che finirebbe anche sul sito.
+# Gli unici pezzi che stanno fuori sono `.github/pandoc/testata.html` (l'aspetto)
+# e `.github/pandoc/sistema.py` (il titolo e i rimandi), che sono dati e non
+# comandi, e `.github/` non finisce in `_site/`.
 #
 # Perché una copia e non il repo: nel repo stanno i .md, che sono la fonte, e
 # basta. Gli .html sono un derivato, e un derivato che sta nel repo invecchia in
@@ -50,7 +57,47 @@ jobs:
           sudo apt-get install -y -qq pandoc
 
       - name: Genera i documenti
-        run: ./genera-documenti.sh
+        run: |
+          # L'aspetto dei documenti generati: gli stessi colori del sito, con in più
+          # quello che serve a un testo lungo.
+          testata=.github/pandoc/testata.html
+          sistema=.github/pandoc/sistema.py
+
+          # Niente evidenziazione della sintassi: pandoc colorerebbe con colori
+          # fissi da tema chiaro — verde scuro, rosso scuro — che sul fondo scuro
+          # del sito non si leggono. Il nome dell'opzione è cambiato in pandoc
+          # 3.1: si chiede a pandoc quale conosce, invece di scegliere per lui.
+          evidenziazione=--no-highlight
+          if pandoc --help 2>/dev/null | grep -q -- '--syntax-highlighting'; then
+            evidenziazione=--syntax-highlighting=none
+          fi
+
+          while IFS='|' read -r documento titolo prima; do
+            [ -n "$documento" ] || continue
+            uscita="${documento%.md}.html"
+
+            # Il titolo NON si passa come metadato: pandoc lo stamperebbe anche in
+            # cima al documento, dove il titolo c'è già. Lo mette a posto sistema.py.
+            # `-V lang=it` invece serve: senza, la pagina dichiara `<html lang="">`.
+            # `prima` è un frammento da mettere in testa, e ce l'ha solo ARCHITETTURA:
+            # è il rimando all'indice dei riferimenti, che è da dove ci si arriva.
+            if [ -n "$prima" ]; then
+              pandoc "$documento" --from=gfm --to=html5 --standalone -V lang=it \
+                "$evidenziazione" --include-in-header="$testata" \
+                --include-before-body=".github/pandoc/$prima" --output="$uscita"
+            else
+              pandoc "$documento" --from=gfm --to=html5 --standalone -V lang=it \
+                "$evidenziazione" --include-in-header="$testata" --output="$uscita"
+            fi
+            python3 "$sistema" "$uscita" "$titolo"
+            echo "  $documento → $uscita"
+          done <<'DOCUMENTI'
+          ARCHITETTURA.md|Black Spider — Architettura|nav-root.html
+          README.md|Black Spider — la porta d'ingresso|
+          app/README.md|Black Spider — l'applicazione|
+          spikes/README.md|M0.5 — le prove che vengono prima del codice|
+          spikes/esiti/2026-09-29-automatiche.md|Esiti delle prove automatiche — 2026-09-29|
+          DOCUMENTI
 
       - name: Copia il sito
         run: |
