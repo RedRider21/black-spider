@@ -37,6 +37,10 @@
   --largh: 1000px;
 }
 
+/* Il tema scelto a mano ha l'ultima parola su quello del sistema. */
+:root[data-tema="chiaro"] { color-scheme: light; }
+:root[data-tema="scuro"] { color-scheme: dark; }
+
 * { box-sizing: border-box; }
 
 body {
@@ -239,6 +243,7 @@ footer code { font-family: var(--mono); }
       <span>Black Spider</span>
     </div>
     <div class="gruppo">
+      <div class="segmento" id="segmentoTema" role="group" aria-label="Tema / Theme"></div>
       <div class="segmento" id="segmentoLingua" role="group" aria-label="Lingua / Language">
         <button type="button" data-lingua-scelta="it" aria-pressed="true">IT</button>
         <button type="button" data-lingua-scelta="en" aria-pressed="false">EN</button>
@@ -417,25 +422,72 @@ footer code { font-family: var(--mono); }
 </footer>
 
 <script>
-/* La lingua, e nient'altro: due articoli in pagina, uno dei quali è nascosto.
- * La scelta non si ricorda — questa è una porta d'ingresso, non l'applicazione —
- * ma si riconosce quella del browser, così chi arriva in inglese non legge
- * italiano per sbaglio. */
+/* Tema e lingua. Il tema ha gli stessi tre stati dell'applicazione — auto,
+ * chiaro, scuro — e la stessa chiave in localStorage, così la scelta fatta
+ * dentro l'applicazione vale anche qui, e viceversa.
+ *
+ * La lingua invece non si ricorda — questa è una porta d'ingresso, non
+ * l'applicazione — ma si riconosce quella del browser, così chi arriva in
+ * inglese non legge italiano per sbaglio. */
 (() => {
   const articoli = document.querySelectorAll('[data-lingua]');
   const bottoni = document.querySelectorAll('[data-lingua-scelta]');
+  const segmentoTema = document.getElementById('segmentoTema');
+
+  const TEMI = [
+    ['auto',   { it: 'Auto',   en: 'Auto'  }],
+    ['chiaro', { it: 'Chiaro', en: 'Light' }],
+    ['scuro',  { it: 'Scuro',  en: 'Dark'  }],
+  ];
+  const CHIAVE = 'bs.tema';
+  let tema = 'auto';
+  let lingua = 'it';
+
+  function leggiTema() {
+    try { return localStorage.getItem(CHIAVE) || 'auto'; } catch { return 'auto'; }
+  }
+
+  function disegnaTema() {
+    if (segmentoTema.children.length !== TEMI.length) {
+      segmentoTema.innerHTML = TEMI.map(([valore, nome]) =>
+        `<button type="button" data-tema-scelto="${valore}">${nome[lingua]}</button>`).join('');
+      segmentoTema.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (b) scegliTema(b.dataset.temaScelto);
+      });
+    }
+    segmentoTema.setAttribute('aria-label', lingua === 'it' ? 'Tema' : 'Theme');
+    TEMI.forEach(([valore, nome], i) => {
+      const b = segmentoTema.children[i];
+      b.textContent = nome[lingua];
+      b.setAttribute('aria-pressed', String(valore === tema));
+    });
+  }
+
+  function scegliTema(valore) {
+    tema = valore;
+    try { localStorage.setItem(CHIAVE, valore); } catch { /* niente memoria: pazienza */ }
+    if (valore === 'auto') delete document.documentElement.dataset.tema;
+    else document.documentElement.dataset.tema = valore;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = getComputedStyle(document.body).backgroundColor;
+    disegnaTema();
+  }
 
   function scegli(codice) {
+    lingua = codice;
     document.documentElement.lang = codice;
     articoli.forEach((n) => n.classList.toggle('attiva', n.dataset.lingua === codice));
     bottoni.forEach((b) =>
       b.setAttribute('aria-pressed', String(b.dataset.linguaScelta === codice)));
+    disegnaTema();
   }
 
   bottoni.forEach((b) => b.addEventListener('click', () => scegli(b.dataset.linguaScelta)));
 
   const preferita = (navigator.language || 'it').slice(0, 2).toLowerCase();
   scegli(preferita === 'en' ? 'en' : 'it');
+  scegliTema(leggiTema());
 })();
 </script>
 
