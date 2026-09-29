@@ -1,0 +1,778 @@
+/* Black Spider — il foglio di stile.
+ *
+ * **Un colore, una riga.** La tavolozza sta in cima e ogni voce è scritta una
+ * volta sola nella forma `light-dark(chiaro, scuro)`: quale delle due si veda lo
+ * decide `color-scheme`, che sotto è `light dark` (segue il sistema) oppure
+ * `light` o `dark` quando l'utente sceglie a mano. Così il tema chiaro non è un
+ * secondo foglio da tenere allineato, è la stessa riga letta dall'altro lato.
+ *
+ * Prima di ogni `light-dark()` c'è il valore scuro scritto per esteso: serve ai
+ * browser che non conoscono la funzione, che così prendono il tema scuro invece
+ * di niente.
+ *
+ * **Niente si muove da solo.** L'unica transizione è il cassetto del menu su
+ * schermo stretto, che si apre perché qualcuno l'ha toccato: serve a far capire
+ * da dove è arrivato e dove torna. Per chi ha chiesto meno movimento, non c'è
+ * nemmeno quella.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --fondo: #0c0d14;
+  --fondo: light-dark(#f4f5f9, #0c0d14);
+  --fondo-alto: #14161f;
+  --fondo-alto: light-dark(#ffffff, #14161f);
+  --superficie: #14161f;
+  --superficie: light-dark(#ffffff, #14161f);
+  --superficie-2: #1b1e2b;
+  --superficie-2: light-dark(#eff0f6, #1b1e2b);
+  --bordo: #272b3c;
+  --bordo: light-dark(#dcdfe9, #272b3c);
+  --bordo-tenue: #1f2230;
+  --bordo-tenue: light-dark(#e7e9f0, #1f2230);
+  --testo: #e8eaf2;
+  --testo: light-dark(#171a26, #e8eaf2);
+  --testo-2: #98a0b8;
+  --testo-2: light-dark(#5b6377, #98a0b8);
+  --testo-3: #6c7492;
+  --testo-3: light-dark(#878ea3, #6c7492);
+  --accento: #7a6cff;
+  --accento: light-dark(#5246e0, #7a6cff);
+  --accento-testo: #ffffff;
+  --accento-testo: light-dark(#ffffff, #ffffff);
+  --mio: #2b2760;
+  --mio: light-dark(#e6e3ff, #2b2760);
+  --ok: #3ecf8e;
+  --ok: light-dark(#128a5c, #3ecf8e);
+  --warn: #e3a852;
+  --warn: light-dark(#9a6410, #e3a852);
+  --err: #e86b73;
+  --err: light-dark(#c0393f, #e86b73);
+
+  --raggio: 12px;
+  --raggio-piccolo: 8px;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --largh-barra: 236px;
+}
+
+/* Il tema scelto a mano: ha l'ultima parola su quello del sistema. */
+:root[data-tema="chiaro"] { color-scheme: light; }
+:root[data-tema="scuro"] { color-scheme: dark; }
+:root[data-barra="stretta"] { --largh-barra: 68px; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* Il documento non si blocca da qui: lo fa `.app`, che è alto esattamente quanto
+ * la finestra. Un foglio di stile che vieta lo scorrimento a tutto il documento
+ * rende illeggibile qualunque pagina che lo usi senza essere il guscio — ed è il
+ * caso delle pagine di prova, che lo usano apposta per essere guardate. */
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--fondo);
+  color: var(--testo);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- le icone -------------------------------------------------------------- */
+
+.icona {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --- impianto -------------------------------------------------------------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;   /* scorre `.contenuto`, non la finestra */
+}
+
+.corpo {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.contenuto {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+.vista {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 22px max(16px, env(safe-area-inset-left)) 48px
+           max(16px, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* --- testata --------------------------------------------------------------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px max(12px, env(safe-area-inset-right)) 10px
+           max(12px, env(safe-area-inset-left));
+  padding-top: max(10px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--bordo-tenue);
+  background: var(--fondo-alto);
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-right: auto;
+  padding-left: 4px;
+}
+
+.marchio img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex: none;
+}
+
+.marchio h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 620;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+
+.chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--testo);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.chip:hover { border-color: var(--accento); filter: none; }
+.chip code { font-family: var(--mono); font-size: 11px; color: var(--testo-3); }
+
+/* Il pulsante del menu: stesso disegno nei due ruoli, aprire e comprimere. */
+.tondo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--testo-2);
+  cursor: pointer;
+}
+
+.tondo:hover { background: var(--superficie-2); color: var(--testo); filter: none; }
+
+/* --- la barra laterale ----------------------------------------------------- */
+
+.barra {
+  width: var(--largh-barra);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  overflow: hidden auto;
+  border-right: 1px solid var(--bordo-tenue);
+  background: var(--fondo-alto);
+}
+
+.barra-voci {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.voce {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--testo-2);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 540;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voce:hover { background: var(--superficie-2); color: var(--testo); filter: none; }
+.voce:active { filter: none; }
+
+.voce[aria-current="page"] { background: var(--superficie-2); color: var(--testo); }
+.voce[aria-current="page"] .icona { color: var(--accento); }
+
+.voce[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  margin-top: -9px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accento);
+}
+
+.voce-titolo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra-piede {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bordo-tenue);
+}
+
+.gruppo-controllo { display: flex; flex-direction: column; gap: 5px; }
+
+.gruppo-controllo > .etichetta {
+  font-size: 10.5px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--testo-3);
+}
+
+.segmento {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--bordo-tenue);
+  border-radius: 9px;
+  background: var(--superficie-2);
+}
+
+.segmento button {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--testo-2);
+  font-size: 12.5px;
+  font-weight: 560;
+  cursor: pointer;
+}
+
+.segmento button:hover { filter: none; color: var(--testo); }
+.segmento button[aria-pressed="true"] {
+  background: var(--superficie);
+  border-color: var(--bordo);
+  color: var(--testo);
+}
+
+/* In barra stretta restano solo le icone: i controlli si raggiungono dalle
+   impostazioni, dove hanno lo spazio per dire cosa fanno. */
+:root[data-barra="stretta"] .voce { justify-content: center; padding: 9px; }
+:root[data-barra="stretta"] .voce-titolo,
+:root[data-barra="stretta"] .barra-piede { display: none; }
+
+.velo { display: none; }
+
+/* --- pannelli -------------------------------------------------------------- */
+
+.pannello {
+  padding: 20px;
+  border: 1px solid var(--bordo-tenue);
+  border-radius: var(--raggio);
+  background: var(--superficie);
+}
+
+.pannello h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 620;
+  letter-spacing: -.01em;
+}
+
+.pannello h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--testo-2);
+}
+
+.spiega {
+  margin: 0 0 18px;
+  max-width: 62ch;
+  color: var(--testo-2);
+}
+
+.spiega:last-child { margin-bottom: 0; }
+
+.due-colonne {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.colonna {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* --- moduli ---------------------------------------------------------------- */
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--testo-2);
+}
+
+.scelta {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--bordo-tenue);
+  border-radius: var(--raggio-piccolo);
+  background: var(--superficie-2);
+  font-weight: 400;
+  color: var(--testo);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.scelta input { margin: 3px 0 0; flex: none; accent-color: var(--accento); }
+.tenue { color: var(--testo-3); font-size: 12px; }
+
+textarea,
+input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-piccolo);
+  background: var(--fondo);
+  color: var(--testo);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+textarea {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+textarea:focus,
+input[type="text"]:focus {
+  outline: 2px solid var(--accento);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+button {
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--raggio-piccolo);
+  background: var(--accento);
+  color: var(--accento-testo);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 560;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.08); }
+button:active { filter: brightness(.94); }
+button:disabled { opacity: .5; cursor: default; filter: none; }
+
+button.secondaria {
+  background: transparent;
+  border-color: var(--bordo);
+  color: var(--testo-2);
+}
+
+button.secondaria:hover { border-color: var(--accento); color: var(--testo); filter: none; }
+button.piccola { padding: 5px 11px; font-size: 12.5px; }
+
+.riga-pulsanti { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+#riquadroInvito,
+#riquadroRisposta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* --- la chat --------------------------------------------------------------- */
+
+#pannelloChat {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.barra-chat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bordo-tenue);
+  background: var(--superficie-2);
+}
+
+.pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  color: var(--testo-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pill:empty { display: none; }
+.pill.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.pill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.pill.err { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, transparent); }
+
+.barra-chat button { margin-left: auto; }
+
+.messaggi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 220px;
+  max-height: min(56vh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 16px;
+}
+
+.vuoto {
+  margin: auto;
+  color: var(--testo-3);
+  font-size: 14px;
+  text-align: center;
+}
+
+.messaggio {
+  max-width: min(78%, 520px);
+  padding: 9px 13px;
+  border-radius: var(--raggio);
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo-tenue);
+}
+
+.messaggio.mio {
+  align-self: flex-end;
+  background: var(--mio);
+  border-color: transparent;
+  border-bottom-right-radius: 4px;
+}
+
+.messaggio.altrui { border-bottom-left-radius: 4px; }
+
+.intestazione {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 11.5px;
+}
+
+.chi { font-weight: 620; color: var(--testo-2); }
+.quando { margin-left: auto; color: var(--testo-3); font-variant-numeric: tabular-nums; }
+
+.messaggio .corpo {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14.5px;
+}
+
+.riga-invio {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--bordo-tenue);
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.riga-invio input { flex: 1; min-width: 0; }
+
+/* --- dati e tabelle -------------------------------------------------------- */
+
+.dati {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.dati dt { color: var(--testo-2); font-weight: 550; }
+
+.dati dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dati code { font-family: var(--mono); font-size: 11.5px; color: var(--testo-3); }
+
+.elenco {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.riga-dato {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 11px 14px;
+  border: 1px solid var(--bordo-tenue);
+  border-radius: var(--raggio-piccolo);
+  background: var(--superficie-2);
+}
+
+.riga-dato .nome { font-weight: 600; }
+.riga-dato code { font-family: var(--mono); font-size: 11.5px; color: var(--testo-3); }
+.riga-dato .stato { margin-left: auto; }
+
+.scorri { overflow-x: auto; }
+
+.tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabella th {
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--testo-3);
+  border-bottom: 1px solid var(--bordo);
+  white-space: nowrap;
+}
+
+.tabella td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--bordo-tenue);
+  color: var(--testo-2);
+  white-space: nowrap;
+}
+
+.tabella tr:last-child td { border-bottom: 0; }
+.tabella td.mono { font-family: var(--mono); font-size: 11.5px; }
+
+.riassunto {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+
+.riassunto div { display: flex; flex-direction: column; gap: 2px; }
+
+.riassunto .numero {
+  font-size: 22px;
+  font-weight: 620;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.riassunto .etichetta {
+  font-size: 11px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--testo-3);
+}
+
+/* --- i moduli dell'applicazione -------------------------------------------- */
+
+.modulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 15px 16px;
+  border: 1px solid var(--bordo-tenue);
+  border-radius: var(--raggio);
+  background: var(--superficie);
+  color: var(--testo);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.modulo.pronto { cursor: pointer; }
+.modulo.pronto:hover { border-color: var(--accento); filter: none; }
+.modulo.spento { color: var(--testo-2); }
+
+.modulo .icona { margin-top: 2px; color: var(--testo-3); }
+.modulo.pronto .icona { color: var(--accento); }
+
+.modulo-testo { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+
+.modulo-nome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 620;
+  color: var(--testo);
+}
+
+.modulo-desc { color: var(--testo-2); font-size: 13.5px; max-width: 62ch; }
+
+.modulo .freccia { margin: auto 0 auto auto; opacity: .5; }
+
+.elenco-moduli { display: flex; flex-direction: column; gap: 10px; }
+
+/* --- registro -------------------------------------------------------------- */
+
+details.pannello { padding: 0; }
+
+details.pannello > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 20px;
+  font-size: 13px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--testo-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+details.pannello > summary::-webkit-details-marker { display: none; }
+details.pannello > summary::before { content: "▸"; color: var(--testo-3); }
+details.pannello[open] > summary::before { content: "▾"; }
+
+.registro {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px 20px 18px;
+  border-top: 1px solid var(--bordo-tenue);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--testo-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.registro .t { color: var(--testo-3); margin-right: 6px; }
+.grave, .registro .grave { color: var(--err); }
+
+/* --- schermo stretto ------------------------------------------------------- */
+
+@media (max-width: 859px) {
+  .due-colonne { grid-template-columns: 1fr; }
+
+  .barra {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: min(280px, 84vw);
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    border-right: 1px solid var(--bordo);
+    transform: translateX(-102%);
+    transition: transform .18s ease;
+  }
+
+  :root[data-menu="aperto"] .barra { transform: none; }
+
+  .velo {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    background: rgba(0, 0, 0, .5);
+  }
+
+  :root[data-menu="aperto"] .velo { display: block; }
+
+  .marchio h1 { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra { transition: none; }
+  .contenuto { scroll-behavior: auto; }
+}
+
+@media print {
+  .barra, .testata, .velo { display: none; }
+  body { overflow: visible; }
+  .contenuto { overflow: visible; }
+}

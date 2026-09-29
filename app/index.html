@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Black Spider</title>
+<meta name="description" content="Conversazioni dirette fra browser, senza server.">
+<meta name="theme-color" content="#14161f">
+<meta name="color-scheme" content="dark light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone/icona.svg" type="image/svg+xml">
+<link rel="icon" href="icone/icona-48.png" sizes="48x48" type="image/png">
+<link rel="apple-touch-icon" href="icone/icona-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Black Spider">
+<link rel="stylesheet" href="stile.css">
+<script>
+/* Tema, lingua e stato del menu si applicano **prima** che la pagina si
+ * disegni. Sono sei righe che non possono aspettare il modulo: se aspettassero,
+ * si vedrebbe un lampo del tema sbagliato — che è proprio la cosa che
+ * `preferenze.js` spiega di voler evitare. */
+try {
+  var r = document.documentElement, L = window.localStorage;
+  var tema = L.getItem('bs.tema');
+  if (tema === 'chiaro' || tema === 'scuro') r.dataset.tema = tema;
+  var lingua = L.getItem('bs.lingua');
+  if (lingua === 'it' || lingua === 'en') r.lang = lingua;
+  r.dataset.barra = L.getItem('bs.barra') === 'stretta' ? 'stretta' : 'larga';
+} catch (e) { /* niente memoria: si parte dalle impostazioni di sistema */ }
+</script>
+</head>
+<body data-vista="chat">
+
+<!-- Le icone, disegnate una volta e richiamate per nome. Sono linee, non
+     figure piene: vengono dallo stesso tratto delle zampe dell'icona. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <symbol id="i-menu" viewBox="0 0 24 24">
+    <path d="M4 7h16M4 12h16M4 17h16"/>
+  </symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24">
+    <path d="M20 5.5H4v10h6l4 4v-4h6z"/>
+  </symbol>
+  <symbol id="i-persone" viewBox="0 0 24 24">
+    <circle cx="9" cy="8.5" r="3.2"/>
+    <path d="M3.5 19.5c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/>
+    <path d="M16 5.6a2.6 2.6 0 0 1 0 5.2"/>
+    <path d="M17 14.6c2.2.4 3.8 2.2 3.8 4.9"/>
+  </symbol>
+  <symbol id="i-archivio" viewBox="0 0 24 24">
+    <path d="M12 3.5 20.5 8 12 12.5 3.5 8z"/>
+    <path d="M3.5 12 12 16.5 20.5 12"/>
+    <path d="M3.5 16 12 20.5 20.5 16"/>
+  </symbol>
+  <symbol id="i-app" viewBox="0 0 24 24">
+    <rect x="3.8" y="3.8" width="7" height="7" rx="1.6"/>
+    <rect x="13.2" y="3.8" width="7" height="7" rx="1.6"/>
+    <rect x="3.8" y="13.2" width="7" height="7" rx="1.6"/>
+    <rect x="13.2" y="13.2" width="7" height="7" rx="1.6"/>
+  </symbol>
+  <symbol id="i-impostazioni" viewBox="0 0 24 24">
+    <path d="M4 7.5h16M4 16.5h16"/>
+    <circle cx="9" cy="7.5" r="2.3"/>
+    <circle cx="15" cy="16.5" r="2.3"/>
+  </symbol>
+  <symbol id="i-freccia" viewBox="0 0 24 24">
+    <path d="M5 12h13M13 6.5 18.5 12 13 17.5"/>
+  </symbol>
+  <symbol id="i-file" viewBox="0 0 24 24">
+    <path d="M6.5 3.5h6.8l4.7 4.7v12.3H6.5z"/>
+    <path d="M13.3 3.5v4.7h4.7"/>
+  </symbol>
+  <symbol id="i-chiamate" viewBox="0 0 24 24">
+    <path d="M4.6 5.4c0-1 .8-1.9 1.9-1.9h2.2l1.3 3.6-2 1.4a12.2 12.2 0 0 0 5.7 5.7l1.4-2 3.6 1.3v2.2c0 1-.9 1.9-1.9 1.9A15.5 15.5 0 0 1 4.6 5.4Z"/>
+  </symbol>
+  <symbol id="i-note" viewBox="0 0 24 24">
+    <path d="M5.5 3.5h13v17h-13z"/>
+    <path d="M9 8.2h6M9 12h6M9 15.8h3.4"/>
+  </symbol>
+  <symbol id="i-bacheca" viewBox="0 0 24 24">
+    <rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/>
+    <path d="M12 4.5v15M3.5 9.5h8.5"/>
+  </symbol>
+</svg>
+
+<div class="app">
+
+  <header class="testata">
+    <!-- L'etichetta di questo pulsante la scrive `aggiornaEtichettaBarra()`: dice
+         cose diverse a seconda che il menu si apra o si comprima. -->
+    <button id="btnBarra" class="tondo" type="button" aria-expanded="true">
+      <svg class="icona"><use href="#i-menu"></use></svg>
+    </button>
+    <div class="marchio">
+      <img src="icone/icona.svg" alt="" width="30" height="30">
+      <h1>Black Spider</h1>
+    </div>
+    <button id="btnIo" class="chip" type="button" data-i18n-titolo="testata.identita">
+      <span id="mioNome" data-i18n="testata.senzaNome">senza nome</span>
+      <code id="mioId">…</code>
+    </button>
+  </header>
+
+  <div class="corpo">
+
+    <nav class="barra" id="barra" data-i18n-aria="barra.sezioni">
+      <ul class="barra-voci">
+        <li><button class="voce" type="button" data-vista="chat" aria-current="page">
+          <svg class="icona"><use href="#i-chat"></use></svg>
+          <span class="voce-titolo" data-i18n="voce.chat">Chat</span>
+        </button></li>
+        <li><button class="voce" type="button" data-vista="persone">
+          <svg class="icona"><use href="#i-persone"></use></svg>
+          <span class="voce-titolo" data-i18n="voce.persone">Persone</span>
+        </button></li>
+        <li><button class="voce" type="button" data-vista="archivio">
+          <svg class="icona"><use href="#i-archivio"></use></svg>
+          <span class="voce-titolo" data-i18n="voce.archivio">Archivio</span>
+        </button></li>
+        <li><button class="voce" type="button" data-vista="app">
+          <svg class="icona"><use href="#i-app"></use></svg>
+          <span class="voce-titolo" data-i18n="voce.app">App</span>
+        </button></li>
+        <li><button class="voce" type="button" data-vista="impostazioni">
+          <svg class="icona"><use href="#i-impostazioni"></use></svg>
+          <span class="voce-titolo" data-i18n="voce.impostazioni">Impostazioni</span>
+        </button></li>
+      </ul>
+
+      <div class="barra-piede">
+        <div class="gruppo-controllo">
+          <span class="etichetta" data-i18n="tema.titolo">Tema</span>
+          <div class="segmento" data-controllo="tema"></div>
+        </div>
+        <div class="gruppo-controllo">
+          <span class="etichetta" data-i18n="lingua.titolo">Lingua</span>
+          <div class="segmento" data-controllo="lingua"></div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="velo" id="velo"></div>
+
+    <main class="contenuto" id="contenuto">
+
+      <!-- ── chat ───────────────────────────────────────────────────── -->
+      <section class="vista" id="vista-chat" data-vista="chat">
+
+        <section id="pannelloCollegamento" class="pannello">
+          <h2 data-i18n="collega.titolo">Collega qualcuno</h2>
+          <p class="spiega" data-i18n="collega.spiega"></p>
+
+          <div class="due-colonne">
+            <div class="colonna">
+              <h3 data-i18n="collega.invita">Invita</h3>
+              <label class="scelta">
+                <input type="checkbox" id="usaStun">
+                <span><span data-i18n="collega.stun"></span>
+                  <span class="tenue" data-i18n="collega.stunSpiega"></span></span>
+              </label>
+              <button id="btnCrea" data-i18n="collega.crea">Crea un invito</button>
+              <div id="riquadroInvito" hidden>
+                <label for="invitoOut" data-i18n="collega.mandaLink">Manda questo link</label>
+                <textarea id="invitoOut" readonly rows="4"></textarea>
+                <div class="riga-pulsanti">
+                  <button id="btnCopiaLink" class="secondaria piccola"
+                          data-i18n="collega.copiaLink">Copia il link</button>
+                </div>
+                <label for="rispostaIn" data-i18n="collega.poiIncolla">Poi incolla qui la risposta</label>
+                <textarea id="rispostaIn" rows="3"
+                          data-i18n-segnaposto="collega.segnapostoRisposta"></textarea>
+                <button id="btnCompleta" data-i18n="collega.completa">Completa il collegamento</button>
+              </div>
+            </div>
+
+            <div class="colonna">
+              <h3 data-i18n="collega.oppure">Oppure rispondi</h3>
+              <label for="invitoIn" data-i18n="collega.incollaInvito">Incolla l'invito ricevuto</label>
+              <textarea id="invitoIn" rows="3"
+                        data-i18n-segnaposto="collega.segnapostoInvito"></textarea>
+              <button id="btnRispondi" data-i18n="collega.prepara">Prepara la risposta</button>
+              <div id="riquadroRisposta" hidden>
+                <label for="rispostaOut" data-i18n="collega.rimanda">Rimanda questo codice</label>
+                <textarea id="rispostaOut" readonly rows="3"></textarea>
+                <div class="riga-pulsanti">
+                  <button id="btnCopiaRisposta" class="secondaria piccola"
+                          data-i18n="collega.copiaCodice">Copia il codice</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="pannelloChat" class="pannello" hidden>
+          <div class="barra-chat">
+            <span id="pillStato" class="pill" data-i18n="stato.nonCollegato"></span>
+            <span id="pillPercorso" class="pill"></span>
+            <span id="pillRtt" class="pill"></span>
+            <button id="btnChiudi" class="secondaria piccola" type="button"
+                    data-i18n="chat.chiudi">Chiudi la connessione</button>
+          </div>
+          <div id="messaggi" class="messaggi"></div>
+          <form id="moduloInvio" class="riga-invio">
+            <input id="testo" type="text" autocomplete="off" maxlength="4000"
+                   enterkeyhint="send" data-i18n-segnaposto="chat.segnaposto">
+            <button id="btnInvia" type="submit" data-i18n="chat.invia">Invia</button>
+          </form>
+        </section>
+
+        <details class="pannello" id="riquadroRegistro">
+          <summary data-i18n="registro.titolo">Registro</summary>
+          <div id="registro" class="registro"></div>
+        </details>
+      </section>
+
+      <!-- ── persone ────────────────────────────────────────────────── -->
+      <section class="vista" id="vista-persone" data-vista="persone" hidden>
+        <div class="pannello">
+          <h2 data-i18n="persone.tuTitolo">Tu</h2>
+          <p class="spiega" data-i18n="persone.spiega"></p>
+          <dl class="dati">
+            <dt data-i18n="persone.id">Identificativo</dt>
+            <dd><code id="tuoId">…</code></dd>
+            <dt data-i18n="persone.numero">Numero di sicurezza</dt>
+            <dd><code id="numeroSicurezza">…</code></dd>
+          </dl>
+          <p class="spiega tenue" style="margin-top:12px" data-i18n="persone.numeroSpiega"></p>
+        </div>
+
+        <div class="pannello">
+          <h2 data-i18n="persone.nome">Il tuo nome</h2>
+          <p class="spiega" data-i18n="persone.nomeSpiega"></p>
+          <div class="riga-pulsanti">
+            <input id="inpNome" type="text" maxlength="60" autocomplete="off"
+                   style="flex:1;min-width:180px">
+            <button id="btnSalvaNome" type="button"
+                    data-i18n="persone.salvaNome">Salva il nome</button>
+          </div>
+        </div>
+
+        <div class="pannello">
+          <h2 data-i18n="persone.incontrate">Chi hai incontrato</h2>
+          <ul class="elenco" id="elencoChiavi"></ul>
+        </div>
+
+        <div class="pannello">
+          <h2 data-i18n="persone.chiScrive">Chi scrive in questa stanza</h2>
+          <dl class="dati" id="datiArchivio"></dl>
+        </div>
+      </section>
+
+      <!-- ── archivio ───────────────────────────────────────────────── -->
+      <section class="vista" id="vista-archivio" data-vista="archivio" hidden>
+        <div class="pannello">
+          <h2 data-i18n="archivio.titolo">Archivio</h2>
+          <p class="spiega" data-i18n="archivio.spiega"></p>
+          <div class="riassunto">
+            <div><span class="numero" id="arcTotali">0</span>
+                 <span class="etichetta" data-i18n="archivio.totali">Eventi</span></div>
+            <div><span class="numero" id="arcAutori">0</span>
+                 <span class="etichetta" data-i18n="archivio.autori">Autori</span></div>
+            <div><span class="numero" id="arcStanze">0</span>
+                 <span class="etichetta" data-i18n="archivio.stanze">Stanze</span></div>
+          </div>
+          <div class="scorri">
+            <table class="tabella">
+              <thead><tr>
+                <th data-i18n="archivio.colSeq">#</th>
+                <th data-i18n="archivio.colTipo">Tipo</th>
+                <th data-i18n="archivio.colAutore">Autore</th>
+                <th data-i18n="archivio.colQuando">Quando</th>
+                <th data-i18n="archivio.colStanza">Stanza</th>
+              </tr></thead>
+              <tbody id="arcTabella"></tbody>
+            </table>
+          </div>
+          <p class="spiega tenue" id="arcNota" style="margin-top:14px"></p>
+        </div>
+      </section>
+
+      <!-- ── le app ─────────────────────────────────────────────────── -->
+      <section class="vista" id="vista-app" data-vista="app" hidden>
+        <div class="pannello">
+          <h2 data-i18n="mod.titolo">App</h2>
+          <p class="spiega" data-i18n="mod.spiega"></p>
+          <div class="elenco-moduli" id="elencoModuli"></div>
+        </div>
+      </section>
+
+      <!-- ── impostazioni ───────────────────────────────────────────── -->
+      <section class="vista" id="vista-impostazioni" data-vista="impostazioni" hidden>
+        <div class="pannello">
+          <h2 data-i18n="imp.aspetto">Aspetto</h2>
+          <p class="spiega" data-i18n="imp.aspettoSpiega"></p>
+          <div class="gruppo-controllo" style="max-width:260px">
+            <span class="etichetta" data-i18n="tema.titolo">Tema</span>
+            <div class="segmento" data-controllo="tema"></div>
+          </div>
+          <div class="gruppo-controllo" style="max-width:260px;margin-top:14px">
+            <span class="etichetta" data-i18n="lingua.titolo">Lingua</span>
+            <div class="segmento" data-controllo="lingua"></div>
+          </div>
+        </div>
+
+        <div class="pannello">
+          <h2 data-i18n="imp.memoria">Memoria</h2>
+          <p class="spiega" id="impMemoria"></p>
+          <dl class="dati" style="margin-bottom:16px">
+            <dt data-i18n="imp.eventi">Eventi nell'archivio</dt>
+            <dd id="impEventi">0</dd>
+          </dl>
+          <div class="riga-pulsanti">
+            <button id="btnChiedi" class="secondaria" type="button"
+                    data-i18n="imp.chiedi">Chiedi la memoria permanente</button>
+            <button id="btnEsporta" class="secondaria" type="button"
+                    data-i18n="imp.esporta">Esporta l'archivio</button>
+          </div>
+          <p class="spiega tenue" style="margin-top:14px" data-i18n="imp.esportaSpiega"></p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
