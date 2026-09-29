@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>verifica in corso…</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<header><h1>Verifica del banco di prova</h1>
+<p class="meta">Controlla che <code>lib/invito.js</code> funzioni davvero: andata e ritorno
+dei codici, compressione, apertura di un canale dati reale.</p></header>
+<main>
+<div class="pannello"><h2>Esiti</h2><div id="out" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.7"></div></div>
+<p id="sommario" style="font-weight:600">in corso…</p>
+</main>
+
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  let ko = 0;
+
+  const riga = (ok, testo) => {
+    if (!ok) ko++;
+    out.insertAdjacentHTML('beforeend',
+      `<div data-esito="${ok ? 'OK' : 'KO'}">${ok ? 'OK' : 'KO'}  ${testo}</div>`);
+  };
+
+  /* ---------- 1. import del modulo ---------- */
+  let Invito;
+  try {
+    Invito = (await import('./lib/invito.js')).Invito;
+    riga(!!Invito, 'modulo lib/invito.js importato');
+  } catch (e) {
+    riga(false, 'import fallito: ' + e.message);
+    document.getElementById('sommario').textContent = 'ESITO: KO';
+    document.title = 'ESITO: KO';
+    return;
+  }
+
+  /* ---------- 2. andata e ritorno di un SDP piccolo ---------- */
+  const piccolo = {
+    v: 1, t: 'offer', chi: 'A',
+    sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n',
+  };
+  try {
+    const codice = await Invito.codifica(piccolo);
+    const letto = await Invito.decodifica(codice);
+    riga(JSON.stringify(letto) === JSON.stringify(piccolo),
+      `andata e ritorno di un SDP piccolo (${codice.length} caratteri)`);
+  } catch (e) { riga(false, 'andata e ritorno piccolo: ' + e.message); }
+
+  /* ---------- 3. compressione su un SDP realistico ---------- */
+  try {
+    const righe = ['v=0', 'o=- 4611731400430051336 2 IN IP4 127.0.0.1', 's=-', 't=0 0',
+      'a=group:BUNDLE 0', 'm=application 9 UDP/DTLS/SCTP webrtc-datachannel'];
+    for (let i = 0; i < 40; i++) {
+      righe.push(`a=candidate:${i} 1 udp 2113937151 192.168.1.${i} 5${i}0${i} typ host generation 0`);
+    }
+    righe.push('a=ice-ufrag:4ZcD', 'a=ice-pwd:2/1muCWoOi3uLifh0gI0sSUn');
+    const sdp = righe.join('\r\n');
+    const codice = await Invito.codifica({ v: 1, t: 'offer', sdp });
+    const rapporto = (codice.length / sdp.length * 100).toFixed(1);
+    const ritorno = await Invito.decodifica(codice);
+    riga(ritorno.sdp === sdp,
+      `SDP realistico di ${sdp.length} caratteri: compresso a ${codice.length} (${rapporto}%)`);
+  } catch (e) { riga(false, 'compressione: ' + e.message); }
+
+  /* ---------- 4. caratteri non ASCII ---------- */
+  try {
+    const prova = { v: 1, t: 'offer', nota: 'perché però è così: àèìòù, 日本語, emoji 🕷️' };
+    const letto = await Invito.decodifica(await Invito.codifica(prova));
+    riga(letto.nota === prova.nota, 'caratteri accentati, CJK ed emoji sopravvivono al giro');
+  } catch (e) { riga(false, 'non ASCII: ' + e.message); }
+
+  /* ---------- 5. codice corrotto viene rifiutato ---------- */
+  try {
+    await Invito.decodifica('@@@non-un-codice@@@');
+    riga(false, 'un codice corrotto NON è stato rifiutato');
+  } catch {
+    riga(true, 'un codice corrotto viene rifiutato con un errore');
+  }
+
+  /* ---------- 6. canale dati vero, in loopback ---------- */
+  await new Promise((fine) => {
+    const scadenza = setTimeout(() => { riga(false, 'il canale dati non si è aperto entro 20 s'); fine(); }, 20000);
+    (async () => {
+      try {
+        const a = Invito.creaPeer([]);
+        const b = Invito.creaPeer([]);
+        const dc = a.createDataChannel('prova', { ordered: true });
+        b.ondatachannel = (ev) => {
+          ev.channel.onmessage = (m) => { ev.channel.send('eco:' + m.data); };
+        };
+        a.onicecandidate = (e) => { if (e.candidate) b.addIceCandidate(e.candidate); };
+        b.onicecandidate = (e) => { if (e.candidate) a.addIceCandidate(e.candidate); };
+
+        const off = await a.createOffer();
+        await a.setLocalDescription(off);
+        await Invito.aspettaGathering(a, 6000);
+        await b.setRemoteDescription({ type: 'offer', sdp: a.localDescription.sdp });
+        const ans = await b.createAnswer();
+        await b.setLocalDescription(ans);
+        await Invito.aspettaGathering(b, 6000);
+        await a.setRemoteDescription({ type: 'answer', sdp: b.localDescription.sdp });
+
+        dc.onopen = async () => {
+          dc.send('ciao');
+          dc.onmessage = async (ev) => {
+            riga(ev.data === 'eco:ciao', 'canale dati aperto e messaggio di andata e ritorno');
+            const s = await Invito.statistiche(a);
+            riga(!!s.tipoLocale, `statistiche lette: candidato ${Invito.nomeTipo(s.tipoLocale)} ↔ ${Invito.nomeTipo(s.tipoRemoto)}`);
+            riga(s.viaRelay === false, 'riconosciuto correttamente come connessione diretta (non relay)');
+            clearTimeout(scadenza);
+            fine();
+          };
+        };
+      } catch (e) {
+        clearTimeout(scadenza);
+        riga(false, 'errore nel loopback: ' + e.message);
+        fine();
+      }
+    })();
+  });
+
+  document.getElementById('sommario').textContent =
+    ko === 0 ? 'ESITO: TUTTO OK' : `ESITO: ${ko} CONTROLLI FALLITI`;
+  document.title = ko === 0 ? 'ESITO: TUTTO OK' : `ESITO: ${ko} FALLITI`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prova 3 — La scheda in background</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <h1>Prova 3 &mdash; La scheda in background</h1>
+  <p class="meta">
+    Una connessione WebRTC regge se la scheda non è in primo piano? Per quanto? È la
+    domanda che decide se un <em>peer sempre acceso</em> è realistico
+    (<code>ARCHITETTURA.md</code> §11).
+  </p>
+</header>
+
+<main>
+
+  <div class="pannello">
+    <h2>Come si conduce</h2>
+    <ol style="margin:0;padding-left:1.3em">
+      <li>Apri questa pagina in <strong>due schede</strong> dello stesso browser.</li>
+      <li>Nella prima premi <strong>Avvia come A</strong>; nella seconda
+          <strong>Avvia come B</strong>. Si trovano da sole.</li>
+      <li>Quando il canale è aperto, <strong>metti la scheda B in background</strong>:
+          apri un'altra applicazione, un'altra finestra sopra, o semplicemente vai a fare
+          altro. <em>Non chiuderla.</em></li>
+      <li>Lascia passare <strong>almeno un'ora</strong>, meglio due.</li>
+      <li>Torna sulla scheda B ed esporta il suo report. Poi esporta anche quello di A.</li>
+    </ol>
+    <p class="nota">
+      <strong>Se il contatore qui sotto si ferma mentre la scheda è in background, hai già
+      la risposta.</strong> Il battito, però, può continuare anche quando il disegno si
+      ferma: per questo si esporta il registro, non ci si fida dell'orologio a schermo.
+    </p>
+  </div>
+
+  <div class="pannello">
+    <h2>Avvio</h2>
+    <button id="btnA">Avvia come A</button>
+    <button id="btnB">Avvia come B</button>
+    <span id="statoAvvio" style="color:var(--muted);font-size:13.5px;margin-left:8px"></span>
+
+    <h3 style="margin-top:20px">Sorgente del battito</h3>
+    <div class="opzioni">
+      <label><input type="radio" name="battito" value="main" checked>
+        <span><strong>Thread principale</strong> &mdash; quello che fa un'app normale.</span></label>
+      <label><input type="radio" name="battito" value="worker">
+        <span><strong>Web Worker</strong> &mdash; la mitigazione prevista da
+        <code>ARCHITETTURA.md</code> §11.2. Attenzione: il worker può solo <em>sollecitare</em>
+        il thread principale, che resta quello che spedisce davvero. Serve a vedere se il
+        sollecito aiuta, non a garantirlo.</span></label>
+    </div>
+  </div>
+
+  <div class="pannello">
+    <h2>Stato</h2>
+    <div class="stato" id="pillole">
+      <span class="pill">non avviato</span>
+    </div>
+    <dl class="dati" id="dati"></dl>
+  </div>
+
+  <div class="pannello">
+    <h2>Eventi notevoli</h2>
+    <p class="nota" style="margin-top:0">
+      Solo le cose che contano: cambi di visibilità, congelamenti della scheda, e i buchi
+      nel battito più lunghi di 12 secondi.
+    </p>
+    <div id="eventi"></div>
+  </div>
+
+  <div class="pannello">
+    <h2>Registro completo</h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="pannello">
+    <h2>Report</h2>
+    <label for="riassunto">Riepilogo</label>
+    <textarea id="riassunto" readonly style="min-height:180px"></textarea>
+    <button class="secondaria piccola" id="btnAggiorna">Aggiorna</button>
+    <button class="secondaria piccola" id="btnScarica">Salva il report</button>
+    <button class="secondaria piccola" id="btnCopia">Copia</button>
+  </div>
+
+</main>
+
+<script type="module">
+import { Invito } from './lib/invito.js';
+
+const $ = (s) => document.querySelector(s);
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const ID = Math.random().toString(36).slice(2, 8);
+const INTERVALLO = 5000;          // ms fra un battito e il successivo
+const SOGLIA_BUCO = 12000;        // oltre questo, è un buco
+
+let pc = null, dc = null, ruolo = null;
+let seq = 0, avvio = null, ultimoRicevuto = null;
+let worker = null, timerBattito = null;
+
+/* Una riga di registro: timestamp assoluto, relativo, e tipo. */
+const registro = [];
+const eventi = [];
+let intervalli = [];
+let rtt = [];
+
+function annota(tipo, dettaglio = '') {
+  const ora = Date.now();
+  const riga = { t: ora, daAvvio: avvio ? ora - avvio : 0, tipo, dettaglio };
+  registro.push(riga);
+  return riga;
+}
+
+function log(msg, livello = '') {
+  const d = document.createElement('div');
+  const rel = avvio ? ((Date.now() - avvio) / 1000).toFixed(0) + 's' : '—';
+  d.innerHTML = `<span class="t">+${rel}</span>  ${escapeHtml(msg)}`;
+  if (livello === 'err') d.style.color = 'var(--err)';
+  if (livello === 'ok') d.style.color = 'var(--ok)';
+  const c = $('#log');
+  c.append(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function notaEvento(msg, livello = '') {
+  const d = document.createElement('div');
+  const rel = avvio ? ((Date.now() - avvio) / 1000).toFixed(0) + 's' : '—';
+  d.innerHTML = `<span class="t">+${rel}</span>  ${escapeHtml(msg)}`;
+  if (livello) d.style.color = `var(--${livello})`;
+  $('#eventi').append(d);
+  log(msg, livello);
+}
+
+/* ------------------------------------------------------ segnalazione fra schede
+ * Le due schede sono della stessa origine, quindi BroadcastChannel basta: è un canale
+ * di signaling perfettamente legittimo, e qui serve solo a non dover copiare codici a
+ * mano. I dati veri passano dal canale WebRTC. */
+
+const segnali = new BroadcastChannel('black-spider-m05-segnali');
+
+segnali.onmessage = async (ev) => {
+  const m = ev.data;
+  if (m.da === ID || !pc) return;
+  try {
+    if (m.t === 'pronto' && ruolo === 'A') {
+      log('l\'altro lato è pronto: rimando l\'offerta.');
+      segnali.postMessage({ t: 'offer', sdp: pc.localDescription.sdp, da: ID });
+    }
+    if (m.t === 'offer' && ruolo === 'B') {
+      await pc.setRemoteDescription({ type: 'offer', sdp: m.sdp });
+      const r = await pc.createAnswer();
+      await pc.setLocalDescription(r);
+      await Invito.aspettaGathering(pc, 3000);
+      segnali.postMessage({ t: 'answer', sdp: pc.localDescription.sdp, da: ID });
+      log('risposta inviata.');
+    }
+    if (m.t === 'answer' && ruolo === 'A') {
+      await pc.setRemoteDescription({ type: 'answer', sdp: m.sdp });
+      log('risposta ricevuta.');
+    }
+  } catch (e) {
+    log('errore di segnalazione: ' + e.message, 'err');
+  }
+};
+
+/* ------------------------------------------------------------------- battito */
+
+function avviaBattito() {
+  const sorgente = document.querySelector('input[name="battito"]:checked').value;
+  if (sorgente === 'worker') {
+    const codice = `
+      let t = null;
+      onmessage = (e) => {
+        if (e.data === 'via') { clearInterval(t); t = setInterval(() => postMessage('batti'), ${INTERVALLO}); }
+        if (e.data === 'stop') { clearInterval(t); t = null; }
+      };`;
+    worker = new Worker(URL.createObjectURL(new Blob([codice], { type: 'text/javascript' })));
+    worker.onmessage = () => batti();
+    worker.postMessage('via');
+    log(`battito ogni ${INTERVALLO / 1000} s, sollecitato da un Web Worker`);
+  } else {
+    timerBattito = setInterval(batti, INTERVALLO);
+    log(`battito ogni ${INTERVALLO / 1000} s, dal thread principale`);
+  }
+}
+
+function batti() {
+  if (!dc || dc.readyState !== 'open') return;
+  if (ruolo !== 'A') return;                     // batte solo A, così l'intervallo atteso è pulito
+  seq += 1;
+  dc.send(JSON.stringify({ t: 'ping', n: seq, ts: Date.now() }));
+  annota('ping inviato', seq);
+}
+
+function ricevi(m) {
+  const ora = Date.now();
+
+  if (ultimoRicevuto != null) {
+    const intervallo = ora - ultimoRicevuto;
+    intervalli.push(intervallo);
+    if (intervallo > SOGLIA_BUCO) {
+      notaEvento(
+        `BUCO nel battito: ${(intervallo / 1000).toFixed(1)} s senza ricevere nulla ` +
+        `(atteso ${INTERVALLO / 1000} s)`, 'err');
+      eventi.push({ tipo: 'buco', durataMs: intervallo, a: ora });
+    }
+  }
+  ultimoRicevuto = ora;
+  annota(m.t === 'ping' ? 'ping ricevuto' : 'pong ricevuto', m.n);
+
+  if (m.t === 'ping') {
+    dc.send(JSON.stringify({ t: 'pong', n: m.n, ts: m.ts }));
+  } else if (m.t === 'pong') {
+    const andata = ora - m.ts;
+    rtt.push(andata);
+  }
+}
+
+/* ------------------------------------------------------------- connessione */
+
+function collega(peer) {
+  peer.onconnectionstatechange = () => {
+    log(`stato della connessione: ${peer.connectionState}`,
+        peer.connectionState === 'failed' ? 'err' : '');
+    annota('stato connessione', peer.connectionState);
+    if (peer.connectionState === 'failed' || peer.connectionState === 'disconnected') {
+      notaEvento(`la connessione è passata a "${peer.connectionState}"`, 'err');
+    }
+    disegna();
+  };
+  peer.ondatachannel = (ev) => { dc = ev.channel; preparaCanale(dc); };
+}
+
+function preparaCanale(canale) {
+  canale.onopen = () => {
+    log('canale aperto: comincia la misura', 'ok');
+    notaEvento('canale aperto', 'ok');
+    avvio = Date.now();
+    avviaBattito();
+    disegna();
+  };
+  canale.onclose = () => { notaEvento('canale chiuso', 'err'); disegna(); };
+  canale.onmessage = (ev) => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch { return; }
+    ricevi(m);
+  };
+}
+
+$('#btnA').addEventListener('click', async () => {
+  ruolo = 'A';
+  $('#statoAvvio').textContent = 'sei A';
+  pc = new RTCPeerConnection({ iceServers: [...Invito.ICE.STUN_GOOGLE] });
+  collega(pc);
+  dc = pc.createDataChannel('battito', { ordered: true });
+  preparaCanale(dc);
+  const o = await pc.createOffer();
+  await pc.setLocalDescription(o);
+  await Invito.aspettaGathering(pc, 3000);
+  segnali.postMessage({ t: 'offer', sdp: pc.localDescription.sdp, da: ID });
+  log('offerta inviata: aspetto che l\'altra scheda risponda.');
+});
+
+$('#btnB').addEventListener('click', () => {
+  ruolo = 'B';
+  $('#statoAvvio').textContent = 'sei B';
+  pc = new RTCPeerConnection({ iceServers: [...Invito.ICE.STUN_GOOGLE] });
+  collega(pc);
+  segnali.postMessage({ t: 'pronto', da: ID });
+  log('mi sono annunciata: aspetto l\'offerta.');
+});
+
+/* ------------------------------------------------------------------- misure */
+
+function media(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : null; }
+
+async function disegna() {
+  if (!avvio) {
+    $('#pillole').innerHTML = '<span class="pill">canale non ancora aperto</span>';
+    return;
+  }
+  const ora = Date.now();
+  const daUltimo = ultimoRicevuto ? ora - ultimoRicevuto : null;
+
+  $('#pillole').innerHTML = [
+    `<span class="pill ${pc && pc.connectionState === 'connected' ? 'ok' : 'err'}">connessione: ${escapeHtml(pc ? pc.connectionState : '—')}</span>`,
+    `<span class="pill ${dc && dc.readyState === 'open' ? 'ok' : 'err'}">canale: ${escapeHtml(dc ? dc.readyState : '—')}</span>`,
+    `<span class="pill ${document.visibilityState === 'visible' ? 'ok' : 'warn'}">scheda: ${document.visibilityState}</span>`,
+    daUltimo != null
+      ? `<span class="pill ${daUltimo > SOGLIA_BUCO ? 'err' : 'ok'}">ultimo battito: ${(daUltimo / 1000).toFixed(1)} s fa</span>`
+      : '',
+  ].join('');
+
+  const righe = [
+    ['ruolo', ruolo || '—'],
+    ['in esecuzione da', ((ora - avvio) / 1000 / 60).toFixed(1) + ' minuti'],
+    ['ping inviati', ruolo === 'A' ? String(seq) : '—'],
+    ['messaggi ricevuti', String(intervalli.length + 1)],
+    ['intervallo medio', intervalli.length ? (media(intervalli) / 1000).toFixed(2) + ' s' : '—'],
+    ['intervallo massimo', intervalli.length ? (Math.max(...intervalli) / 1000).toFixed(1) + ' s' : '—'],
+    ['buchi oltre 12 s', String(eventi.filter((e) => e.tipo === 'buco').length)],
+    ['andata e ritorno medio', rtt.length ? Math.round(media(rtt)) + ' ms' : '—'],
+    ['cambi di visibilità', String(registro.filter((r) => r.tipo === 'visibilità').length)],
+    ['sorgente del battito',
+      (document.querySelector('input[name="battito"]:checked') || {}).value || '—'],
+  ];
+  $('#dati').innerHTML = righe
+    .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('');
+}
+
+setInterval(disegna, 1000);
+
+/* ------------------------------------------------ eventi del ciclo di vita */
+
+document.addEventListener('visibilitychange', () => {
+  const stato = document.visibilityState;
+  annota('visibilità', stato);
+  notaEvento(`la scheda è diventata "${stato}"`);
+  disegna();
+});
+
+// Page Lifecycle API: dice esplicitamente quando il browser ci congela.
+document.addEventListener('freeze', () => { annota('freeze'); notaEvento('la scheda è stata CONGELATA dal browser', 'err'); });
+document.addEventListener('resume', () => { annota('resume'); notaEvento('la scheda è stata RIPRESA'); });
+
+/* ------------------------------------------------------------------ report */
+
+async function componi() {
+  const buchi = eventi.filter((e) => e.tipo === 'buco');
+  return {
+    prova: '3 — scheda in background',
+    ruolo,
+    quando: new Date().toISOString(),
+    origine: location.origin,
+    browser: navigator.userAgent,
+    sorgenteBattito: (document.querySelector('input[name="battito"]:checked') || {}).value,
+    intervalloAttesoMs: INTERVALLO,
+    durataMinuti: avvio ? +(((Date.now() - avvio) / 60000).toFixed(2)) : null,
+    messaggiRicevuti: avvio ? intervalli.length + 1 : 0,
+    intervalloMedioMs: intervalli.length ? Math.round(media(intervalli)) : null,
+    intervalloMassimoMs: intervalli.length ? Math.max(...intervalli) : null,
+    latenzaMediaMs: rtt.length ? Math.round(media(rtt)) : null,
+    numeroBuchi: buchi.length,
+    buchi: buchi.map((b) => ({ dopoMs: b.a - avvio, durataMs: b.durataMs })),
+    cambiVisibilita: registro.filter((r) => r.tipo === 'visibilità')
+      .map((r) => ({ dopoMs: r.daAvvio, stato: r.dettaglio })),
+    congelamenti: registro.filter((r) => r.tipo === 'freeze' || r.tipo === 'resume')
+      .map((r) => ({ dopoMs: r.daAvvio, evento: r.tipo })),
+    statoFinale: pc ? pc.connectionState : null,
+    canaleFinale: dc ? dc.readyState : null,
+    registroCompleto: registro,
+  };
+}
+
+async function aggiorna() { $('#riassunto').value = JSON.stringify(await componi(), null, 2); }
+$('#btnAggiorna').addEventListener('click', aggiorna);
+
+$('#btnScarica').addEventListener('click', async () => {
+  await aggiorna();
+  const b = new Blob([$('#riassunto').value], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = `prova-3-${ruolo || 'x'}-${Date.now()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  log('report salvato', 'ok');
+});
+
+$('#btnCopia').addEventListener('click', async () => {
+  await aggiorna();
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText($('#riassunto').value);
+      log('report copiato', 'ok');
+      return;
+    }
+    throw new Error('no');
+  } catch {
+    $('#riassunto').select();
+    log('premi Ctrl+C per copiare il report selezionato.', 'ok');
+  }
+});
+
+log('pronta. Apri una seconda scheda su questa stessa pagina.');
+disegna();
+</script>
+
+</body>
+</html>

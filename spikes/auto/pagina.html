@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>M0.5 — prova automatica</title>
+</head>
+<body>
+<pre id="uscita">avvio…</pre>
+<script>
+/* Rete di sicurezza: se il modulo non riesce nemmeno a caricarsi, senza questo il banco
+ * resterebbe in silenzio e sembrerebbe un blocco invece di un errore. */
+(function () {
+  const ruolo = (new URLSearchParams(location.search).get('ruolo') || 'A').toUpperCase();
+  const deposita = (motivo, dettaglio) => fetch('/api/esito-' + ruolo, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prova: 'automatica', ruolo, ok: false, errore: motivo,
+                           dettaglio: String(dettaglio || ''), quando: new Date().toISOString() }),
+  });
+  window.addEventListener('error', (e) => {
+    if (e.target && e.target.tagName === 'SCRIPT') { deposita('script non caricato', e.target.src); return; }
+    deposita('errore non gestito', e.message);
+  }, true);
+  window.addEventListener('unhandledrejection', (e) => deposita('promise rifiutata', e.reason));
+})();
+</script>
+<script type="module">
+import { Invito } from '../lib/invito.js';
+
+/* Una sola pagina per entrambi i ruoli.
+ *   ?ruolo=A&modo=stun   crea l'invito e aspetta la risposta
+ *   ?ruolo=B&modo=stun   aspetta l'invito e produce la risposta
+ * I codici non si copiano a mano: passano dal banco (server.py), che fa la parte
+ * delle mani umane. Tutto il resto è identico al flusso reale di prova-1-invito.html.
+ */
+
+const q = new URLSearchParams(location.search);
+const RUOLO = (q.get('ruolo') || 'A').toUpperCase();
+const MODO  = q.get('modo') || 'stun';
+const ICE_SERVERS = MODO === 'host' ? [] : [...Invito.ICE.STUN_GOOGLE];
+
+const uscita = document.getElementById('uscita');
+const note = [];
+const annota = (m) => { note.push(m); uscita.textContent = note.join('\n'); };
+
+const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function post(percorso, dati) {
+  const r = await fetch('/api/' + percorso, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dati),
+  });
+  return r.json();
+}
+async function get(percorso) {
+  const r = await fetch('/api/' + percorso);
+  return r.json();
+}
+/** Aspetta che un file del banco compaia. */
+async function attendiCodice(nome, timeoutMs) {
+  const scadenza = Date.now() + timeoutMs;
+  while (Date.now() < scadenza) {
+    const d = await get(nome);
+    if (d && d.codice) return d;
+    await attendi(400);
+  }
+  throw new Error(`il codice "${nome}" non è mai arrivato`);
+}
+
+const esito = {
+  prova: 'automatica', ruolo: RUOLO, modo: MODO,
+  quando: new Date().toISOString(),
+  browser: navigator.userAgent,
+  iceServers: ICE_SERVERS.map((s) => s.urls),
+};
+
+async function main() {
+  const pc = Invito.creaPeer(ICE_SERVERS);
+  let dc = null;
+  const t0 = Date.now();
+
+  pc.onconnectionstatechange = () => annota(`connessione: ${pc.connectionState}`);
+
+  if (RUOLO === 'A') {
+    const { dc: canale, codice, gathering } = await Invito.creaInvito(pc, ICE_SERVERS, 12000);
+    dc = canale;
+    esito.gatheringA = gathering;
+    esito.raccoltaMs = Date.now() - t0;
+    esito.codiceInvito = codice.length;
+    annota(`invito creato: ${codice.length} caratteri, raccolta ICE = ${gathering}`);
+    await post('invito', { codice, quando: Date.now() });
+
+    const risposta = await attendiCodice('risposta', 60000);
+    esito.codiceRisposta = risposta.codice.length;
+    annota(`risposta ricevuta: ${risposta.codice.length} caratteri`);
+    const letto = await Invito.decodifica(risposta.codice);
+    esito.gatheringB = letto.gathering;
+    await Invito.completa(pc, letto);
+    annota('cerchio chiuso');
+
+  } else {
+    const invito = await attendiCodice('invito', 60000);
+    esito.codiceInvito = invito.codice.length;
+    annota(`invito ricevuto: ${invito.codice.length} caratteri`);
+    const letto = await Invito.decodifica(invito.codice);
+    esito.gatheringA = letto.gathering;
+
+    const t1 = Date.now();
+    const { codice, gathering } = await Invito.creaRisposta(pc, letto, 12000);
+    esito.gatheringB = gathering;
+    esito.raccoltaMs = Date.now() - t1;
+    esito.codiceRisposta = codice.length;
+    annota(`risposta creata: ${codice.length} caratteri, raccolta ICE = ${gathering}`);
+    await post('risposta', { codice, quando: Date.now() });
+
+    dc = await new Promise((r) => { pc.ondatachannel = (ev) => r(ev.channel); });
+  }
+
+  /* Il canale si apre? */
+  const aperto = await new Promise((r) => {
+    if (dc.readyState === 'open') return r(true);
+    const t = setTimeout(() => r(false), 20000);
+    dc.onopen = () => { clearTimeout(t); r(true); };
+    dc.onclose = () => { clearTimeout(t); r(false); };
+  });
+  esito.canaleAperto = aperto;
+  esito.tempoConnessioneMs = Date.now() - t0;
+  annota(aperto ? `canale APERTO in ${esito.tempoConnessioneMs} ms` : 'canale NON aperto');
+  if (!aperto) return;
+
+  /* Messaggio di andata, e risposta di ritorno. */
+  if (RUOLO === 'A') {
+    const eco = await new Promise((r) => {
+      const t = setTimeout(() => r(null), 8000);
+      dc.onmessage = (ev) => { clearTimeout(t); r(ev.data); };
+      dc.send('messaggio di prova');
+    });
+    esito.rispostaRicevuta = eco;
+    annota('risposta ricevuta sul canale: ' + eco);
+  } else {
+    const arrivato = await new Promise((r) => {
+      const t = setTimeout(() => r(null), 8000);
+      dc.onmessage = (ev) => {
+        clearTimeout(t);
+        dc.send('eco: ' + ev.data);
+        r(ev.data);
+      };
+    });
+    esito.messaggioRicevuto = arrivato;
+    annota('messaggio ricevuto: ' + arrivato);
+  }
+
+  await attendi(400);
+  const s = await Invito.statistiche(pc);
+  esito.tipoCandidatoLocale = s.tipoLocale;
+  esito.tipoCandidatoRemoto = s.tipoRemoto;
+  esito.viaRelay = s.viaRelay;
+  esito.statoFinale = s.stato;
+  esito.rttMs = s.rtt;
+  annota(`candidati: ${s.tipoLocale} ↔ ${s.tipoRemoto} | relay: ${s.viaRelay} | RTT ${s.rtt} ms`);
+}
+
+try {
+  await main();
+  esito.ok = true;
+} catch (e) {
+  esito.ok = false;
+  esito.errore = String(e && e.message || e);
+  annota('ERRORE: ' + esito.errore);
+}
+
+esito.note = note;
+esito.registro = uscita.textContent;
+await post('esito-' + RUOLO, esito);
+document.title = esito.ok ? 'FINE OK' : 'FINE ERRORE';
+</script>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prove 1 · 2 · 4 — L'invito, la LAN, il NAT</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <h1>Prove 1 · 2 · 4 — L'invito, la LAN, il NAT</h1>
+  <p class="meta">
+    Due browser si connettono scambiandosi <strong>due soli codici</strong>, senza alcun
+    server. Se questa pagina si apre, la prova è già possibile: non c'è niente da installare
+    e niente da configurare.
+  </p>
+</header>
+
+<main>
+
+  <div class="pannello">
+    <h2>Quale prova stai facendo</h2>
+    <table>
+      <tr>
+        <th style="width:30%">Prova 1 &mdash; l'invito</th>
+        <td>Due dispositivi in luoghi diversi. Scegli <strong>STUN Google</strong>.
+        Il codice funziona? Quanto ci mette la connessione?</td>
+      </tr>
+      <tr>
+        <th>Prova 2 &mdash; la LAN</th>
+        <td>Due dispositivi sulla stessa Wi-Fi, <strong>internet staccato</strong>.
+        Scegli <strong>Solo rete locale</strong>. Funziona senza alcun intermediario?</td>
+      </tr>
+      <tr>
+        <th>Prova 4 &mdash; il NAT</th>
+        <td>Due dispositivi su reti diverse (es. PC e telefono in 4G). Scegli
+        <strong>STUN + TURN</strong> e inserisci le credenziali. Guarda in fondo:
+        <em>via relay</em> o <em>diretto</em>?</td>
+      </tr>
+    </table>
+    <p class="nota">
+      La configurazione ICE riguarda <strong>ciascun lato per conto suo</strong>: i due
+      dispositivi possono scegliere cose diverse senza problemi. Scegli però prima di
+      generare il codice, perché la raccolta dei candidati parte in quel momento.
+    </p>
+  </div>
+
+  <div class="pannello">
+    <h2>Configurazione ICE</h2>
+    <div class="opzioni">
+      <label><input type="radio" name="ice" value="stun" checked>
+        <span><strong>STUN Google</strong> &mdash; la configurazione normale su internet.</span></label>
+      <label><input type="radio" name="ice" value="host">
+        <span><strong>Solo rete locale</strong> &mdash; nessuno STUN, nessun TURN, nessun
+        contatto con l'esterno. È la prova 2.</span></label>
+      <label><input type="radio" name="ice" value="stun2">
+        <span><strong>STUN Google + Cloudflare</strong> &mdash; due fornitori, per vedere se
+        il secondo subentra quando il primo non risponde.</span></label>
+      <label><input type="radio" name="ice" value="turn">
+        <span><strong>STUN + TURN</strong> &mdash; la prova 4.</span></label>
+    </div>
+    <div id="turnCampi" style="display:none">
+      <label for="turnUrl">URL del TURN (<code>turn:host:3478</code> oppure <code>turns:host:5349</code>)</label>
+      <input type="text" id="turnUrl" placeholder="turn:relay.example.net:3478" autocomplete="off">
+      <label for="turnUser">Nome utente</label>
+      <input type="text" id="turnUser" autocomplete="off">
+      <label for="turnPass">Credenziale</label>
+      <input type="text" id="turnPass" autocomplete="off">
+    </div>
+    <button class="secondaria piccola" id="btnReset">Ricomincia da capo</button>
+  </div>
+
+  <div class="colonne">
+
+    <div class="pannello">
+      <h2>A &mdash; chi invita</h2>
+      <button id="btnCrea">1 · Crea l'invito</button>
+      <label for="invitoOut">Codice di invito &mdash; mandalo all'altro</label>
+      <textarea id="invitoOut" readonly placeholder="Apparirà qui…"></textarea>
+      <button class="secondaria piccola" id="btnCopiaInvito">Copia il codice</button>
+      <button class="secondaria piccola" id="btnCopiaLink">Copia il link</button>
+      <label for="linkOut">Link diretto (per l'altro dispositivo)</label>
+      <input type="text" id="linkOut" readonly placeholder="Apparirà qui…">
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+      <label for="rispostaIn">Codice di ritorno ricevuto dall'altro</label>
+      <textarea id="rispostaIn" placeholder="Incolla qui la risposta…"></textarea>
+      <button id="btnCompleta">4 · Completa la connessione</button>
+    </div>
+
+    <div class="pannello">
+      <h2>B &mdash; chi risponde</h2>
+      <p class="nota" style="margin-top:0">
+        Se hai aperto questa pagina dal <strong>link di invito</strong>, la risposta è già
+        stata preparata e trovi qui sotto il codice da rimandare.
+      </p>
+      <label for="invitoIn">Incolla qui l'invito ricevuto</label>
+      <textarea id="invitoIn" placeholder="Incolla qui il codice di invito…"></textarea>
+      <button id="btnRisposta">2 · Genera la risposta</button>
+      <label for="rispostaOut">Codice di ritorno &mdash; rimandalo a chi ha invitato</label>
+      <textarea id="rispostaOut" readonly placeholder="Apparirà qui…"></textarea>
+      <button class="secondaria piccola" id="btnCopiaRisposta">Copia il codice</button>
+    </div>
+
+  </div>
+
+  <div class="pannello">
+    <h2>Stato</h2>
+    <div class="stato" id="stato">
+      <span class="pill">in attesa</span>
+    </div>
+    <dl class="dati" id="dati"></dl>
+  </div>
+
+  <div class="pannello">
+    <h2>Verifica che i dati passino davvero</h2>
+    <div class="chat" id="chat">
+      <div style="color:var(--muted)">I messaggi scritti qui viaggiano sul canale dati
+      WebRTC, non passano da nessun server.</div>
+    </div>
+    <form id="chatForm" style="display:flex;gap:8px;margin-top:10px">
+      <input type="text" id="chatTesto" placeholder="Scrivi qualcosa…" disabled>
+      <button type="submit" id="chatInvio" disabled style="margin:0;white-space:nowrap">Invia</button>
+    </form>
+  </div>
+
+  <div class="pannello">
+    <h2>Registro</h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="pannello">
+    <h2>Esito della prova</h2>
+    <p class="nota" style="margin-top:0">
+      Compila a mano e salva: è la parte che serve davvero. Il resto lo misura la pagina,
+      ma il giudizio no.
+    </p>
+    <label for="esito">Com'è andata</label>
+    <select id="esito">
+      <option value="">— scegli —</option>
+      <option>Connesso al primo colpo</option>
+      <option>Connesso dopo un tentativo ripetuto</option>
+      <option>Fallito: non si sono visti</option>
+      <option>Fallito per altro motivo</option>
+    </select>
+    <label for="note">Note (dove, che dispositivi, che reti)</label>
+    <input type="text" id="note" placeholder="es. PC ufficio su Wi-Fi aziendale ↔ telefono in 4G">
+    <label for="riassunto">Report misurato</label>
+    <textarea id="riassunto" readonly style="min-height:150px"></textarea>
+    <button class="secondaria piccola" id="btnAggiornaReport">Aggiorna il report</button>
+    <button class="secondaria piccola" id="btnScaricaReport">Salva il report</button>
+    <button class="secondaria piccola" id="btnCopiaReport">Copia il report</button>
+  </div>
+
+  <p class="nota allarme">
+    <strong>Sul secondo dispositivo, se non è questa la stessa macchina:</strong> il browser
+    considera sicuro solo <code>localhost</code> e <code>https</code>. Aprendo
+    <code>http://192.168.x.x:8080</code> il canale dati di questa prova funziona comunque
+    (non usiamo API che richiedono un contesto sicuro), ma la spunta dell'invito potrebbe
+    non copiarsi da sola negli appunti e va fatta a mano. È normale.
+  </p>
+
+</main>
+
+<script type="module">
+import { Invito } from './lib/invito.js';
+
+const $ = (s) => document.querySelector(s);
+
+let pc = null;
+let dc = null;
+let ruolo = null;
+let timerStato = null;
+
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ------------------------------------------------------------------ registro */
+
+function log(msg, livello = '') {
+  const ora = new Date().toLocaleTimeString('it-IT');
+  const d = document.createElement('div');
+  d.innerHTML = `<span class="t">${ora}</span>  ${escapeHtml(msg)}`;
+  if (livello === 'err') d.style.color = 'var(--err)';
+  if (livello === 'ok') d.style.color = 'var(--ok)';
+  const contenitore = $('#log');
+  contenitore.append(d);
+  contenitore.scrollTop = contenitore.scrollHeight;
+}
+
+/* ------------------------------------------------------------ configurazione */
+
+function nomeConfigurazione() {
+  const v = document.querySelector('input[name="ice"]:checked').value;
+  return ({ host: 'solo rete locale (nessuno STUN)',
+            stun: 'STUN Google',
+            stun2: 'STUN Google + Cloudflare',
+            turn: 'STUN + TURN' })[v];
+}
+
+function iceScelti() {
+  const v = document.querySelector('input[name="ice"]:checked').value;
+  if (v === 'host') return [];
+  if (v === 'stun') return [...Invito.ICE.STUN_GOOGLE];
+  if (v === 'stun2') return [...Invito.ICE.STUN_GOOGLE, ...Invito.ICE.STUN_CLOUDFLARE];
+  const url = $('#turnUrl').value.trim();
+  if (!url) throw new Error('Per usare il TURN serve almeno l\'URL del server.');
+  return [...Invito.ICE.STUN_GOOGLE, {
+    urls: url,
+    username: $('#turnUser').value.trim() || undefined,
+    credential: $('#turnPass').value.trim() || undefined,
+  }];
+}
+
+document.querySelectorAll('input[name="ice"]').forEach((r) =>
+  r.addEventListener('change', () => {
+    $('#turnCampi').style.display =
+      document.querySelector('input[name="ice"]:checked').value === 'turn' ? '' : 'none';
+  }));
+
+/* ------------------------------------------------------------------- stato */
+
+function pill(testo, classe = '') {
+  return `<span class="pill ${classe}">${escapeHtml(testo)}</span>`;
+}
+
+async function mostraStato() {
+  if (!pc) return;
+  const s = await Invito.statistiche(pc);
+
+  const classeConn = ({ connected: 'ok', connecting: 'warn', new: 'warn',
+                        failed: 'err', disconnected: 'err', closed: 'err' })[s.stato] || '';
+  const classeCanale = dc && dc.readyState === 'open' ? 'ok' : 'warn';
+
+  $('#stato').innerHTML = [
+    pill(`connessione: ${s.stato}`, classeConn),
+    pill(`canale: ${dc ? dc.readyState : '—'}`, classeCanale),
+    s.coppia ? pill(s.viaRelay ? 'via relay TURN' : 'diretto', s.viaRelay ? 'warn' : 'ok') : '',
+    s.rtt != null ? pill(`andata e ritorno: ${s.rtt} ms`) : '',
+  ].join('');
+
+  const righe = [
+    ['contesto sicuro', window.isSecureContext ? 'sì' : 'no (http:// in rete locale)'],
+    ['raccolta ICE', s.gathering],
+    ['protocollo', s.coppia ? (s.coppia.protocollo || '—') : '—'],
+    ['candidato locale', s.tipoLocale ? Invito.nomeTipo(s.tipoLocale) : '—'],
+    ['candidato remoto', s.tipoRemoto ? Invito.nomeTipo(s.tipoRemoto) : '—'],
+  ];
+  $('#dati').innerHTML = righe
+    .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('');
+}
+
+/* --------------------------------------------------------------- connessione */
+
+function collegaEventi(peer) {
+  peer.onconnectionstatechange = () => {
+    log(`stato della connessione: ${peer.connectionState}`,
+        peer.connectionState === 'failed' ? 'err' : '');
+    const spiega = Invito.spiegaFallimento(peer.connectionState);
+    if (spiega) log(spiega, 'err');
+    mostraStato();
+  };
+  peer.oniceconnectionstatechange = () => mostraStato();
+  peer.onicegatheringstatechange = () => mostraStato();
+  peer.ondatachannel = (ev) => { dc = ev.channel; preparaCanale(dc); };
+  if (!timerStato) timerStato = setInterval(mostraStato, 2000);
+}
+
+function preparaCanale(canale) {
+  canale.onopen = () => {
+    log('canale dati aperto: da qui in poi i messaggi vanno da browser a browser', 'ok');
+    $('#chatTesto').disabled = false;
+    $('#chatInvio').disabled = false;
+    canale.send(JSON.stringify({ t: 'ciao', ruolo }));
+    mostraStato();
+  };
+  canale.onclose = () => {
+    log('canale dati chiuso', 'err');
+    $('#chatTesto').disabled = true;
+    $('#chatInvio').disabled = true;
+  };
+  canale.onmessage = (ev) => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch { return; }
+    if (m.t === 'ciao') { log(`l'altro lato si presenta: ${m.ruolo}`); return; }
+    if (m.t === 'chat') { aggiungiChat(m.m, false); return; }
+  };
+}
+
+function azzera() {
+  if (pc) { try { pc.close(); } catch {} }
+  pc = null; dc = null; ruolo = null;
+  $('#log').innerHTML = '';
+  $('#chat').innerHTML =
+    '<div style="color:var(--muted)">I messaggi scritti qui viaggiano sul canale dati WebRTC, non passano da nessun server.</div>';
+  $('#invitoOut').value = ''; $('#rispostaOut').value = '';
+  $('#rispostaIn').value = ''; $('#linkOut').value = '';
+  $('#chatTesto').disabled = true; $('#chatInvio').disabled = true;
+  $('#stato').innerHTML = '<span class="pill">in attesa</span>';
+  $('#dati').innerHTML = '';
+}
+
+/* -------------------------------------------------------------- lato A */
+
+$('#btnCrea').addEventListener('click', async () => {
+  azzera();
+  try {
+    ruolo = 'A';
+    const ice = iceScelti();
+    pc = Invito.creaPeer(ice);
+    collegaEventi(pc);
+    log(`configurazione ICE: ${nomeConfigurazione()}`);
+    log('raccolta dei candidati in corso…');
+    $('#btnCrea').disabled = true;
+    const esito = await Invito.creaInvito(pc, ice, 12000);
+    dc = esito.dc;
+    preparaCanale(dc);
+    log(`raccolta ICE conclusa: ${esito.gathering}`);
+    $('#invitoOut').value = esito.codice;
+    $('#linkOut').value = location.origin + location.pathname + '#invito=' + esito.codice;
+    log(`invito pronto: ${esito.codice.length} caratteri`, 'ok');
+    log('mandalo all\'altro dispositivo e aspetta il codice di ritorno.');
+  } catch (e) {
+    log('errore: ' + e.message, 'err');
+  } finally {
+    $('#btnCrea').disabled = false;
+  }
+});
+
+$('#btnCompleta').addEventListener('click', async () => {
+  try {
+    if (!pc) throw new Error('Prima bisogna creare l\'invito.');
+    const r = await Invito.decodifica($('#rispostaIn').value);
+    await Invito.completa(pc, r);
+    log('risposta applicata: la connessione sta partendo…', 'ok');
+  } catch (e) {
+    log('errore: ' + e.message, 'err');
+  }
+});
+
+/* -------------------------------------------------------------- lato B */
+
+async function rispondiA(codice) {
+  try {
+    const invito = await Invito.decodifica(codice);
+    if (invito.t !== 'offer') throw new Error('Questo codice non è un invito.');
+    ruolo = 'B';
+    const ice = iceScelti();
+    pc = Invito.creaPeer(ice);
+    collegaEventi(pc);
+    log(`configurazione ICE: ${nomeConfigurazione()}`);
+    log('raccolta dei candidati in corso…');
+    const esito = await Invito.creaRisposta(pc, invito, 12000);
+    log(`raccolta ICE conclusa: ${esito.gathering}`);
+    $('#rispostaOut').value = esito.codice;
+    log(`risposta pronta: ${esito.codice.length} caratteri`, 'ok');
+    log('rimandala a chi ha invitato.');
+  } catch (e) {
+    log('errore: ' + e.message, 'err');
+  }
+}
+
+$('#btnRisposta').addEventListener('click', () => {
+  const codice = $('#invitoIn').value.trim();
+  if (!codice) { log('incolla prima il codice di invito.', 'err'); return; }
+  rispondiA(codice);
+});
+
+/* ------------------------------------------------------------- chat */
+
+function aggiungiChat(testo, mio) {
+  const d = document.createElement('div');
+  d.className = mio ? 'mio' : 'suo';
+  d.textContent = (mio ? 'tu: ' : 'lui: ') + testo;
+  $('#chat').append(d);
+  $('#chat').scrollTop = $('#chat').scrollHeight;
+}
+
+$('#chatForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const testo = $('#chatTesto').value.trim();
+  if (!testo || !dc || dc.readyState !== 'open') return;
+  dc.send(JSON.stringify({ t: 'chat', m: testo }));
+  aggiungiChat(testo, true);
+  $('#chatTesto').value = '';
+});
+
+/* ------------------------------------------------------------ appunti */
+
+async function copia(testo) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(testo);
+      return 'copiato negli appunti';
+    }
+    throw new Error('niente appunti');
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = testo;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.append(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok ? 'copiato negli appunti' : 'selezionalo e premi Ctrl+C';
+    } catch { return 'selezionalo e premi Ctrl+C'; }
+  }
+}
+
+$('#btnCopiaInvito').addEventListener('click', async () =>
+  log(await copia($('#invitoOut').value), 'ok'));
+$('#btnCopiaRisposta').addEventListener('click', async () =>
+  log(await copia($('#rispostaOut').value), 'ok'));
+$('#btnCopiaLink').addEventListener('click', async () =>
+  log(await copia($('#linkOut').value), 'ok'));
+
+/* ------------------------------------------------------------- report */
+
+async function componiReport() {
+  const s = pc ? await Invito.statistiche(pc) : {};
+  return {
+    prova: nomeConfigurazione(),
+    quando: new Date().toISOString(),
+    ruolo,
+    origine: location.origin,
+    contestoSicuro: window.isSecureContext,
+    browser: navigator.userAgent,
+    raccoltaIce: s.gathering ?? null,
+    statoConnessione: s.stato ?? null,
+    candidatoLocale: s.tipoLocale ? Invito.nomeTipo(s.tipoLocale) : null,
+    candidatoRemoto: s.tipoRemoto ? Invito.nomeTipo(s.tipoRemoto) : null,
+    viaRelay: s.viaRelay ?? null,
+    rttMs: s.rtt ?? null,
+    canaleAperto: dc ? dc.readyState === 'open' : false,
+    esito: $('#esito').value || null,
+    note: $('#note').value || null,
+  };
+}
+
+async function aggiornaReport() {
+  $('#riassunto').value = JSON.stringify(await componiReport(), null, 2);
+}
+
+$('#btnAggiornaReport').addEventListener('click', aggiornaReport);
+
+$('#btnScaricaReport').addEventListener('click', async () => {
+  await aggiornaReport();
+  const b = new Blob([$('#riassunto').value], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = `prova-${Date.now()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  log('report salvato', 'ok');
+});
+
+$('#btnCopiaReport').addEventListener('click', async () => {
+  await aggiornaReport();
+  log(await copia($('#riassunto').value), 'ok');
+});
+
+$('#btnReset').addEventListener('click', () => {
+  azzera();
+  log('tutto azzerato: puoi ricominciare.');
+});
+
+/* ------------------------------------------------- avvio da link di invito */
+
+(async function avvioDaLink() {
+  const m = location.hash.match(/invito=([A-Za-z0-9_-]+)/);
+  if (!m) {
+    log('pronto. Scegli la configurazione e comincia dalla colonna A, oppure incolla un invito in B.');
+    return;
+  }
+  log('invito ricevuto dal link: preparo la risposta…');
+  $('#invitoIn').value = m[1];
+  await rispondiA(m[1]);
+  history.replaceState(null, '', location.pathname);
+})();
+
+window.addEventListener('beforeunload', () => { if (pc) pc.close(); });
+</script>
+
+</body>
+</html>
