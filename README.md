@@ -46,6 +46,10 @@ python3 -m http.server 8766 --bind 127.0.0.1
 
 # 2. eseguire tutte le prove e avere il verdetto
 ./prove.sh
+
+# 3. leggere i documenti in HTML, come si leggono sul sito
+./genera-documenti.sh        # serve pandoc: sudo apt install pandoc
+#      → http://127.0.0.1:8766/ARCHITETTURA.html   (e gli altri)
 ```
 
 Il server serve a **consegnare i file**, non a far funzionare l'applicazione: i moduli ES e
@@ -54,22 +58,36 @@ Per far parlare due browser bisogna aprirne due — uno normale e uno in incogni
 `http://127.0.0.1:8766/app/`, e scambiarsi il codice d'invito a mano. **Lo stesso sito è
 pubblicato su Pages**: in locale serve per lavorarci, non per usarlo.
 
+**I documenti sono scritti in markdown**, che GitHub mostra impaginato e un browser no: su
+Pages `ARCHITETTURA.md` si scarica come testo. Per questo il sito serve **HTML generati**, e
+li rigenera a ogni pubblicazione (`.github/workflows/pubblica.yml` → `genera-documenti.sh`):
+non stanno nel repo, quindi non possono restare indietro rispetto al markdown. In locale li
+si generano con lo stesso comando — è il passo 3 qui sopra — e i rimandi fra un documento e
+l'altro si aggiustano da soli (nel markdown puntano al `.md`, che è giusto per GitHub;
+nell'HTML al `.html`, che è giusto per il sito).
+
 ## Com'è disposta la cartella
 
 ```
 black-spider/
-├── index.html           la pagina d'ingresso del sito: la presentazione, autonoma e bilingue
-├── README.md            questo file — la porta d'ingresso, per una persona
+├── index.html           la pagina d'ingresso: la presentazione, IT/EN
+├── README.md            questo file
 ├── LICENSE              AGPL-3.0 — il testo della licenza
 ├── .nojekyll            dice a Pages di servire i file come sono
-├── ARCHITETTURA.md      il documento di progetto: il *perché* di ogni scelta
+├── ARCHITETTURA.md      il progetto, e il perché di ogni scelta
 ├── prove.sh             esegue tutte le prove e dice l'esito
+├── genera-documenti.sh  ricava gli .html dai .md (serve pandoc)
+├── .github/             il workflow di pubblicazione e la generazione
 ├── app/                 l'applicazione: il guscio PWA e la chat
-│   ├── js/              identità, eventi, archivio, invito, trasporto, sincronizzazione
-│   └── prove/           le prove, che aprono l'app vera e le cliccano i pulsanti
-├── spikes/              le prove di fattibilità fatte prima di scrivere il codice
-└── riferimenti/         le fonti: 22 documenti, in copia HTML e in testo
+│   ├── js/              i moduli: identità, eventi, archivio, invito…
+│   └── prove/           aprono l'app vera e ne cliccano i pulsanti
+├── spikes/              le prove di fattibilità, fatte prima del codice
+└── riferimenti/         le fonti: 22 documenti, in HTML e in testo
 ```
+
+Il markdown è la **fonte**; gli HTML dei documenti sono un **derivato**, e non stanno nel
+repo. Li produce `genera-documenti.sh` — in locale quando servono, e nel workflow dentro la
+copia che finisce online. Un derivato che non si conserva non può divergere dalla sua fonte.
 
 ## Le tre cose che non si rinegoziano
 

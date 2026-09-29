@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+#
+# Pubblica il sito su GitHub Pages.
+#
+# Cosa fa, in due passi. Prima **costruisce**: rigenera i documenti .html dai
+# .md (genera-documenti.sh, pandoc) e poi copia tutto in `_site/`. Poi
+# **pubblica** quella cartella così com'è.
+#
+# L'ordine conta: si genera nel repo e si copia dopo, così la copia contiene sia
+# il markdown (la fonte) sia l'HTML che se ne ricava.
+#
+# Perché una copia e non il repo: nel repo stanno i .md, che sono la fonte, e
+# basta. Gli .html sono un derivato, e un derivato che sta nel repo invecchia in
+# silenzio — il modo per non farlo invecchiare è non conservarlo: nasce a ogni
+# pubblicazione, dentro la copia che finisce online, e da nessun'altra parte.
+#
+# Qui arriva solo quello che è tracciato: quello che sta solo su una macchina
+# non esiste in questa copia, e quindi non finisce online.
+#
+# La prima volta che questo workflow gira, Pages deve essere impostato su
+# «GitHub Actions» come sorgente: senza quello la pubblicazione non parte.
+
+name: Pubblica il sito
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:      # per ripubblicare a mano, senza un commit
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Una pubblicazione per volta: se ne arriva un'altra, la precedente si annulla.
+concurrency:
+  group: pagine
+  cancel-in-progress: true
+
+jobs:
+  costruisci:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa pandoc
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pandoc
+
+      - name: Genera i documenti
+        run: ./genera-documenti.sh
+
+      - name: Copia il sito
+        run: |
+          mkdir -p _site
+          rsync -a --exclude='.git' --exclude='.github' --exclude='_site' ./ _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  pubblica:
+    needs: costruisci
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.pubblicazione.outputs.page_url }}
+    steps:
+      - name: Pubblica
+        id: pubblicazione
+        uses: actions/deploy-pages@v4

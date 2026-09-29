@@ -1,0 +1,140 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Daniele Deplano (RedRider21) -->
+<!--
+  L'aspetto dei documenti generati: ARCHITETTURA, i README, gli esiti delle prove.
+
+  Non è un foglio di stile a sé: sono gli stessi colori e gli stessi caratteri
+  del sito, con in più quello che serve a un testo lungo — righe non troppo
+  larghe, titoli distanziati, tabelle e blocchi di codice leggibili.
+
+  Vive in `.github/pandoc/` perché la usa la generazione: `genera-documenti.sh`
+  in locale e il workflow di pubblicazione su GitHub. Il documento .md resta la
+  fonte; l'HTML è quello che se ne ricava, e non sta nel repo.
+-->
+<style>
+:root {
+  color-scheme: light dark;
+
+  /* Prima il valore scuro per esteso: serve ai browser che non conoscono
+   * light-dark(), che così prendono il tema scuro invece di niente. */
+  --fondo: #0c0d14;
+  --fondo: light-dark(#f6f7fa, #0c0d14);
+  --carta: #14161f;
+  --carta: light-dark(#ffffff, #14161f);
+  --bordo: #272b3c;
+  --bordo: light-dark(#dfe2ea, #272b3c);
+  --testo: #e8eaf2;
+  --testo: light-dark(#161926, #e8eaf2);
+  --testo-2: #98a0b8;
+  --testo-2: light-dark(#596074, #98a0b8);
+  --accento: #7a6cff;
+  --accento: light-dark(#5246e0, #7a6cff);
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --righe: 78ch;
+}
+
+html { background: var(--fondo); }
+
+body {
+  margin: 0 auto;
+  padding: 56px 18px 96px;
+  max-width: var(--righe);
+  background: var(--fondo);
+  color: var(--testo);
+  font: 17px/1.72 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+
+/* Il blocco che pandoc mette in cima con il titolo non serve: il titolo c'è
+ * già, come primo titolo del documento. */
+#title-block-header { display: none; }
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.25;
+  letter-spacing: -.015em;
+  margin: 2.1em 0 .5em;
+  font-weight: 660;
+}
+h1 { font-size: 2em; margin-top: 0; }
+h2 {
+  font-size: 1.4em;
+  padding-bottom: .28em;
+  border-bottom: 1px solid var(--bordo);
+}
+h3 { font-size: 1.13em; }
+h4 { font-size: 1em; }
+h5, h6 { font-size: .95em; color: var(--testo-2); }
+
+p, ul, ol, dl, table, blockquote, pre { margin: 0 0 1.05em; }
+ul, ol { padding-left: 1.35em; }
+li { margin-bottom: .3em; }
+li > ul, li > ol { margin: .3em 0 .3em; }
+
+a { color: var(--accento); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+strong { font-weight: 660; }
+em { font-style: italic; }
+hr { border: 0; border-top: 1px solid var(--bordo); margin: 2.4em 0; }
+
+blockquote {
+  margin-left: 0;
+  padding: .1em 0 .1em 1.1em;
+  border-left: 3px solid var(--accento);
+  color: var(--testo-2);
+}
+blockquote > :last-child { margin-bottom: 0; }
+
+code, kbd, samp {
+  font-family: var(--mono);
+  font-size: .89em;
+  background: color-mix(in srgb, var(--testo) 8%, transparent);
+  padding: .12em .38em;
+  border-radius: 5px;
+}
+pre {
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+}
+pre code {
+  background: none;
+  padding: 0;
+  font-size: .86em;
+  /* Una riga di codice non si spezza. Il testo va a capo perché è fatto di
+   * frasi; il codice no — un albero di cartelle spezzato a metà perde
+   * l'allineamento e non si legge più. Se la riga è lunga, il blocco scorre.
+   * (pandoc, di suo, mette `white-space: pre-wrap` su ogni `code`.) */
+  white-space: pre;
+}
+
+/* Su uno schermo di telefono, però, una riga lunga che scorre è peggio di una
+ * riga che va a capo: si perde il posto. Sotto i 560 px il codice torna a
+ * spezzarsi — l'allineamento si perde, ma si legge tutto senza muovere niente. */
+@media (max-width: 560px) {
+  pre code { white-space: pre-wrap; }
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: .95em;
+  display: block;
+  overflow-x: auto;
+}
+th, td {
+  border: 1px solid var(--bordo);
+  padding: 7px 11px;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: color-mix(in srgb, var(--testo) 5%, transparent); font-weight: 660; }
+
+img { max-width: 100%; height: auto; }
+
+/* I titoli non vanno nascosti sotto la barra quando si arriva da un rimando. */
+:target { scroll-margin-top: 20px; }
+</style>
