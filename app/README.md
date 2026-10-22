@@ -161,10 +161,10 @@ giro, cioè ≈15-24 kbps in Opus — lo stesso ordine dei 24-40 dichiarati. Il 
 balla da un giro all'altro e va detto: Opus è a bitrate variabile, e tre secondi
 sono un campione corto. Accendendo la telecamera, solo per il video ne arrivano
 **70 000-72 500** negli stessi tre secondi, e **zero** dopo averla spenta.
-Niente STUN, microfono finto, tutto dentro `127.0.0.1`. 68 controlli su 68
-(37 in un ruolo, 31 nell'altro), misurati il 2026-10-23: fra questi, il video
-in ingresso deve avere dei **fotogrammi decodificati** (`videoWidth > 0`), non
-solo dei byte.
+Niente STUN, microfono finto, tutto dentro `127.0.0.1`. 72 controlli su 72
+(40 in un ruolo, 32 nell'altro), misurati il 2026-10-23: fra questi, il video
+in ingresso e l'anteprima devono avere dei **fotogrammi decodificati**
+(`videoWidth > 0`), non solo dei byte.
 
 Un numero vale più di una frase: la voce costa 15-24 kbps e il video molto di
 più. Ma va detto *quale* video è stato misurato: quello finto di Chrome, un
@@ -374,13 +374,13 @@ via d'uscita**, non a cuor leggero.
 
 ## Cosa manca
 
-- **Il video che si riceve si vede, ma chi lo manda non si vede.** La traccia in
-  ingresso ha finalmente un posto dove apparire: un `<video>` nel pannello della
-  chat, legato alla sola traccia video (lo stream che arriva contiene anche
-  l'audio, e darlo a due elementi lo farebbe sentire due volte). Il riquadro
-  compare quando la traccia è **davvero viva**, con la stessa misura che distingue
-  «promessa» da «arrivata», e sparisce quando l'altro spegne la telecamera. Manca
-  però l'anteprima di sé: chi accende la telecamera non vede cosa sta mandando.
+- **Il video, nelle due direzioni.** La traccia in ingresso ha un posto dove
+  apparire: un `<video>` nel pannello della chat, legato alla sola traccia video
+  (lo stream che arriva contiene anche l'audio, e darlo a due elementi lo farebbe
+  sentire due volte). Il riquadro compare quando la traccia è **davvero viva**,
+  con la stessa misura che distingue «promessa» da «arrivata», e sparisce quando
+  l'altro spegne la telecamera. Nell'angolo c'è l'anteprima di sé, specchiata:
+  serve a sapere cosa si sta inquadrando.
 - **L'indirizzario.** Oggi per parlare con qualcuno si rifà lo scambio a mano,
   ogni volta. Salvando in IndexedDB chi si è incontrato e per quale percorso
   (vedi «Perché non si può riusare lo stesso invito»), l'offerta **nuova** può

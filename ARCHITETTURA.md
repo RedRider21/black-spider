@@ -786,8 +786,17 @@ stessa misura (`tipiInArrivo`, dove `muted` conta più della direzione del trans
 distingue una promessa da un'immagine, e sparisce quando l'altro spegne la telecamera: un
 fotogramma fermo farebbe credere che sia ancora lì.
 
-Resta scoperta l'altra metà della domanda: **chi manda non si vede**. L'anteprima locale è
-un'aggiunta piccola ma non c'è ancora.
+Anche l'altra metà della domanda ha risposta: **chi manda adesso si vede**. Nell'angolo del
+riquadro c'è un secondo `<video>`, muto e specchiato (`scaleX(-1)`, come uno specchio: senza,
+ci si muove dalla parte sbagliata), legato alla traccia locale. Serve a sapere cosa si sta
+inquadrando — una telecamera puntata al soffitto, altrimenti, si scopre solo perché lo dice
+l'altro. Sparisce con la telecamera, e con essa la traccia si ferma: nessuna ripresa di
+nascosto.
+
+Una nota di CSS che è costata un giro di fotografie: `.riquadro-video video` è più specifico di
+`.video-mio`, e restituiva l'anteprima a grandezza piena, sopra la barra della chiamata. Il
+selettore ora è per id (`#videoMio`), e la lezione è la solita — la specificità vince dove non
+te l'aspetti; a vederlo è stata `sguardo.py`, non un'asserzione.
 
 #### Verificato il 29 settembre 2026
 
@@ -804,7 +813,7 @@ Fra il pulsante e la funzione sta quasi tutto lo spazio in cui vivono i guasti v
 | il video che si riceve | un `<video>` con **fotogrammi decodificati** (`videoWidth > 0`), non solo byte |
 | percorso | `host → host`, due browser, niente STUN, tutto dentro `127.0.0.1` |
 
-68 controlli su 68 (37 + 31), il 23 ottobre 2026. La differenza fra i due numeri — 23 kbps
+72 controlli su 72 (40 + 32), il 23 ottobre 2026. La differenza fra i due numeri — 23 kbps
 contro quasi dieci volte tanto — è la ragione per cui la sola voce è il caso base e non il
 caso ridotto.
 
