@@ -105,6 +105,7 @@ const DIZIONARI = {
     'chiamata.microfonoNegato': 'Il microfono non è stato concesso ({errore}): senza microfono non c\'è niente da mandare.',
     'chiamata.telecameraNegata': 'La telecamera non è stata concessa ({errore}).',
     'chiamata.videoLontano': 'Video ricevuto',
+    'chiamata.videoMio': 'La tua telecamera',
     'chiamata.spiega': 'La chiamata è solo voce: costa 24-40 kbps, contro 1,5 Mbps di un video. Il video si accende dopo, se serve.',
 
     'registro.titolo': 'Registro',
@@ -324,6 +325,7 @@ const DIZIONARI = {
     'chiamata.microfonoNegato': 'The microphone was not granted ({errore}): without it there is nothing to send.',
     'chiamata.telecameraNegata': 'The camera was not granted ({errore}).',
     'chiamata.videoLontano': 'Incoming video',
+    'chiamata.videoMio': 'Your camera',
     'chiamata.spiega': 'The call is voice only: it costs 24-40 kbps, against 1.5 Mbps for video. Video goes on afterwards, if needed.',
 
     'registro.titolo': 'Log',

@@ -919,7 +919,7 @@ giusta:
 | Modulo | Priorità | Note |
 |---|---|---|
 | Chat | v0 | testo, risposte, reazioni, presenza, "sta scrivendo" |
-| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, **durata a vista** come su un telefono, **video ricevuto e disegnato** in un riquadro sopra la chat, sulla stessa connessione della chat. **Manca l'anteprima di sé** (chi manda non si vede). Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
+| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, **durata a vista** come su un telefono, **video ricevuto e disegnato** in un riquadro sopra la chat, sulla stessa connessione della chat. **C'è anche l'anteprima di sé** (chi manda si vede nell'angolo). Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
 | File | v1 | invio, ricezione, ripresa, quota, OPFS |
 | Bacheca | v1 | stato condiviso modificabile (editor collaborativo semplice) |
 | Blocchi | v2 | note/liste condivise, buon caso di test per lo stato mutabile e per Yjs |

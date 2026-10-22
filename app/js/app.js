@@ -526,7 +526,21 @@ function disegnaChiamata(stato, info = {}) {
   // guarda quello che il motore ha misurato, come tutto il resto dello schermo.
   const riquadroVideo = $('#riquadroVideo');
   if (riquadroVideo) {
-    riquadroVideo.hidden = !(viva && (info.tipi || '').split(',').includes('video'));
+    const daLontano = (info.tipi || '').split(',').includes('video');
+    const daQui = !!info.video;          // la telecamera di questa parte è accesa
+    riquadroVideo.hidden = !(viva && (daLontano || daQui));
+    // Il riquadro ha due posti e ognuno si accende per conto suo: si può
+    // mandare video senza riceverne (l'altro non ha la telecamera), e si può
+    // ricevere senza mandarne.
+    const lontano = $('#videoLontano');
+    if (lontano) lontano.hidden = !(viva && daLontano);
+    const mio = $('#videoMio');
+    if (mio) mio.hidden = !(viva && daQui);
+    // Con la sola anteprima il riquadro non deve collassare: il CSS ha bisogno
+    // di sapere che il video grande non c'è. L'attributo si toglie quando non
+    // serve — `min-height` non deve restare in piedi su un riquadro vuoto.
+    if (viva && daQui && !daLontano) riquadroVideo.dataset.soloMio = '1';
+    else delete riquadroVideo.dataset.soloMio;
   }
 
   if (!viva) return;

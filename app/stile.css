@@ -567,11 +567,24 @@ button.piccola { padding: 5px 11px; font-size: 12.5px; }
 .riquadro-video {
   display: flex;
   justify-content: center;
+  overflow: hidden;
   padding: 12px 16px;
   border-bottom: 1px solid var(--bordo-tenue);
   background: #000;
 }
 .riquadro-video[hidden] { display: none; }
+.telecamera {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 640px;
+}
+/* Solo la propria anteprima, senza video in arrivo: il riquadro non deve
+ * collassare a zero — l'anteprima è assoluta e non dà altezza. */
+.riquadro-video[data-solo-mio="1"] .telecamera { min-height: min(24vh, 200px); }
+
 .riquadro-video video {
   display: block;
   width: auto;
@@ -582,6 +595,27 @@ button.piccola { padding: 5px 11px; font-size: 12.5px; }
   border-radius: 10px;
   background: #000;
 }
+/* Il video dell'altro non c'è: lo spazio lo prende l'anteprima. */
+#videoLontano[hidden] { display: none; }
+
+/* L'anteprima di sé, in un angolo. Specchiata: è come ci si aspetta di vedersi
+ * in una telecamera, e il gesto della mano destra sta dalla parte della mano
+ * destra. Non è un ritocco estetico — senza, ci si muove dalla parte sbagliata. */
+/* Selettore per id, non per classe: `.riquadro-video video` è più specifico
+ * di `.video-mio` e vincerebbe, restituendo l'anteprima a grandezza intera —
+ * ed era proprio così che si vedeva, larga e sopra la barra della chiamata. */
+#videoMio {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 28%;
+  max-width: 150px;
+  max-height: 40%;
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 8px;
+  transform: scaleX(-1);
+}
+#videoMio[hidden] { display: none; }
 
 button.pericolo {
   background: transparent;

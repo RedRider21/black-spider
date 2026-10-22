@@ -181,8 +181,10 @@ pulsante «Chiama» che restava acceso mentre si parlava, e l'intestazione che
 sotto i 410 px finiva sotto il chip dell'identità (rimisurata a 360, 390, 400,
 430 e 1240 px). La terza non era un difetto ma una funzione che mancava — il
 video arrivava e non si mostrava — e adesso c'è: chi riceve vede l'altro in un
-riquadro sopra i messaggi, e il riquadro sparisce quando l'altro spegne la
-telecamera.
+riquadro sopra i messaggi, chi manda vede sé in un angolo, e il riquadro sparisce
+quando la telecamera si spegne. Anche l'anteprima, al primo giro, è uscita a
+grandezza piena sopra la barra: un problema di specificità del CSS che nessuna
+asserzione poteva vedere.
 
 ## La chiamata, e perché è fatta così
 

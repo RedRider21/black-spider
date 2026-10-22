@@ -15,7 +15,7 @@
  * non ci sarebbe modo di aggiornarla senza svuotare la memoria a mano.
  */
 
-const VERSIONE = '3';
+const VERSIONE = '4';
 const CACHE = `black-spider-v${VERSIONE}`;
 
 const GUSCIO = [

@@ -343,6 +343,8 @@ export function creaChiamate({ trasporto, polite, scheda, chiIniziale, onStato, 
     if (audio) { audio.srcObject = null; }
     const v = document.getElementById('videoLontano');
     if (v) v.srcObject = null;
+    const mio = document.getElementById('videoMio');
+    if (mio) mio.srcObject = null;
     muto = false;
   }
 
@@ -396,10 +398,14 @@ export function creaChiamate({ trasporto, polite, scheda, chiIniziale, onStato, 
   /** Il video: la traccia in più, aggiunta e tolta a chiamata avviata. */
   async function cambiaVideo() {
     if (stato !== CHIAMATA.IN_CORSO) return;
+    const mio = document.getElementById('videoMio');
     if (video) {
       video.traccia.stop();
       try { pc.removeTrack(video.sender); } catch { /* già tolta */ }
       video = null;
+      // Spenta la telecamera, l'anteprima sparisce: un fotogramma fermo di sé
+      // farebbe credere che stia ancora riprendendo.
+      if (mio) mio.srcObject = null;
       await offri(M.NEGOZIA);
       annuncia();
       return;
@@ -413,6 +419,13 @@ export function creaChiamate({ trasporto, polite, scheda, chiIniziale, onStato, 
     }
     const traccia = flusso.getVideoTracks()[0];
     const sender = pc.addTrack(traccia, flusso);
+    // L'anteprima di sé: la stessa traccia, in un secondo elemento muto. Senza,
+    // chi manda non sa cosa inquadra — e una telecamera puntata al soffitto si
+    // scopre solo perché l'altro lo dice.
+    if (mio) {
+      mio.srcObject = new MediaStream([traccia]);
+      mio.play().catch(() => { /* l'anteprima è un aiuto, non la chiamata */ });
+    }
     // La traccia locale vive quanto la chiamata: si tiene il riferimento per
     // poterla fermare, perché una telecamera accesa di nascosto è peggio di una
     // chiamata che non parte.

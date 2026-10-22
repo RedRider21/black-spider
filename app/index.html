@@ -256,8 +256,16 @@ try {
                `muted` non toglie niente al video: la voce arriva da un elemento
                `<audio>` a parte, e il suono qui lo farebbe sentire due volte. -->
           <div id="riquadroVideo" class="riquadro-video" hidden>
-            <video id="videoLontano" autoplay playsinline muted
-                   data-i18n-aria="chiamata.videoLontano"></video>
+            <div class="telecamera">
+              <video id="videoLontano" autoplay playsinline muted
+                     data-i18n-aria="chiamata.videoLontano"></video>
+              <!-- L'anteprima di sé: piccola, in un angolo, specchiata come in
+                   uno specchio — ci si aspetta di vedere il proprio gesto dalla
+                   stessa parte. `muted` perché è la propria voce, che si sente
+                   già dal microfono e non va riprodotta una seconda volta. -->
+              <video id="videoMio" class="video-mio" autoplay playsinline muted
+                     data-i18n-aria="chiamata.videoMio"></video>
+            </div>
           </div>
 
           <div id="messaggi" class="messaggi"></div>

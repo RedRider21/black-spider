@@ -255,6 +255,19 @@ async function attendiAvvio() {
         testo('#chiamataTesto').trim().slice(-28),
         testo('#chiamataTesto') !== testoPrima);
 
+      /* Chi manda deve vedersi: l'anteprima è la sola cosa che dice se la
+       * telecamera sta inquadrando quello che si crede. E deve esserci anche
+       * se l'altro non manda niente — A non riceve video, e la riceve B. */
+      await finche(() => {
+        const v = d().querySelector('#videoMio');
+        return v && v.videoWidth > 0;
+      }, 'la propria anteprima si veda', 15000);
+      const mio = d().querySelector('#videoMio');
+      verifica(`chi manda si vede: ${mio.videoWidth}×${mio.videoHeight}`,
+        mio.videoWidth > 0 && mio.videoHeight > 0 && mio.readyState >= 2);
+      verifica('e il riquadro è visibile anche se l\'altro non manda video',
+        !d().querySelector('#riquadroVideo').hidden);
+
       // La rinegoziazione è la strada più rischiosa di tutta la chiamata: mentre
       // si scambiano le nuove descrizioni la voce deve continuare ad arrivare.
       const primaDelVideo = byteChiamata();
@@ -270,6 +283,9 @@ async function attendiAvvio() {
       const primaDiSpegnere = byteChiamata();
       await attendi(3000);
       verifica('la telecamera è spenta', !$('#btnVideo').classList.contains('attivo'));
+      verifica('e con lei l\'anteprima di sé sparisce',
+        d().querySelector('#riquadroVideo').hidden
+        && !d().querySelector('#videoMio').srcObject);
       verifica('la barra è tornata com\'era: ' + testo('#chiamataTesto').trim().slice(-28),
         testo('#chiamataTesto') === testoPrima);
       verifica('e la chiamata è ancora in corso', statoChiamata() === 'in-corso');
@@ -298,6 +314,8 @@ async function attendiAvvio() {
         video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= 2);
       verifica('ed è in un riquadro visibile',
         !d().querySelector('#riquadroVideo').hidden);
+      verifica('B non manda video, quindi non ha un\'anteprima di sé',
+        d().querySelector('#videoMio').hidden);
 
       // Il video non è una riga nella SDP: è traffico, e va contato come traffico.
       // Si guardano i byte **video** in ingresso, non il totale di quelli audio —
