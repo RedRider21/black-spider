@@ -210,6 +210,10 @@ async function attendiAvvio() {
     await finche(() => tipiChiamata().includes('audio'), 'arrivi la traccia audio dell\'altro');
     verifica('dall\'altra parte è arrivata la voce', tipiChiamata().includes('audio'));
     verifica('e nient\'altro che voce: ' + tipiChiamata(), tipiChiamata() === 'audio');
+    // Solo voce vuol dire anche nessun riquadro video: se comparisse qui,
+    // comparirebbe senza che ci sia niente da mostrare.
+    verifica('e nessun riquadro video: nessuno ne manda',
+      d().querySelector('#riquadroVideo').hidden);
 
     const primo = byteChiamata();
     await attendi(3000);
@@ -281,6 +285,20 @@ async function attendiAvvio() {
       verifica('a B è arrivato il video di A: ' + tipiChiamata(),
         tipiChiamata() === 'audio,video');
 
+      /* Arrivare non è vedersi. Fino a qui la prova contava i byte — che dicono
+       * che qualcuno manda dei fotogrammi, non che qualcuno li guarda. Il
+       * fotogramma si vede quando il `<video>` ha una dimensione: quella la dà
+       * il primo fotogramma decodificato, non la traccia. */
+      await finche(() => {
+        const v = d().querySelector('#videoLontano');
+        return v && v.videoWidth > 0;
+      }, 'il video si veda davvero', 20000);
+      const video = d().querySelector('#videoLontano');
+      verifica(`il video che si riceve si vede: ${video.videoWidth}×${video.videoHeight}`,
+        video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= 2);
+      verifica('ed è in un riquadro visibile',
+        !d().querySelector('#riquadroVideo').hidden);
+
       // Il video non è una riga nella SDP: è traffico, e va contato come traffico.
       // Si guardano i byte **video** in ingresso, non il totale di quelli audio —
       // confrontare l'audio con e senza video non misurerebbe niente, perché
@@ -296,6 +314,10 @@ async function attendiAvvio() {
         tipiChiamata() === 'audio');
       // Prima di misurare, non dopo: A riattacca appena ha finito di misurare lei.
       verifica('e la chiamata è ancora in corso', statoChiamata() === 'in-corso');
+
+      // E il riquadro sparisce: mostrare un fotogramma fermo di una telecamera
+      // spenta farebbe credere che l'altro sia ancora lì.
+      verifica('e il riquadro del video è sparito', d().querySelector('#riquadroVideo').hidden);
 
       const dopoSenza = byteVideo();
       await attendi(3000);
@@ -320,6 +342,7 @@ async function attendiAvvio() {
       verifica('B vede che A ha riattaccato', true);
       await attendi(400);
       verifica('e la barra è sparita anche da questa parte', $('#barraChiamata').hidden);
+      verifica('e il riquadro del video con lei', d().querySelector('#riquadroVideo').hidden);
       verifica('la chat resta: si può ancora scrivere', !$('#pannelloChat').hidden);
     }
 

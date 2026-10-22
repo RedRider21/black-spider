@@ -15,7 +15,7 @@
  * non ci sarebbe modo di aggiornarla senza svuotare la memoria a mano.
  */
 
-const VERSIONE = '2';
+const VERSIONE = '3';
 const CACHE = `black-spider-v${VERSIONE}`;
 
 const GUSCIO = [
@@ -37,6 +37,9 @@ const GUSCIO = [
   './js/sincronizzazione.js',
   './js/lingua.js',
   './js/preferenze.js',
+  // Mancava: senza rete, la prima apertura della chat chiamava un file che
+  // nella copia locale non c'era.
+  './js/chiamate.js',
 ];
 
 self.addEventListener('install', (ev) => {

@@ -250,6 +250,16 @@ try {
             </div>
           </div>
 
+          <!-- Il video che si riceve: il posto dove guardarlo. Compare quando una
+               traccia video dell'altro è davvero viva — non quando è stata
+               promessa — e sparisce quando l'altro spegne la telecamera.
+               `muted` non toglie niente al video: la voce arriva da un elemento
+               `<audio>` a parte, e il suono qui lo farebbe sentire due volte. -->
+          <div id="riquadroVideo" class="riquadro-video" hidden>
+            <video id="videoLontano" autoplay playsinline muted
+                   data-i18n-aria="chiamata.videoLontano"></video>
+          </div>
+
           <div id="messaggi" class="messaggi"></div>
           <form id="moduloInvio" class="riga-invio">
             <input id="testo" type="text" autocomplete="off" maxlength="4000"

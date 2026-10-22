@@ -769,14 +769,25 @@ Una nota di dettaglio che non è un dettaglio: la durata si disegna con `font-va
 tabular-nums`. Senza, ogni cifra ha la sua larghezza e il numero balla a ogni secondo che
 cambia — un tremolio che in una schermata che si guarda di sfuggita si nota.
 
-#### Il video arriva, ma non si vede
+#### Il video arriva, e adesso si vede
 
-I byte di video in ingresso si contano, e sono la prova che il video **arriva**; ma
-l'applicazione **non lo mostra**: non c'è nessun elemento `<video>` legato alla traccia in
-ingresso. È una funzione che manca, non un guasto — e va detto perché la misura da sola non
-poteva accorgersene: 62 controlli dicevano «il video arriva», e nessuno diceva «il video si
-vede». Se n'è accorto `sguardo.py` (`app/prove/sguardo.py`), al primo giro in cui si è
-*guardata* la chiamata invece di misurarla.
+I byte di video in ingresso si contano, e sono la prova che il video **arriva**. Per un po'
+non è stato sufficiente: i byte dicevano che qualcuno mandava dei fotogrammi, non che
+qualcuno li stesse guardando — l'applicazione non aveva nessun elemento `<video>` legato alla
+traccia in ingresso. Era una funzione che manca, non un guasto, e la misura da sola non poteva
+accorgersene: 62 controlli dicevano «il video arriva» e nessuno diceva «il video si vede». Se
+n'è accorto `sguardo.py` (`app/prove/sguardo.py`), al primo giro in cui si è *guardata* la
+chiamata invece di misurarla.
+
+Adesso la traccia video ha il suo posto: un `<video>` nel pannello della chat, a cui si dà la
+**sola traccia video** — lo stream che arriva contiene anche l'audio, e darlo a due elementi
+lo farebbe sentire due volte. Il riquadro compare quando la traccia è *davvero viva*, con la
+stessa misura (`tipiInArrivo`, dove `muted` conta più della direzione del transceiver) che
+distingue una promessa da un'immagine, e sparisce quando l'altro spegne la telecamera: un
+fotogramma fermo farebbe credere che sia ancora lì.
+
+Resta scoperta l'altra metà della domanda: **chi manda non si vede**. L'anteprima locale è
+un'aggiunta piccola ma non c'è ancora.
 
 #### Verificato il 29 settembre 2026
 
@@ -790,10 +801,12 @@ Fra il pulsante e la funzione sta quasi tutto lo spazio in cui vivono i guasti v
 | il video, dopo aver acceso la telecamera | **70 977 byte** in tre secondi, **solo video** |
 | dopo aver spento la telecamera | **0 byte** di video in tre secondi |
 | a chi non manda video | non arriva nessuna traccia video |
+| il video che si riceve | un `<video>` con **fotogrammi decodificati** (`videoWidth > 0`), non solo byte |
 | percorso | `host → host`, due browser, niente STUN, tutto dentro `127.0.0.1` |
 
-62 controlli su 62. La differenza fra i due numeri — 23 kbps contro quasi dieci volte tanto —
-è la ragione per cui la sola voce è il caso base e non il caso ridotto.
+68 controlli su 68 (37 + 31), il 23 ottobre 2026. La differenza fra i due numeri — 23 kbps
+contro quasi dieci volte tanto — è la ragione per cui la sola voce è il caso base e non il
+caso ridotto.
 
 Il numero del video va letto con la sua avvertenza: **70 977 byte in tre secondi sono ≈ 190
 kbps**, molto meno dei ~1,5 Mbps citati più sopra, perché il dispositivo finto di Chrome genera
@@ -804,8 +817,8 @@ Poi la chiamata è stata **guardata**, non solo misurata: `sguardo.py` apre due 
 pilota sul protocollo DevTools e clicca i pulsanti con il mouse, fotografando il risultato. Ha
 trovato tre cose che le asserzioni non potevano vedere — il video che arriva e non si disegna,
 il pulsante «Chiama» che resta acceso per tutta la chiamata, e l'intestazione che sotto i 410 px
-finisce sotto il chip dell'identità. Le ultime due sono state riparate e rimisurate; la prima è
-la funzione mancante descritta sopra. «Funziona» e «si vede bene» sono due domande diverse, e
+finisce sotto il chip dell'identità. Tutte e tre sono state riparate e rimisurate; la prima con
+un `<video>` vero, e la prova adesso lo aspetta finché non ha dei fotogrammi decodificati. «Funziona» e «si vede bene» sono due domande diverse, e
 servono due strumenti diversi per rispondere.
 
 #### Riusare l'invito? No, e vale la pena dire perché
@@ -906,7 +919,7 @@ giusta:
 | Modulo | Priorità | Note |
 |---|---|---|
 | Chat | v0 | testo, risposte, reazioni, presenza, "sta scrivendo" |
-| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, **durata a vista** come su un telefono, sulla stessa connessione della chat. **Manca il disegno del video ricevuto**: i byte si contano, l'immagine non si mostra. Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
+| Call | v1 | **fatto, dentro l'app**: solo voce per difetto (§12.1), telecamera accesa e spenta a chiamata avviata, **durata a vista** come su un telefono, **video ricevuto e disegnato** in un riquadro sopra la chat, sulla stessa connessione della chat. **Manca l'anteprima di sé** (chi manda non si vede). Restano i gruppi piccoli e Encoded Transform. Provato: `app/prove/chiamata.html` |
 | File | v1 | invio, ricezione, ripresa, quota, OPFS |
 | Bacheca | v1 | stato condiviso modificabile (editor collaborativo semplice) |
 | Blocchi | v2 | note/liste condivise, buon caso di test per lo stato mutabile e per Yjs |

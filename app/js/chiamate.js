@@ -137,8 +137,29 @@ export function creaChiamate({ trasporto, polite, scheda, chiIniziale, onStato, 
     return audio;
   }
 
+  /* Arrivare non è vedersi: i byte di video in ingresso dicono che qualcuno sta
+   * mandando dei fotogrammi, non che qualcuno li stia guardando. Perché si
+   * vedano serve un elemento `<video>` legato alla traccia, ed è qui che viene
+   * legato — quando la traccia arriva, non quando la si aspetta.
+   *
+   * All'elemento si dà **la sola traccia video**, non lo stream che arriva:
+   * quello contiene anche l'audio, che suonerebbe una seconda volta sopra
+   * l'elemento `<audio>` che lo sta già riproducendo. */
   pc.addEventListener('track', (ev) => {
     annuncia();
+
+    if (ev.track.kind === 'video') {
+      const v = document.getElementById('videoLontano');
+      if (!v) return;
+      v.srcObject = new MediaStream([ev.track]);
+      v.play().catch(() => {
+        // Succede quando il browser vuole un gesto prima di far partire un
+        // video: meglio dirlo che lasciare un riquadro nero senza spiegazione.
+        nota(t('nota.chiamataVideoBloccato'), true);
+      });
+      return;
+    }
+
     if (ev.track.kind !== 'audio') return;
     const flusso = ev.streams && ev.streams[0];
     const a = preparaAudio();
@@ -320,6 +341,8 @@ export function creaChiamate({ trasporto, polite, scheda, chiIniziale, onStato, 
     descrizioneInArrivo = null;
     byteRicevuti = 0; byteVideoRicevuti = 0; byteVisti.clear(); iniziata = null;
     if (audio) { audio.srcObject = null; }
+    const v = document.getElementById('videoLontano');
+    if (v) v.srcObject = null;
     muto = false;
   }
 

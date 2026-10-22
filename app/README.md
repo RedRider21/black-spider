@@ -129,10 +129,11 @@ acceso. Nessuna asserzione se ne accorge. Clicca con `Input.dispatchMouseEvent`
 sulle coordinate del pulsante, non con `element.click()`: un evento del mouse
 attraversa i gestori e il disegno come li attraversa un dito, e se un pulsante è
 fuori dallo schermo il clic semplicemente non arriva — che è quello che succede a
-chi lo cerca. È così che sono saltati fuori tre difetti che le prove non vedevano:
-il video che arriva e non si mostra, il pulsante «Chiama» acceso durante la
+chi lo cerca. È così che sono saltati fuori tre cose che le prove non vedevano:
+il video che arrivava e non si mostrava, il pulsante «Chiama» acceso durante la
 chiamata, e l'intestazione che a larghezza telefono finiva sotto il chip
-dell'identità.
+dell'identità. Le prime due sono adesso riparate; della terza — il video — la
+prova controlla anche i fotogrammi, non solo i byte.
 
 `collegamento.html` e `chiamata.html` vanno aperte in due esemplari — `?ruolo=A` e
 `?ruolo=B` — in due profili diversi, con un piccolo server che fa da punto
@@ -147,7 +148,7 @@ lingua, e una prova che si rompe traducendo l'app non segnala un guasto, segnala
 sé stessa. Cercano i segni che l'app lascia su `body` — `data-pronto`,
 `data-eventi`, `data-sw` — che sono uguali in tutte le lingue.
 
-**Ultimo esito, 2026-09-29.** Due processi Chrome separati, profili separati,
+**Ultimo esito, 2026-10-23.** Due processi Chrome separati, profili separati,
 identità separate.
 
 *Collegamento.* Invito → risposta → canale aperto in circa un secondo, in diretto
@@ -160,8 +161,10 @@ giro, cioè ≈15-24 kbps in Opus — lo stesso ordine dei 24-40 dichiarati. Il 
 balla da un giro all'altro e va detto: Opus è a bitrate variabile, e tre secondi
 sono un campione corto. Accendendo la telecamera, solo per il video ne arrivano
 **70 000-72 500** negli stessi tre secondi, e **zero** dopo averla spenta.
-Niente STUN, microfono finto, tutto dentro `127.0.0.1`. 62 controlli su 62
-(36 in un ruolo, 26 nell'altro).
+Niente STUN, microfono finto, tutto dentro `127.0.0.1`. 68 controlli su 68
+(37 in un ruolo, 31 nell'altro), misurati il 2026-10-23: fra questi, il video
+in ingresso deve avere dei **fotogrammi decodificati** (`videoWidth > 0`), non
+solo dei byte.
 
 Un numero vale più di una frase: la voce costa 15-24 kbps e il video molto di
 più. Ma va detto *quale* video è stato misurato: quello finto di Chrome, un
@@ -176,8 +179,10 @@ coordinate dei pulsanti e fotografa la chiamata. Il primo giro ha trovato tre
 cose che nessuna asserzione vedeva. Due erano difetti, e sono corretti: il
 pulsante «Chiama» che restava acceso mentre si parlava, e l'intestazione che
 sotto i 410 px finiva sotto il chip dell'identità (rimisurata a 360, 390, 400,
-430 e 1240 px). La terza non è un difetto ma una funzione che manca: il video
-arriva e non si mostra.
+430 e 1240 px). La terza non era un difetto ma una funzione che mancava — il
+video arrivava e non si mostrava — e adesso c'è: chi riceve vede l'altro in un
+riquadro sopra i messaggi, e il riquadro sparisce quando l'altro spegne la
+telecamera.
 
 ## La chiamata, e perché è fatta così
 
@@ -367,11 +372,13 @@ via d'uscita**, non a cuor leggero.
 
 ## Cosa manca
 
-- **Il video che si riceve non si vede.** Arriva — i byte si contano — ma nessun
-  elemento lo mostra: il gestore della traccia in ingresso scarta ciò che non è
-  audio. È il primo pezzo da fare della chiamata, ed è piccolo: un `<video>` e
-  `srcObject` dal flusso remoto. Finché manca, il video va chiamato esperimento,
-  non funzione.
+- **Il video che si riceve si vede, ma chi lo manda non si vede.** La traccia in
+  ingresso ha finalmente un posto dove apparire: un `<video>` nel pannello della
+  chat, legato alla sola traccia video (lo stream che arriva contiene anche
+  l'audio, e darlo a due elementi lo farebbe sentire due volte). Il riquadro
+  compare quando la traccia è **davvero viva**, con la stessa misura che distingue
+  «promessa» da «arrivata», e sparisce quando l'altro spegne la telecamera. Manca
+  però l'anteprima di sé: chi accende la telecamera non vede cosa sta mandando.
 - **L'indirizzario.** Oggi per parlare con qualcuno si rifà lo scambio a mano,
   ogni volta. Salvando in IndexedDB chi si è incontrato e per quale percorso
   (vedi «Perché non si può riusare lo stesso invito»), l'offerta **nuova** può

@@ -104,6 +104,7 @@ const DIZIONARI = {
     'chiamata.giaInCorso': 'C\'è già una chiamata in corso.',
     'chiamata.microfonoNegato': 'Il microfono non è stato concesso ({errore}): senza microfono non c\'è niente da mandare.',
     'chiamata.telecameraNegata': 'La telecamera non è stata concessa ({errore}).',
+    'chiamata.videoLontano': 'Video ricevuto',
     'chiamata.spiega': 'La chiamata è solo voce: costa 24-40 kbps, contro 1,5 Mbps di un video. Il video si accende dopo, se serve.',
 
     'registro.titolo': 'Registro',
@@ -198,6 +199,7 @@ const DIZIONARI = {
     'nota.chiamataFinita': 'Chiamata finita ({durata}).',
     'nota.chiamataPersa': 'La connessione è caduta: la chiamata è finita.',
     'nota.chiamataAudioBloccato': 'Il browser non ha lasciato partire l\'audio: tocca la pagina per sentire.',
+    'nota.chiamataVideoBloccato': 'Il browser non ha lasciato partire il video: tocca la pagina per vederlo.',
     'nota.chiamataErrore': 'Errore nella chiamata: {errore}',
     'nota.invitoNelLink': 'C\'è un invito in questo link: premi «Prepara la risposta».',
     'nota.identita': 'Identità pronta: {id} ({algoritmo}).',
@@ -321,6 +323,7 @@ const DIZIONARI = {
     'chiamata.giaInCorso': 'There is already a call in progress.',
     'chiamata.microfonoNegato': 'The microphone was not granted ({errore}): without it there is nothing to send.',
     'chiamata.telecameraNegata': 'The camera was not granted ({errore}).',
+    'chiamata.videoLontano': 'Incoming video',
     'chiamata.spiega': 'The call is voice only: it costs 24-40 kbps, against 1.5 Mbps for video. Video goes on afterwards, if needed.',
 
     'registro.titolo': 'Log',
@@ -410,6 +413,7 @@ const DIZIONARI = {
     'nota.chiamataFinita': 'Call ended ({durata}).',
     'nota.chiamataPersa': 'The connection dropped: the call is over.',
     'nota.chiamataAudioBloccato': 'The browser would not start the audio: tap the page to hear.',
+    'nota.chiamataVideoBloccato': 'The browser would not start the video: tap the page to see it.',
     'nota.chiamataErrore': 'Call error: {errore}',
     'nota.invitoNelLink': 'There is an invite in this link: press «Prepare the answer».',
     'nota.identita': 'Identity ready: {id} ({algoritmo}).',

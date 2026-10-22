@@ -558,6 +558,31 @@ button.piccola { padding: 5px 11px; font-size: 12.5px; }
 .chiamata[data-stato="in-corso"] { border-left-color: var(--ok); }
 .chiamata[data-stato="in-corso"] .chiamata-segno { color: var(--ok); }
 
+/* --- il video che si riceve -------------------------------------------- */
+
+/* Il posto dove guardare l'altro. Il fondo resta nero anche in tema chiaro: è
+ * lo spazio attorno a un fotogramma a far sembrare un fotogramma un video.
+ * Senza `object-fit: contain` una telecamera in 4:3 verrebbe ritagliata a
+ * forza in un riquadro 16:9, e si perderebbe proprio il bordo dell'immagine. */
+.riquadro-video {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bordo-tenue);
+  background: #000;
+}
+.riquadro-video[hidden] { display: none; }
+.riquadro-video video {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(38vh, 360px);
+  object-fit: contain;
+  border-radius: 10px;
+  background: #000;
+}
+
 button.pericolo {
   background: transparent;
   border-color: color-mix(in srgb, var(--err) 45%, transparent);

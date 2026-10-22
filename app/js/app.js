@@ -519,6 +519,16 @@ function disegnaChiamata(stato, info = {}) {
   const viva = stato === CHIAMATA.CHIAMANDO || stato === CHIAMATA.SQUILLA
     || stato === CHIAMATA.IN_CORSO;
   barra.hidden = !viva;
+
+  // Il riquadro del video compare quando una traccia video altrui è davvero
+  // viva — la stessa misura che distingue «promessa» da «arrivata» — e sparisce
+  // da solo quando l'altro spegne la telecamera o si riattacca. Non decide lui:
+  // guarda quello che il motore ha misurato, come tutto il resto dello schermo.
+  const riquadroVideo = $('#riquadroVideo');
+  if (riquadroVideo) {
+    riquadroVideo.hidden = !(viva && (info.tipi || '').split(',').includes('video'));
+  }
+
   if (!viva) return;
 
   barra.dataset.stato = stato;
